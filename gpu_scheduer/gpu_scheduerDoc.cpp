@@ -1,5 +1,5 @@
 
-// gpu_schedulerDoc.cpp : implementation of the CgpuschedulerDoc class
+// gpu_scheduerDoc.cpp : implementation of the CgpuscheduerDoc class
 //
 
 #include "pch.h"
@@ -7,10 +7,10 @@
 // SHARED_HANDLERS can be defined in an ATL project implementing preview, thumbnail
 // and search filter handlers and allows sharing of document code with that project.
 #ifndef SHARED_HANDLERS
-#include "gpu_scheduler.h"
+#include "gpu_scheduer.h"
 #endif
 
-#include "gpu_schedulerDoc.h"
+#include "gpu_scheduerDoc.h"
 
 #include <propkey.h>
 
@@ -18,27 +18,27 @@
 #define new DEBUG_NEW
 #endif
 
-// CgpuschedulerDoc
+// CgpuscheduerDoc
 
-IMPLEMENT_DYNCREATE(CgpuschedulerDoc, CDocument)
+IMPLEMENT_DYNCREATE(CgpuscheduerDoc, CDocument)
 
-BEGIN_MESSAGE_MAP(CgpuschedulerDoc, CDocument)
+BEGIN_MESSAGE_MAP(CgpuscheduerDoc, CDocument)
 END_MESSAGE_MAP()
 
 
-// CgpuschedulerDoc construction/destruction
+// CgpuscheduerDoc construction/destruction
 
-CgpuschedulerDoc::CgpuschedulerDoc() noexcept
+CgpuscheduerDoc::CgpuscheduerDoc() noexcept
 {
 	// TODO: add one-time construction code here
 
 }
 
-CgpuschedulerDoc::~CgpuschedulerDoc()
+CgpuscheduerDoc::~CgpuscheduerDoc()
 {
 }
 
-BOOL CgpuschedulerDoc::OnNewDocument()
+BOOL CgpuscheduerDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
@@ -52,9 +52,9 @@ BOOL CgpuschedulerDoc::OnNewDocument()
 
 
 
-// CgpuschedulerDoc serialization
+// CgpuscheduerDoc serialization
 
-void CgpuschedulerDoc::Serialize(CArchive& ar)
+void CgpuscheduerDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring())
 	{
@@ -69,7 +69,7 @@ void CgpuschedulerDoc::Serialize(CArchive& ar)
 #ifdef SHARED_HANDLERS
 
 // Support for thumbnails
-void CgpuschedulerDoc::OnDrawThumbnail(CDC& dc, LPRECT lprcBounds)
+void CgpuscheduerDoc::OnDrawThumbnail(CDC& dc, LPRECT lprcBounds)
 {
 	// Modify this code to draw the document's data
 	dc.FillSolidRect(lprcBounds, RGB(255, 255, 255));
@@ -90,7 +90,7 @@ void CgpuschedulerDoc::OnDrawThumbnail(CDC& dc, LPRECT lprcBounds)
 }
 
 // Support for Search Handlers
-void CgpuschedulerDoc::InitializeSearchContent()
+void CgpuscheduerDoc::InitializeSearchContent()
 {
 	CString strSearchContent;
 	// Set search contents from document's data.
@@ -100,7 +100,7 @@ void CgpuschedulerDoc::InitializeSearchContent()
 	SetSearchContent(strSearchContent);
 }
 
-void CgpuschedulerDoc::SetSearchContent(const CString& value)
+void CgpuscheduerDoc::SetSearchContent(const CString& value)
 {
 	if (value.IsEmpty())
 	{
@@ -120,19 +120,19 @@ void CgpuschedulerDoc::SetSearchContent(const CString& value)
 
 #endif // SHARED_HANDLERS
 
-// CgpuschedulerDoc diagnostics
+// CgpuscheduerDoc diagnostics
 
 #ifdef _DEBUG
-void CgpuschedulerDoc::AssertValid() const
+void CgpuscheduerDoc::AssertValid() const
 {
 	CDocument::AssertValid();
 }
 
-void CgpuschedulerDoc::Dump(CDumpContext& dc) const
+void CgpuscheduerDoc::Dump(CDumpContext& dc) const
 {
 	CDocument::Dump(dc);
 }
 #endif //_DEBUG
 
 
-// CgpuschedulerDoc commands
+// CgpuscheduerDoc commands

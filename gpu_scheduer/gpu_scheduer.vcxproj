@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
-    <ProjectGuid>{7282D0EA-38D4-435F-9231-8204F3055906}</ProjectGuid>
+    <ProjectGuid>{E8FB54FA-C5D3-4822-B947-2A4525BF4A10}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>gpuscheduler</RootNamespace>
+    <RootNamespace>gpuscheduer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -183,70 +183,40 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ClassView.h" />
-    <ClInclude Include="FileView.h" />
+    <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="gpu_scheduler.h" />
-    <ClInclude Include="gpu_schedulerDoc.h" />
-    <ClInclude Include="gpu_schedulerView.h" />
+    <ClInclude Include="gpu_scheduer.h" />
+    <ClInclude Include="gpu_scheduerDoc.h" />
+    <ClInclude Include="gpu_scheduerView.h" />
     <ClInclude Include="MainFrm.h" />
-    <ClInclude Include="OutputWnd.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PropertiesWnd.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="ViewTree.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ClassView.cpp" />
-    <ClCompile Include="FileView.cpp" />
-    <ClCompile Include="gpu_scheduler.cpp" />
-    <ClCompile Include="gpu_schedulerDoc.cpp" />
-    <ClCompile Include="gpu_schedulerView.cpp" />
+    <ClCompile Include="ChildFrm.cpp" />
+    <ClCompile Include="gpu_scheduer.cpp" />
+    <ClCompile Include="gpu_scheduerDoc.cpp" />
+    <ClCompile Include="gpu_scheduerView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
-    <ClCompile Include="OutputWnd.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PropertiesWnd.cpp" />
-    <ClCompile Include="ViewTree.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="gpu_scheduler.reg" />
-    <None Include="res\gpuscheduler.rc2" />
+    <None Include="gpu_scheduer.reg" />
+    <None Include="res\gpuscheduer.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="gpuscheduler.rc" />
+    <ResourceCompile Include="gpuscheduer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\classview.bmp" />
-    <Image Include="res\classview_hc.bmp" />
-    <Image Include="res\class_view.ico" />
-    <Image Include="res\class_view_hc.ico" />
-    <Image Include="res\explorer.bmp" />
-    <Image Include="res\explorer_hc.bmp" />
-    <Image Include="res\fileview.bmp" />
-    <Image Include="res\fileview_hc.bmp" />
-    <Image Include="res\file_view.ico" />
-    <Image Include="res\file_view_hc.ico" />
-    <Image Include="res\gpu_scheduler.ico" />
-    <Image Include="res\gpu_schedulerDoc.ico" />
-    <Image Include="res\menuimages.bmp" />
-    <Image Include="res\menuimages_hc.bmp" />
-    <Image Include="res\output_wnd.ico" />
-    <Image Include="res\output_wnd_hc.ico" />
-    <Image Include="res\properties.bmp" />
-    <Image Include="res\properties_hc.bmp" />
-    <Image Include="res\properties_wnd.ico" />
-    <Image Include="res\properties_wnd_hc.ico" />
-    <Image Include="res\sort.bmp" />
-    <Image Include="res\sort_hc.bmp" />
+    <Image Include="res\gpu_scheduer.ico" />
+    <Image Include="res\gpu_scheduerDoc.ico" />
     <Image Include="res\Toolbar.bmp" />
-    <Image Include="res\Toolbar256.bmp" />
-    <Image Include="res\userimages.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

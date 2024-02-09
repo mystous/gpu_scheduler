@@ -1,16 +1,16 @@
 
-// gpu_schedulerDoc.h : interface of the CgpuschedulerDoc class
+// gpu_scheduerDoc.h : interface of the CgpuscheduerDoc class
 //
 
 
 #pragma once
 
 
-class CgpuschedulerDoc : public CDocument
+class CgpuscheduerDoc : public CDocument
 {
 protected: // create from serialization only
-	CgpuschedulerDoc() noexcept;
-	DECLARE_DYNCREATE(CgpuschedulerDoc)
+	CgpuscheduerDoc() noexcept;
+	DECLARE_DYNCREATE(CgpuscheduerDoc)
 
 // Attributes
 public:
@@ -29,7 +29,7 @@ public:
 
 // Implementation
 public:
-	virtual ~CgpuschedulerDoc();
+	virtual ~CgpuscheduerDoc();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;

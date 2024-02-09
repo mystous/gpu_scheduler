@@ -1,42 +1,40 @@
 
-// gpu_scheduler.cpp : Defines the class behaviors for the application.
+// gpu_scheduer.cpp : Defines the class behaviors for the application.
 //
 
 #include "pch.h"
 #include "framework.h"
 #include "afxwinappex.h"
 #include "afxdialogex.h"
-#include "gpu_scheduler.h"
+#include "gpu_scheduer.h"
 #include "MainFrm.h"
 
-#include "gpu_schedulerDoc.h"
-#include "gpu_schedulerView.h"
+#include "ChildFrm.h"
+#include "gpu_scheduerDoc.h"
+#include "gpu_scheduerView.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 
-// CgpuschedulerApp
+// CgpuscheduerApp
 
-BEGIN_MESSAGE_MAP(CgpuschedulerApp, CWinAppEx)
-	ON_COMMAND(ID_APP_ABOUT, &CgpuschedulerApp::OnAppAbout)
+BEGIN_MESSAGE_MAP(CgpuscheduerApp, CWinApp)
+	ON_COMMAND(ID_APP_ABOUT, &CgpuscheduerApp::OnAppAbout)
 	// Standard file based document commands
-	ON_COMMAND(ID_FILE_NEW, &CWinAppEx::OnFileNew)
-	ON_COMMAND(ID_FILE_OPEN, &CWinAppEx::OnFileOpen)
+	ON_COMMAND(ID_FILE_NEW, &CWinApp::OnFileNew)
+	ON_COMMAND(ID_FILE_OPEN, &CWinApp::OnFileOpen)
 	// Standard print setup command
-	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinAppEx::OnFilePrintSetup)
+	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
 END_MESSAGE_MAP()
 
 
-// CgpuschedulerApp construction
+// CgpuscheduerApp construction
 
-CgpuschedulerApp::CgpuschedulerApp() noexcept
+CgpuscheduerApp::CgpuscheduerApp() noexcept
 {
-	m_bHiColorIcons = TRUE;
 
-
-	m_nAppLook = 0;
 	// support Restart Manager
 	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_ALL_ASPECTS;
 #ifdef _MANAGED
@@ -48,20 +46,20 @@ CgpuschedulerApp::CgpuschedulerApp() noexcept
 
 	// TODO: replace application ID string below with unique ID string; recommended
 	// format for string is CompanyName.ProductName.SubProduct.VersionInformation
-	SetAppID(_T("gpuscheduler.AppID.NoVersion"));
+	SetAppID(_T("gpuscheduer.AppID.NoVersion"));
 
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
 }
 
-// The one and only CgpuschedulerApp object
+// The one and only CgpuscheduerApp object
 
-CgpuschedulerApp theApp;
+CgpuscheduerApp theApp;
 
 
-// CgpuschedulerApp initialization
+// CgpuscheduerApp initialization
 
-BOOL CgpuschedulerApp::InitInstance()
+BOOL CgpuscheduerApp::InitInstance()
 {
 	// InitCommonControlsEx() is required on Windows XP if an application
 	// manifest specifies use of ComCtl32.dll version 6 or later to enable
@@ -73,7 +71,7 @@ BOOL CgpuschedulerApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	CWinAppEx::InitInstance();
+	CWinApp::InitInstance();
 
 
 	// Initialize OLE libraries
@@ -101,28 +99,30 @@ BOOL CgpuschedulerApp::InitInstance()
 	LoadStdProfileSettings(4);  // Load standard INI file options (including MRU)
 
 
-	InitContextMenuManager();
-
-	InitKeyboardManager();
-
-	InitTooltipManager();
-	CMFCToolTipInfo ttParams;
-	ttParams.m_bVislManagerTheme = TRUE;
-	theApp.GetTooltipManager()->SetTooltipParams(AFX_TOOLTIP_TYPE_ALL,
-		RUNTIME_CLASS(CMFCToolTipCtrl), &ttParams);
-
 	// Register the application's document templates.  Document templates
 	//  serve as the connection between documents, frame windows and views
-	CSingleDocTemplate* pDocTemplate;
-	pDocTemplate = new CSingleDocTemplate(
-		IDR_MAINFRAME,
-		RUNTIME_CLASS(CgpuschedulerDoc),
-		RUNTIME_CLASS(CMainFrame),       // main SDI frame window
-		RUNTIME_CLASS(CgpuschedulerView));
+	CMultiDocTemplate* pDocTemplate;
+	pDocTemplate = new CMultiDocTemplate(IDR_gpuscheduerTYPE,
+		RUNTIME_CLASS(CgpuscheduerDoc),
+		RUNTIME_CLASS(CChildFrame), // custom MDI child frame
+		RUNTIME_CLASS(CgpuscheduerView));
 	if (!pDocTemplate)
 		return FALSE;
 	AddDocTemplate(pDocTemplate);
 
+	// create main MDI Frame window
+	CMainFrame* pMainFrame = new CMainFrame;
+	if (!pMainFrame || !pMainFrame->LoadFrame(IDR_MAINFRAME))
+	{
+		delete pMainFrame;
+		return FALSE;
+	}
+	m_pMainWnd = pMainFrame;
+
+	// call DragAcceptFiles only if there's a suffix
+	//  In an MDI app, this should occur immediately after setting m_pMainWnd
+	// Enable drag/drop open
+	m_pMainWnd->DragAcceptFiles();
 
 	// Parse command line for standard shell commands, DDE, file open
 	CCommandLineInfo cmdInfo;
@@ -137,26 +137,22 @@ BOOL CgpuschedulerApp::InitInstance()
 	// app was launched with /RegServer, /Register, /Unregserver or /Unregister.
 	if (!ProcessShellCommand(cmdInfo))
 		return FALSE;
+	// The main window has been initialized, so show and update it
+	pMainFrame->ShowWindow(m_nCmdShow);
+	pMainFrame->UpdateWindow();
 
-	// The one and only window has been initialized, so show and update it
-	m_pMainWnd->ShowWindow(SW_SHOW);
-	m_pMainWnd->UpdateWindow();
-	// call DragAcceptFiles only if there's a suffix
-	//  In an SDI app, this should occur after ProcessShellCommand
-	// Enable drag/drop open
-	m_pMainWnd->DragAcceptFiles();
 	return TRUE;
 }
 
-int CgpuschedulerApp::ExitInstance()
+int CgpuscheduerApp::ExitInstance()
 {
 	//TODO: handle additional resources you may have added
 	AfxOleTerm(FALSE);
 
-	return CWinAppEx::ExitInstance();
+	return CWinApp::ExitInstance();
 }
 
-// CgpuschedulerApp message handlers
+// CgpuscheduerApp message handlers
 
 
 // CAboutDlg dialog used for App About
@@ -192,35 +188,13 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 // App command to run the dialog
-void CgpuschedulerApp::OnAppAbout()
+void CgpuscheduerApp::OnAppAbout()
 {
 	CAboutDlg aboutDlg;
 	aboutDlg.DoModal();
 }
 
-// CgpuschedulerApp customization load/save methods
-
-void CgpuschedulerApp::PreLoadState()
-{
-	BOOL bNameValid;
-	CString strName;
-	bNameValid = strName.LoadString(IDS_EDIT_MENU);
-	ASSERT(bNameValid);
-	GetContextMenuManager()->AddMenu(strName, IDR_POPUP_EDIT);
-	bNameValid = strName.LoadString(IDS_EXPLORER);
-	ASSERT(bNameValid);
-	GetContextMenuManager()->AddMenu(strName, IDR_POPUP_EXPLORER);
-}
-
-void CgpuschedulerApp::LoadCustomState()
-{
-}
-
-void CgpuschedulerApp::SaveCustomState()
-{
-}
-
-// CgpuschedulerApp message handlers
+// CgpuscheduerApp message handlers
 
 
 
