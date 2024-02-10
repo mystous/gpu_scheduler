@@ -183,21 +183,31 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CGPUStatus.h" />
     <ClInclude Include="ChildFrm.h" />
+    <ClInclude Include="coprocessor_server.h" />
+    <ClInclude Include="CSchedulerOption.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="gpu_scheduer.h" />
     <ClInclude Include="gpu_scheduerDoc.h" />
     <ClInclude Include="gpu_scheduerView.h" />
+    <ClInclude Include="job_emulator.h" />
+    <ClInclude Include="job_entry.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CGPUStatus.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
+    <ClCompile Include="coprocessor_server.cpp" />
+    <ClCompile Include="CSchedulerOption.cpp" />
     <ClCompile Include="gpu_scheduer.cpp" />
     <ClCompile Include="gpu_scheduerDoc.cpp" />
     <ClCompile Include="gpu_scheduerView.cpp" />
+    <ClCompile Include="job_emulator.cpp" />
+    <ClCompile Include="job_entry.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -207,6 +217,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="gpu_scheduer.reg" />
     <None Include="res\gpuscheduer.rc2" />
   </ItemGroup>

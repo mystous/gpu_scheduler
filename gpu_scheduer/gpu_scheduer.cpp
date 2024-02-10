@@ -126,6 +126,7 @@ BOOL CgpuscheduerApp::InitInstance()
 
 	// Parse command line for standard shell commands, DDE, file open
 	CCommandLineInfo cmdInfo;
+  cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 	ParseCommandLine(cmdInfo);
 
 	// Enable DDE Execute open
@@ -173,6 +174,9 @@ protected:
 // Implementation
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+//  afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
+//  afx_msg void OnEmulationPause();
 };
 
 CAboutDlg::CAboutDlg() noexcept : CDialogEx(IDD_ABOUTBOX)
@@ -185,6 +189,8 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+//  ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CAboutDlg::OnUpdateFileNew)
+//  ON_COMMAND(ID_EMULATION_PAUSE, &CAboutDlg::OnEmulationPause)
 END_MESSAGE_MAP()
 
 // App command to run the dialog
@@ -198,3 +204,15 @@ void CgpuscheduerApp::OnAppAbout()
 
 
 
+
+
+//void CAboutDlg::OnUpdateFileNew(CCmdUI* pCmdUI)
+//{
+  // TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+//}
+
+
+//void CAboutDlg::OnEmulationPause()
+//{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+//}

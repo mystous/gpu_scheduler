@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "job_emulator.h"
+
 
 class CgpuscheduerDoc : public CDocument
 {
@@ -13,15 +15,18 @@ protected: // create from serialization only
 	DECLARE_DYNCREATE(CgpuscheduerDoc)
 
 // Attributes
-public:
+private:
+  job_emulator job_emulator_obj;
 
 // Operations
 public:
-
+  job_emulator& get_job_element_obj() {
+    return job_emulator_obj;
+  };
 // Overrides
 public:
 	virtual BOOL OnNewDocument();
-	virtual void Serialize(CArchive& ar);
+//	virtual void Serialize(CArchive& ar);
 #ifdef SHARED_HANDLERS
 	virtual void InitializeSearchContent();
 	virtual void OnDrawThumbnail(CDC& dc, LPRECT lprcBounds);
@@ -41,8 +46,15 @@ protected:
 protected:
 	DECLARE_MESSAGE_MAP()
 
+
 #ifdef SHARED_HANDLERS
 	// Helper function that sets search content for a Search Handler
 	void SetSearchContent(const CString& value);
 #endif // SHARED_HANDLERS
+public:
+  virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
+  virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+  afx_msg void OnGpuserversettingShowgpulist();
+//  afx_msg void OnGpuserversettingAddgpu();
+  afx_msg void OnBnClickedButtonAdd();
 };

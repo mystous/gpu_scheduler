@@ -13,6 +13,8 @@
 #include "gpu_scheduerDoc.h"
 #include "gpu_scheduerView.h"
 
+#include "CSchedulerOption.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -27,6 +29,11 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
+  ON_COMMAND(ID_EMULATION_START, &CgpuscheduerView::OnEmulationStart)
+  ON_COMMAND(ID_EMULATION_STOP, &CgpuscheduerView::OnEmulationStop)
+  ON_COMMAND(ID_EMULATION_SETTING, &CgpuscheduerView::OnEmulationSetting)
+  ON_COMMAND(ID_EMULATION_SAVERESULT, &CgpuscheduerView::OnEmulationSaveresult)
+  ON_COMMAND(ID_EMULATION_PAUSE, &CgpuscheduerView::OnEmulationPause)
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -51,14 +58,33 @@ BOOL CgpuscheduerView::PreCreateWindow(CREATESTRUCT& cs)
 
 // CgpuscheduerView drawing
 
-void CgpuscheduerView::OnDraw(CDC* /*pDC*/)
+void CgpuscheduerView::OnDraw(CDC* pDC)
 {
 	CgpuscheduerDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
 		return;
 
-	// TODO: add draw code for native data here
+  CRect rect;
+  GetClientRect(&rect);
+  int width = rect.Width();
+  int height = rect.Height();
+
+  CDC memDC;
+  CBitmap bitmap;
+  memDC.CreateCompatibleDC(pDC);
+  bitmap.CreateCompatibleBitmap(pDC, width, height);
+  CBitmap* pOldBitmap = memDC.SelectObject(&bitmap);
+
+  memDC.FillSolidRect(&rect, RGB(255, 255, 255));
+
+  DrawGPUStatus(memDC, rect);
+
+  pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
+
+  memDC.SelectObject(pOldBitmap);
+  bitmap.DeleteObject();
+  memDC.DeleteDC();
 }
 
 
@@ -103,3 +129,50 @@ CgpuscheduerDoc* CgpuscheduerView::GetDocument() const // non-debug version is i
 
 
 // CgpuscheduerView message handlers
+
+
+void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
+{
+  // TODO: 여기에 구현 코드 추가.
+}
+
+
+void CgpuscheduerView::OnEmulationStart()
+{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+}
+
+
+void CgpuscheduerView::OnEmulationStop()
+{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+}
+
+
+void CgpuscheduerView::OnEmulationSetting()
+{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+  CgpuscheduerDoc* pDoc = (CgpuscheduerDoc*)m_pDocument;
+  job_emulator& job_emul = pDoc->get_job_element_obj();
+
+  CSchedulerOption dlg_option;
+
+  dlg_option.scheduler_selection = (int)job_emul.get_selction_scheduler();
+  dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
+
+  if (dlg_option.DoModal() == IDOK) {
+    job_emul.set_option((job_emulator::scheduler_type)dlg_option.scheduler_selection, dlg_option.using_preemtion);
+  }
+}
+
+
+void CgpuscheduerView::OnEmulationSaveresult()
+{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+}
+
+
+void CgpuscheduerView::OnEmulationPause()
+{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+}

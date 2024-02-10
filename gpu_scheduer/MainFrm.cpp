@@ -7,6 +7,7 @@
 #include "gpu_scheduer.h"
 
 #include "MainFrm.h"
+#include "CSchedulerOption.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -18,6 +19,11 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
+  ON_COMMAND(ID_FILE_OPEN, &CMainFrame::OnFileOpen)
+  ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CMainFrame::OnUpdateFileSave)
+//  ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CMainFrame::OnUpdateFileNew)
+//  ON_COMMAND(ID_FILE_NEW, &CMainFrame::OnFileNew)
+  ON_UPDATE_COMMAND_UI(ID_FILE_OPEN, &CMainFrame::OnUpdateFileOpen)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -94,3 +100,31 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 // CMainFrame message handlers
 
+
+
+void CMainFrame::OnFileOpen()
+{
+}
+
+
+void CMainFrame::OnUpdateFileSave(CCmdUI* pCmdUI)
+{
+
+}
+
+
+//void CMainFrame::OnUpdateFileNew(CCmdUI* pCmdUI)
+//{
+//}
+
+
+//void CMainFrame::OnFileNew()
+//{
+//
+//}
+
+
+void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
+{
+  pCmdUI->Enable(FALSE);
+}

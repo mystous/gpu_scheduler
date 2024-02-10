@@ -40,6 +40,13 @@ protected:
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+  void DrawGPUStatus(CDC& dc, CRect& rect);
+  afx_msg void OnEmulationStart();
+  afx_msg void OnEmulationStop();
+  afx_msg void OnEmulationSetting();
+  afx_msg void OnEmulationSaveresult();
+  afx_msg void OnEmulationPause();
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

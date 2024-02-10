@@ -7,6 +7,7 @@
 #include "gpu_scheduer.h"
 
 #include "ChildFrm.h"
+#include "CSchedulerOption.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -17,6 +18,7 @@
 IMPLEMENT_DYNCREATE(CChildFrame, CMDIChildWnd)
 
 BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWnd)
+    ON_COMMAND(ID_FILE_OPEN, &CChildFrame::OnFileOpen)
 END_MESSAGE_MAP()
 
 // CChildFrame construction/destruction
@@ -55,3 +57,9 @@ void CChildFrame::Dump(CDumpContext& dc) const
 #endif //_DEBUG
 
 // CChildFrame message handlers
+
+
+void CChildFrame::OnFileOpen()
+{
+
+}

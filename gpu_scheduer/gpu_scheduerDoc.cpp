@@ -11,8 +11,13 @@
 #endif
 
 #include "gpu_scheduerDoc.h"
+#include "CSchedulerOption.h"
+#include "CGPUStatus.h"
 
 #include <propkey.h>
+
+#include <atlstr.h>
+#include <string>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -23,6 +28,9 @@
 IMPLEMENT_DYNCREATE(CgpuscheduerDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CgpuscheduerDoc, CDocument)
+    ON_COMMAND(ID_GPUSERVERSETTING_SHOWGPULIST, &CgpuscheduerDoc::OnGpuserversettingShowgpulist)
+//  ON_COMMAND(ID_GPUSERVERSETTING_ADDGPU, &CgpuscheduerDoc::OnGpuserversettingAddgpu)
+  ON_BN_CLICKED(IDC_BUTTON_ADD, &CgpuscheduerDoc::OnBnClickedButtonAdd)
 END_MESSAGE_MAP()
 
 
@@ -43,6 +51,36 @@ BOOL CgpuscheduerDoc::OnNewDocument()
 	if (!CDocument::OnNewDocument())
 		return FALSE;
 
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+  CFileDialog dlg(TRUE, _T("csv"), NULL,
+    OFN_HIDEREADONLY | OFN_FILEMUSTEXIST,
+    _T("CSV Files (*.csv)|*.csv|All Files (*.*)|*.*||"));
+
+  if (dlg.DoModal() == IDOK)
+  {
+    CString filePath = dlg.GetPathName();
+    AfxGetApp()->OpenDocumentFile(filePath);
+
+    bool preemtion_enabling = false;
+    int scheduler_selection = 0;
+
+    CSchedulerOption dlg_option;
+    if (dlg_option.DoModal() == IDOK)
+    {
+      scheduler_selection = dlg_option.scheduler_selection;
+      preemtion_enabling = dlg_option.using_preemtion;
+    }
+    else {
+      AfxMessageBox(L"Select Scheduling method first!");
+      return FALSE;
+    }
+
+    job_emulator_obj.build_job_list([&](CString filaname) -> string {
+      CT2A asciiString(filaname);
+      return std::string(asciiString);
+      }(filePath), (job_emulator::scheduler_type)scheduler_selection, preemtion_enabling);
+  }
+
 	// TODO: add reinitialization code here
 	// (SDI documents will reuse this document)
 
@@ -54,17 +92,17 @@ BOOL CgpuscheduerDoc::OnNewDocument()
 
 // CgpuscheduerDoc serialization
 
-void CgpuscheduerDoc::Serialize(CArchive& ar)
-{
-	if (ar.IsStoring())
-	{
+//void CgpuscheduerDoc::Serialize(CArchive& ar)
+//{
+//	if (ar.IsStoring())
+//	{
 		// TODO: add storing code here
-	}
-	else
-	{
-		// TODO: add loading code here
-	}
-}
+//	}
+//	else
+//	{
+//
+//	}
+//}
 
 #ifdef SHARED_HANDLERS
 
@@ -136,3 +174,45 @@ void CgpuscheduerDoc::Dump(CDumpContext& dc) const
 
 
 // CgpuscheduerDoc commands
+
+
+BOOL CgpuscheduerDoc::OnOpenDocument(LPCTSTR lpszPathName)
+{
+  if (!CDocument::OnOpenDocument(lpszPathName))
+    return FALSE;
+
+  
+
+  return FALSE;
+}
+
+
+BOOL CgpuscheduerDoc::OnSaveDocument(LPCTSTR lpszPathName)
+{
+  AfxMessageBox(L"This application doesn't support save document", MB_ICONSTOP);
+
+  return FALSE;
+
+  //return CDocument::OnSaveDocument(lpszPathName);
+}
+
+
+void CgpuscheduerDoc::OnGpuserversettingShowgpulist()
+{
+    // TODO: 여기에 명령 처리기 코드를 추가합니다.
+  CGPUStatus dlg;
+
+  dlg.DoModal();
+}
+
+
+//void CgpuscheduerDoc::OnGpuserversettingAddgpu()
+//{
+  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+//}
+
+
+void CgpuscheduerDoc::OnBnClickedButtonAdd()
+{
+  // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}

@@ -37,6 +37,12 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	DECLARE_MESSAGE_MAP()
 
+public:
+    afx_msg void OnFileOpen();
+    afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
+//    afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
+//    afx_msg void OnFileNew();
+    afx_msg void OnUpdateFileOpen(CCmdUI* pCmdUI);
 };
 
 
