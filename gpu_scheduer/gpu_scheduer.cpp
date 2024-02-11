@@ -177,6 +177,7 @@ protected:
 public:
 //  afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
 //  afx_msg void OnEmulationPause();
+//    afx_msg void OnEmulationShowjoblist();
 };
 
 CAboutDlg::CAboutDlg() noexcept : CDialogEx(IDD_ABOUTBOX)
@@ -191,6 +192,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 //  ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CAboutDlg::OnUpdateFileNew)
 //  ON_COMMAND(ID_EMULATION_PAUSE, &CAboutDlg::OnEmulationPause)
+//ON_COMMAND(ID_EMULATION_SHOWJOBLIST, &CAboutDlg::OnEmulationShowjoblist)
 END_MESSAGE_MAP()
 
 // App command to run the dialog
@@ -215,4 +217,10 @@ void CgpuscheduerApp::OnAppAbout()
 //void CAboutDlg::OnEmulationPause()
 //{
   // TODO: 여기에 명령 처리기 코드를 추가합니다.
+//}
+
+
+//void CAboutDlg::OnEmulationShowjoblist()
+//{
+    // TODO: 여기에 명령 처리기 코드를 추가합니다.
 //}

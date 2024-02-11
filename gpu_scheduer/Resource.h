@@ -10,6 +10,7 @@
 #define IDD_CSchedulerOption            310
 #define IDD_DIALOG_GPU_LIST             311
 #define IDD_CGPUStatus                  312
+#define IDD_gpu_log_dialog              313
 #define IDC_RADIO_MOST_WANTED           1000
 #define IDC_RADIO_FARE_SHARE            1001
 #define IDC_RADIO_COMPACT               1002
@@ -17,6 +18,7 @@
 #define IDC_CHECK_PREEMTION             1004
 #define IDC_LIST_GPU_SERVER             1005
 #define IDC_BUTTON_ADD                  1006
+#define IDC_LIST_JOB_LIST               1007
 #define ID_GPUSERVERSETTING_SHOWGPULIST 32771
 #define ID_GPUSERVERSETTING_ADDGPU      32772
 #define ID_EMULATION_START              32773
@@ -29,14 +31,15 @@
 #define ID_BUTTON32781                  32781
 #define ID_EMULATION_PAUSE              32782
 #define ID_EMULATION_STOP               32783
+#define ID_EMULATION_SHOWJOBLIST        32784
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        313
-#define _APS_NEXT_COMMAND_VALUE         32784
-#define _APS_NEXT_CONTROL_VALUE         1007
-#define _APS_NEXT_SYMED_VALUE           313
+#define _APS_NEXT_RESOURCE_VALUE        314
+#define _APS_NEXT_COMMAND_VALUE         32785
+#define _APS_NEXT_CONTROL_VALUE         1008
+#define _APS_NEXT_SYMED_VALUE           314
 #endif
 #endif

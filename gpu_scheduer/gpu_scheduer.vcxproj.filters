@@ -57,6 +57,12 @@
     <ClInclude Include="coprocessor_server.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="gpu_log_dialog.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="server_entry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gpu_scheduer.cpp">
@@ -90,6 +96,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="coprocessor_server.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="gpu_log_dialog.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="server_entry.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

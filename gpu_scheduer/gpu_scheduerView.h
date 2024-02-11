@@ -47,6 +47,7 @@ public:
   afx_msg void OnEmulationSetting();
   afx_msg void OnEmulationSaveresult();
   afx_msg void OnEmulationPause();
+  afx_msg void OnEmulationShowjoblist();
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

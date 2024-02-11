@@ -14,6 +14,7 @@
 #include "gpu_scheduerView.h"
 
 #include "CSchedulerOption.h"
+#include "gpu_log_dialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -34,6 +35,7 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
   ON_COMMAND(ID_EMULATION_SETTING, &CgpuscheduerView::OnEmulationSetting)
   ON_COMMAND(ID_EMULATION_SAVERESULT, &CgpuscheduerView::OnEmulationSaveresult)
   ON_COMMAND(ID_EMULATION_PAUSE, &CgpuscheduerView::OnEmulationPause)
+  ON_COMMAND(ID_EMULATION_SHOWJOBLIST, &CgpuscheduerView::OnEmulationShowjoblist)
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -175,4 +177,15 @@ void CgpuscheduerView::OnEmulationSaveresult()
 void CgpuscheduerView::OnEmulationPause()
 {
   // TODO: 여기에 명령 처리기 코드를 추가합니다.
+}
+
+
+void CgpuscheduerView::OnEmulationShowjoblist()
+{
+  gpu_log_dialog  dlg;
+  CgpuscheduerDoc* pDoc = (CgpuscheduerDoc*)m_pDocument;
+  job_emulator& job_emul = pDoc->get_job_element_obj();
+
+  dlg.set_job_list(job_emul.get_job_list_ptr());
+  dlg.DoModal();
 }

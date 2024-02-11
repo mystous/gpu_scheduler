@@ -79,6 +79,13 @@ BOOL CgpuscheduerDoc::OnNewDocument()
       CT2A asciiString(filaname);
       return std::string(asciiString);
       }(filePath), (job_emulator::scheduler_type)scheduler_selection, preemtion_enabling);
+
+    DWORD size = MAX_PATH;
+    std::vector<TCHAR> currentDir(size);
+    GetCurrentDirectory(size, &currentDir[0]);
+
+    job_emulator_obj.build_job_queue();
+    job_emulator_obj.build_server_list("server.csv");
   }
 
 	// TODO: add reinitialization code here
