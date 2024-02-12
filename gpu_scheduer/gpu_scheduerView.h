@@ -48,6 +48,14 @@ public:
   afx_msg void OnEmulationSaveresult();
   afx_msg void OnEmulationPause();
   afx_msg void OnEmulationShowjoblist();
+  void DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
+  void DrawColorText(CDC& dc, CString message, CString highlighted, COLORREF col, CPoint& start_position);
+  pair<int, int> DrawGPUInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
+  pair<int, int> DrawGPUSingleInfo(CDC& dc, CRect& rect, server_entry& server, CPoint& start_position);
+  void DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint start_position, int reserved, int total_count);
+  CString FormatWithCommas(int value);
+  afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+  afx_msg void OnServersettingReloadserverlist();
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

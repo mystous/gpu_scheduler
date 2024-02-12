@@ -23,6 +23,8 @@ void job_emulator::build_server_list(string filename) {
     return;
   }
 
+  server_list.clear();
+
   string line;
   while (getline(file, line)) {
     istringstream ss(line);
@@ -63,6 +65,7 @@ void job_emulator::build_job_list(string filename, job_emulator::scheduler_type 
     return;
   }
 
+  job_file_name = filename;
   set_option(scheduler_index, using_preemetion);
 
   string line;
@@ -112,9 +115,6 @@ void job_emulator::build_job_queue() {
       TRACE(_T("Job queue Index(%s): %d\n"), job.get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"), startDiff.count());
 #endif
   }
-
-
-  int j = 0;
 }
 
 void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool using_preemetion) {

@@ -32,13 +32,14 @@
 #define ID_EMULATION_PAUSE              32782
 #define ID_EMULATION_STOP               32783
 #define ID_EMULATION_SHOWJOBLIST        32784
+#define ID_SERVERSETTING_RELOADSERVERLIST 32785
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        314
-#define _APS_NEXT_COMMAND_VALUE         32785
+#define _APS_NEXT_COMMAND_VALUE         32786
 #define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           314
 #endif

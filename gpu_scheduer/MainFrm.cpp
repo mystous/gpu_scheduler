@@ -24,6 +24,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 //  ON_UPDATE_COMMAND_UI(ID_FILE_NEW, &CMainFrame::OnUpdateFileNew)
 //  ON_COMMAND(ID_FILE_NEW, &CMainFrame::OnFileNew)
   ON_UPDATE_COMMAND_UI(ID_FILE_OPEN, &CMainFrame::OnUpdateFileOpen)
+    ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -68,6 +69,23 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
+
+  WINDOWPLACEMENT wp;
+  wp.length = sizeof(WINDOWPLACEMENT);
+  CWinApp* pApp = AfxGetApp();
+  wp.flags = pApp->GetProfileInt(_T("WindowPlacement"), _T("flags"), 0);
+  wp.showCmd = pApp->GetProfileInt(_T("WindowPlacement"), _T("showCmd"), SW_SHOWNORMAL);
+  wp.ptMinPosition.x = pApp->GetProfileInt(_T("WindowPlacement"), _T("ptMinPosition_x"), 0);
+  wp.ptMinPosition.y = pApp->GetProfileInt(_T("WindowPlacement"), _T("ptMinPosition_y"), 0);
+  wp.ptMaxPosition.x = pApp->GetProfileInt(_T("WindowPlacement"), _T("ptMaxPosition_x"), 0);
+  wp.ptMaxPosition.y = pApp->GetProfileInt(_T("WindowPlacement"), _T("ptMaxPosition_y"), 0);
+  wp.rcNormalPosition.left = pApp->GetProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_left"), 0);
+  wp.rcNormalPosition.top = pApp->GetProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_top"), 0);
+  wp.rcNormalPosition.right = pApp->GetProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_right"), 0);
+  wp.rcNormalPosition.bottom = pApp->GetProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_bottom"), 0);
+
+  // 크기와 위치 정보를 적용합니다.
+  SetWindowPlacement(&wp);
 
 
 	return 0;
@@ -127,4 +145,28 @@ void CMainFrame::OnUpdateFileSave(CCmdUI* pCmdUI)
 void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
 {
   pCmdUI->Enable(FALSE);
+}
+
+
+void CMainFrame::OnClose()
+{
+  // 윈도우의 크기와 위치를 얻습니다.
+  WINDOWPLACEMENT wp;
+  wp.length = sizeof(WINDOWPLACEMENT);
+  GetWindowPlacement(&wp);
+
+  // 크기와 위치 정보를 레지스트리에 저장합니다.
+  CWinApp* pApp = AfxGetApp();
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("flags"), wp.flags);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("showCmd"), wp.showCmd);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("ptMinPosition_x"), wp.ptMinPosition.x);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("ptMinPosition_y"), wp.ptMinPosition.y);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("ptMaxPosition_x"), wp.ptMaxPosition.x);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("ptMaxPosition_y"), wp.ptMaxPosition.y);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_left"), wp.rcNormalPosition.left);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_top"), wp.rcNormalPosition.top);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_right"), wp.rcNormalPosition.right);
+  pApp->WriteProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_bottom"), wp.rcNormalPosition.bottom);
+
+  CMDIFrameWnd::OnClose();
 }

@@ -31,6 +31,7 @@ BEGIN_MESSAGE_MAP(CgpuscheduerDoc, CDocument)
     ON_COMMAND(ID_GPUSERVERSETTING_SHOWGPULIST, &CgpuscheduerDoc::OnGpuserversettingShowgpulist)
 //  ON_COMMAND(ID_GPUSERVERSETTING_ADDGPU, &CgpuscheduerDoc::OnGpuserversettingAddgpu)
   ON_BN_CLICKED(IDC_BUTTON_ADD, &CgpuscheduerDoc::OnBnClickedButtonAdd)
+  ON_COMMAND(ID_SERVERSETTING_RELOADSERVERLIST, &CgpuscheduerDoc::OnServersettingReloadserverlist)
 END_MESSAGE_MAP()
 
 
@@ -206,9 +207,8 @@ BOOL CgpuscheduerDoc::OnSaveDocument(LPCTSTR lpszPathName)
 
 void CgpuscheduerDoc::OnGpuserversettingShowgpulist()
 {
-    // TODO: 여기에 명령 처리기 코드를 추가합니다.
   CGPUStatus dlg;
-
+  dlg.set_server_list(job_emulator_obj.get_server_list());
   dlg.DoModal();
 }
 
@@ -222,4 +222,28 @@ void CgpuscheduerDoc::OnGpuserversettingShowgpulist()
 void CgpuscheduerDoc::OnBnClickedButtonAdd()
 {
   // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+
+void CgpuscheduerDoc::OnServersettingReloadserverlist()
+{
+
+}
+
+
+bool CgpuscheduerDoc::ReloadServerList()
+{
+  CFileDialog dlg(TRUE, _T("csv"), NULL,
+    OFN_HIDEREADONLY | OFN_FILEMUSTEXIST,
+    _T("CSV Files (*.csv)|*.csv|All Files (*.*)|*.*||"));
+
+  if (dlg.DoModal() == IDOK)
+  {
+    USES_CONVERSION;
+    CString filePath = dlg.GetPathName();
+    string str_file = std::string(CT2CA(filePath));
+    job_emulator_obj.build_server_list(str_file);
+    return true;
+  }
+  return false;
 }

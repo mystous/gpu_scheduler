@@ -43,6 +43,7 @@ public:
 //    afx_msg void OnUpdateFileNew(CCmdUI* pCmdUI);
 //    afx_msg void OnFileNew();
     afx_msg void OnUpdateFileOpen(CCmdUI* pCmdUI);
+    afx_msg void OnClose();
 };
 
 

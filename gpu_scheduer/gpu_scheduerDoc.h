@@ -57,4 +57,6 @@ public:
   afx_msg void OnGpuserversettingShowgpulist();
 //  afx_msg void OnGpuserversettingAddgpu();
   afx_msg void OnBnClickedButtonAdd();
+  afx_msg void OnServersettingReloadserverlist();
+  bool ReloadServerList();
 };

@@ -64,7 +64,6 @@ BOOL gpu_log_dialog::OnInitDialog()
     };
 
 
-  // TODO:  여기에 추가 초기화 작업을 추가합니다.
   job_list_ctrl.InsertColumn(0, _T("pod_name"), LVCFMT_LEFT, 350);
   job_list_ctrl.InsertColumn(1, _T("pd_type"), LVCFMT_LEFT, 80);
   job_list_ctrl.InsertColumn(2, _T("GPU #"), LVCFMT_LEFT, 80);
