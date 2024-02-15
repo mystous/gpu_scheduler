@@ -27,8 +27,11 @@
 #define ID_EMULATION_SAVERESULT         32776
 #define ID_SERVERSETTING_SAVESERVERLIST 32777
 #define ID_BUTTON32778                  32778
+#define ID_BUTTON_EMUL_START            32778
 #define ID_BUTTON32780                  32780
+#define ID_BUTTON_EMUL_PAUSE            32780
 #define ID_BUTTON32781                  32781
+#define ID_BUTTON_EMUL_STOP             32781
 #define ID_EMULATION_PAUSE              32782
 #define ID_EMULATION_STOP               32783
 #define ID_EMULATION_SHOWJOBLIST        32784

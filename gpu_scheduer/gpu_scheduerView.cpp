@@ -52,6 +52,9 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
   ON_COMMAND(ID_EMULATION_SHOWJOBLIST, &CgpuscheduerView::OnEmulationShowjoblist)
   ON_WM_ERASEBKGND()
   ON_COMMAND(ID_SERVERSETTING_RELOADSERVERLIST, &CgpuscheduerView::OnServersettingReloadserverlist)
+  ON_COMMAND(ID_BUTTON_EMUL_START, &CgpuscheduerView::OnButtonEmulStart)
+  ON_COMMAND(ID_BUTTON_EMUL_PAUSE, &CgpuscheduerView::OnButtonEmulPause)
+  ON_COMMAND(ID_BUTTON_EMUL_STOP, &CgpuscheduerView::OnButtonEmulStop)
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -171,7 +174,7 @@ void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
 
 void CgpuscheduerView::OnEmulationStart()
 {
-  // TODO: 여기에 명령 처리기 코드를 추가합니다.
+  StartEmul();
 }
 
 
@@ -229,7 +232,7 @@ void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint sta
   digit.Format(_T("%-2.2f %%"), (double)reserved / (double)total_count * 100);
   allocation_rate.Format(_T("Total allocation: %s"), digit.GetBuffer());
 
-  CPoint new_position(start_position.x + 600, start_position.y + 10);
+  CPoint new_position(start_position.x + 900, start_position.y + 10);
 
   dc.SetTextColor(defaultColor);
   dc.TextOut(new_position.x, new_position.y, allocation_rate);
@@ -445,4 +448,33 @@ void CgpuscheduerView::OnServersettingReloadserverlist()
   if (pDoc->ReloadServerList()) {
     Invalidate();
   }
+}
+
+
+void CgpuscheduerView::OnButtonEmulStart()
+{
+  StartEmul();
+}
+
+
+void CgpuscheduerView::StartEmul()
+{
+  job_emulator &emul = GetDocument()->get_job_element_obj();
+  emul.start_progress();
+}
+
+
+void CgpuscheduerView::OnButtonEmulPause()
+{
+  job_emulator& emul = GetDocument()->get_job_element_obj();
+  emul.pause_progress();
+
+}
+
+
+void CgpuscheduerView::OnButtonEmulStop()
+{
+  job_emulator& emul = GetDocument()->get_job_element_obj();
+  emul.stop_progress();
+
 }

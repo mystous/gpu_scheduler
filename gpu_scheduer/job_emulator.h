@@ -7,17 +7,25 @@
 #include <iomanip>
 #include <chrono>
 #include <limits>
+#include <atomic>
+#include <functional>
+#include <thread>
 
 #include "job_entry.h"
 #include "coprocessor_server.h"
 #include "server_entry.h"
+#include "job_scheduler.h"
+#include "scheduler_compact.h"
+#include "scheduler_fare_share.h"
+#include "scheduler_most_wanted.h"
+#include "scheduler_round_robin.h"
 
 using namespace std;
 using namespace std::chrono;
 
 class job_emulator {
 public:
-
+  job_emulator() = default;
   struct job_entry_element {
     vector<job_entry> job_list_in_slot;
   };
@@ -27,6 +35,10 @@ public:
   virtual ~job_emulator();
   enum class scheduler_type : int {
     most_wanted = 0, compact, round_robin, fare_share
+  };
+
+  enum class emulation_status : int {
+    stop, pause, start
   };
 
   void build_job_list(string filename, job_emulator::scheduler_type scheduler_index, bool using_preemetion);
@@ -39,7 +51,13 @@ public:
   vector<job_entry>* get_job_list_ptr() { return &job_list; };
   vector<server_entry>* get_server_list() { return &server_list; };
   int get_total_time_slot() { return total_time_sloct; };
+  int get_emulation_play_priod() { return emulation_play_priod; };
   string get_job_file_name() { return job_file_name; };
+  void step_foward();
+  void pause_progress();
+  void stop_progress();
+  void start_progress();
+  void exit_thread();
 
 private:
   vector<job_entry> job_list;
@@ -51,5 +69,11 @@ private:
   job_entry_struct* job_queue = nullptr;
   int total_time_sloct = 0;
   string job_file_name = "";
+  int emulation_step = -1;
+  int emulation_play_priod = 1;
+  emulation_status emul_status= emulation_status::stop;
+  job_scheduler* scheduler_obj = nullptr;
+  atomic<emulation_status> progress_status = emulation_status::stop;
+  thread emulation_player;
 };
 

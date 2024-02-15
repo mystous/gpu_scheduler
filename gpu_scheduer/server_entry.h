@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include "job_entry.h"
 
 using namespace std;
 class server_entry
@@ -22,6 +23,8 @@ private:
   string server_name = "";
   accelator_type coprocessor_type = accelator_type::cpu;
   vector<bool> reserved;
+  vector<job_entry*> job_list;
+
   void build_accelator_status();
 };
 

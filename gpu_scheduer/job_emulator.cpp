@@ -13,6 +13,10 @@ job_emulator::~job_emulator() {
   if (nullptr != job_queue) {
     delete[] job_queue;
   }
+
+  if (nullptr != scheduler_obj) {
+    delete scheduler_obj;
+  }
 }
 
 void job_emulator::build_server_list(string filename) {
@@ -47,14 +51,11 @@ void job_emulator::build_server_list(string filename) {
         }
         else {
           return server_entry::accelator_type::cpu;
-        }
-      }(tokens[2]),
-      stoi(tokens[1]));
+        } }(tokens[2]), stoi(tokens[1]));
     server_list.push_back(new_element);
   }
 
   file.close();
-
 }
 
 void job_emulator::build_job_list(string filename, job_emulator::scheduler_type scheduler_index, bool using_preemetion) {
@@ -113,14 +114,95 @@ void job_emulator::build_job_queue() {
   
 #ifdef _WIN32
       TRACE(_T("Job queue Index(%s): %d\n"), job.get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"), startDiff.count());
+#else
+      printf("Job queue Index(% s) : % d\n",  job.get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"), startDiff.count());
 #endif
   }
 }
 
 void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool using_preemetion) {
-  selected_scheduler = scheduler_index;
   preemtion_enabling = using_preemetion;
+  selected_scheduler = scheduler_index;
+  if (nullptr != scheduler_obj) {
+    delete scheduler_obj;
+  }
+
+  switch (selected_scheduler) {
+  case scheduler_type::compact:
+    scheduler_obj = new scheduler_compact();
+    break;
+  case scheduler_type::fare_share:
+      scheduler_obj = new scheduler_fare_share();
+    break;
+  case scheduler_type::most_wanted:
+    scheduler_obj = new scheduler_most_wanted();
+      break;
+  case scheduler_type::round_robin:
+  default:
+    scheduler_obj = new scheduler_round_robin();
+      break;
+  }
 }
 
+void job_emulator::step_foward() {
+  if (total_time_sloct  == emulation_step) {
+    emulation_step = -1;
+    progress_status = emulation_status::stop;
+  }
+  else {
+    emulation_step++;
+#ifdef _WIN32
+    TRACE(_T("Step foward %d/%d\n"), emulation_step, total_time_sloct);
+#else
+    printf("Step foward %d/%d", emulation_step, total_time_sloct);
+#endif
+  }
+}
 
+void job_emulator::pause_progress() {
+  progress_status = emulation_status::pause;
+
+#ifdef _WIN32
+  TRACE(_T("\nPause progress\n"));
+#else
+  printf("\nPause progress\n");
+#endif
+}
+
+void job_emulator::stop_progress() {
+  if (emulation_status::pause == progress_status) {
+    emulation_step = -1;
+  }
+  progress_status = emulation_status::stop;
+
+#ifdef _WIN32
+  TRACE(_T("\nStop progress\n"));
+#else
+  printf("\nStop progress\n");
+#endif
+}
+
+void job_emulator::exit_thread() {
+    if (emulation_player.joinable()) {
+      emulation_player.join();
+    }
+}
+
+void job_emulator::start_progress() {
+  emulation_player = thread([this] (){
+      this->progress_status = emulation_status::start;
+      
+      while (emulation_status::start == this->progress_status) {
+        auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
+        this->step_foward();
+        std::this_thread::sleep_until(next_call);
+      }
+      if (progress_status == emulation_status::stop) {
+        emulation_step = -1;
+      }
+
+    });
+
+  emulation_player.detach();  
+}
 

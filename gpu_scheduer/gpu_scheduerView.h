@@ -56,6 +56,10 @@ public:
   CString FormatWithCommas(int value);
   afx_msg BOOL OnEraseBkgnd(CDC* pDC);
   afx_msg void OnServersettingReloadserverlist();
+  afx_msg void OnButtonEmulStart();
+  void StartEmul();
+  afx_msg void OnButtonEmulPause();
+  afx_msg void OnButtonEmulStop();
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

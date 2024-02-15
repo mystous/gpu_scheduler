@@ -17,9 +17,7 @@ void server_entry::build_accelator_status() {
   reserved.clear();
 
   for (int i = 0; i < accelator_count; ++i) {
-    if( i % 3 )
-      reserved.push_back(false);
-    else
-      reserved.push_back(true);
+	  reserved.push_back(false);
+    job_list.push_back(nullptr);
   }
 }
