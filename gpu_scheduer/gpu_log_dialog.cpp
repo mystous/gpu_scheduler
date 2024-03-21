@@ -74,7 +74,7 @@ BOOL gpu_log_dialog::OnInitDialog()
   for (auto && job : *job_list) {
     int index = job_list_ctrl.InsertItem(job_list_ctrl.GetItemCount(), CA2T(job.get_pod_name().c_str()));
     job_list_ctrl.SetItemText(index, 1, job.get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"));
-    job_list_ctrl.SetItemText(index, 2, CA2T(to_string(job.get_gpu_count()).c_str()));
+    job_list_ctrl.SetItemText(index, 2, CA2T(to_string(job.get_accelerator_count()).c_str()));
 
     job_list_ctrl.SetItemText(index, 3, CA2T(conver_tp_str(job.get_start_tp()).c_str()));
     job_list_ctrl.SetItemText(index, 4, CA2T(conver_tp_str(job.get_finish_tp()).c_str()));

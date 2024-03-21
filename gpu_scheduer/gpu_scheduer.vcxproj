@@ -185,6 +185,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="call_back_object.h" />
     <ClInclude Include="CGPUStatus.h" />
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="coprocessor_server.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="call_back_object.cpp" />
     <ClCompile Include="CGPUStatus.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="coprocessor_server.cpp" />

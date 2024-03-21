@@ -78,6 +78,9 @@
     <ClInclude Include="scheduler_fare_share.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="call_back_object.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gpu_scheduer.cpp">
@@ -132,6 +135,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="scheduler_fare_share.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="call_back_object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

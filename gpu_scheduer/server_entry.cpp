@@ -18,6 +18,33 @@ void server_entry::build_accelator_status() {
 
   for (int i = 0; i < accelator_count; ++i) {
 	  reserved.push_back(false);
-    job_list.push_back(nullptr);
   }
+}
+
+bool server_entry::assign_accelator(job_entry* job, int required_accelator_count) {
+  if (required_accelator_count > get_avaliable_accelator_count()) {
+    return false;
+  }
+
+  for( int i = 0 ; i < accelator_count ; ++i ){
+    if (true == reserved[i]) {
+      continue;
+    }
+
+    job->assign_accelerator(i);
+    reserved[i] = true;
+  }
+  job_list.push_back(job);
+
+  return true;
+}
+
+int server_entry::get_avaliable_accelator_count() {
+  int avaliable_count = 0;
+  for (auto&& avaliable_server : reserved) {
+    if (false == avaliable_server) {
+      avaliable_count++;
+    }
+  }
+  return avaliable_count;
 }

@@ -10,6 +10,7 @@
 #include <atomic>
 #include <functional>
 #include <thread>
+#include <queue>
 
 #include "job_entry.h"
 #include "coprocessor_server.h"
@@ -52,12 +53,16 @@ public:
   vector<server_entry>* get_server_list() { return &server_list; };
   int get_total_time_slot() { return total_time_sloct; };
   int get_emulation_play_priod() { return emulation_play_priod; };
+  void set_emulation_play_priod(int priod) { emulation_play_priod = priod; };
   string get_job_file_name() { return job_file_name; };
   void step_foward();
   void pause_progress();
   void stop_progress();
   void start_progress();
   void exit_thread();
+  void update_wait_queue();
+  void scheduling_job();
+  void set_callback(std::function<void()> callback) { step_forward_callback = callback; };
 
 private:
   vector<job_entry> job_list;
@@ -75,5 +80,7 @@ private:
   job_scheduler* scheduler_obj = nullptr;
   atomic<emulation_status> progress_status = emulation_status::stop;
   thread emulation_player;
+  queue<job_entry> wait_queue;
+  std::function<void()> step_forward_callback;
 };
 

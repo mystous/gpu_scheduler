@@ -59,10 +59,11 @@ END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
 
+CgpuscheduerView *global_view = nullptr;
+
 CgpuscheduerView::CgpuscheduerView() noexcept
 {
 	// TODO: add construction code here
-
 }
 
 CgpuscheduerView::~CgpuscheduerView()
@@ -151,6 +152,12 @@ CgpuscheduerDoc* CgpuscheduerView::GetDocument() const // non-debug version is i
 
 
 // CgpuscheduerView message handlers
+
+void CgpuscheduerView::function_call() {
+  CRect rect;
+  GetClientRect(&rect);
+  InvalidateRect(rect);
+}
 
 
 void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
@@ -457,9 +464,18 @@ void CgpuscheduerView::OnButtonEmulStart()
 }
 
 
+void global_callback() {
+  global_view->function_call();
+}
+
 void CgpuscheduerView::StartEmul()
 {
-  job_emulator &emul = GetDocument()->get_job_element_obj();
+  job_emulator &emul = GetDocument()->get_job_element_obj() ;
+
+  global_view = this;
+
+  std::function<void()> callback_func = global_callback;
+  emul.set_callback(callback_func);
   emul.start_progress();
 }
 
@@ -478,3 +494,5 @@ void CgpuscheduerView::OnButtonEmulStop()
   emul.stop_progress();
 
 }
+
+

@@ -70,6 +70,8 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     {
       scheduler_selection = dlg_option.scheduler_selection;
       preemtion_enabling = dlg_option.using_preemtion;
+
+      //job_emulator_obj.set_option((job_emulator::scheduler_type)dlg_option.scheduler_selection, dlg_option.using_preemtion);
     }
     else {
       AfxMessageBox(L"Select Scheduling method first!");
@@ -87,6 +89,8 @@ BOOL CgpuscheduerDoc::OnNewDocument()
 
     job_emulator_obj.build_job_queue();
     job_emulator_obj.build_server_list("server.csv");
+
+    
   }
 
 	// TODO: add reinitialization code here
@@ -246,4 +250,8 @@ bool CgpuscheduerDoc::ReloadServerList()
     return true;
   }
   return false;
+}
+
+void CgpuscheduerDoc::callback() {
+  
 }

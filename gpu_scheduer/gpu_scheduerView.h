@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include "call_back_object.h"
 
-class CgpuscheduerView : public CView
+
+class CgpuscheduerView : public CView, public call_back_object
 {
 protected: // create from serialization only
 	CgpuscheduerView() noexcept;
@@ -60,6 +62,7 @@ public:
   void StartEmul();
   afx_msg void OnButtonEmulPause();
   afx_msg void OnButtonEmulStop();
+  virtual void function_call() override;
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

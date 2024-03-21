@@ -24,4 +24,5 @@ protected:
 public:
   int scheduler_selection;
   BOOL using_preemtion;
+  virtual BOOL OnInitDialog();
 };

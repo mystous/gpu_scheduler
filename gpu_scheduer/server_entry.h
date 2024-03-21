@@ -17,6 +17,8 @@ public:
   accelator_type get_accelator_type() { return coprocessor_type; };
   void set_server_setting(string server_name, int accelator_count, accelator_type coprocessor_type);
   vector<bool>* get_reserved_status() { return &reserved; };
+  int get_avaliable_accelator_count();
+  bool assign_accelator(job_entry* job, int required_accelator_count);
 
 private:
   int accelator_count = 0;

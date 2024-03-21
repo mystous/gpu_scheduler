@@ -55,6 +55,8 @@ void job_emulator::build_server_list(string filename) {
     server_list.push_back(new_element);
   }
 
+  scheduler_obj->set_server(&server_list);
+
   file.close();
 }
 
@@ -79,7 +81,7 @@ void job_emulator::build_job_list(string filename, job_emulator::scheduler_type 
       tokens.push_back(token);
     }
 
-    job_entry new_element(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], stoi(tokens[7]));
+    job_entry new_element(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], stoi(tokens[7]), stoi(tokens[8]), stod(tokens[9]));
     job_list.push_back(new_element);
 
   }
@@ -145,7 +147,7 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
 }
 
 void job_emulator::step_foward() {
-  if (total_time_sloct  == emulation_step) {
+  if ((total_time_sloct  - 1) == emulation_step) {
     emulation_step = -1;
     progress_status = emulation_status::stop;
   }
@@ -156,6 +158,28 @@ void job_emulator::step_foward() {
 #else
     printf("Step foward %d/%d", emulation_step, total_time_sloct);
 #endif
+
+    update_wait_queue();
+    scheduling_job();
+    step_forward_callback();
+  }
+}
+
+void job_emulator::scheduling_job() {
+  while (false == wait_queue.empty()) {
+    auto job = wait_queue.front();
+    if (-1 == scheduler_obj->arrange_server(job)) {
+      break;
+    }
+    wait_queue.pop();
+  }
+}
+
+void job_emulator::update_wait_queue() {
+  if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
+    for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
+      wait_queue.push(job);
+    }
   }
 }
 
@@ -189,6 +213,7 @@ void job_emulator::exit_thread() {
 }
 
 void job_emulator::start_progress() {
+  set_emulation_play_priod(0.1);
   emulation_player = thread([this] (){
       this->progress_status = emulation_status::start;
       

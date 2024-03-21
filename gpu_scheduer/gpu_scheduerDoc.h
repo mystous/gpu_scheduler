@@ -59,4 +59,5 @@ public:
   afx_msg void OnBnClickedButtonAdd();
   afx_msg void OnServersettingReloadserverlist();
   bool ReloadServerList();
+  void callback();
 };

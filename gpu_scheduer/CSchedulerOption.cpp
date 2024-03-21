@@ -36,3 +36,22 @@ END_MESSAGE_MAP()
 
 
 // CSchedulerOption 메시지 처리기
+
+
+BOOL CSchedulerOption::OnInitDialog()
+{
+  CDialog::OnInitDialog();
+
+  // TODO:  Add extra initialization here
+
+  CButton* pCheck;
+  pCheck = (CButton*)GetDlgItem(IDC_RADIO_ROUND_ROBIN);
+  pCheck->SetCheck(TRUE);
+  pCheck = (CButton*)GetDlgItem(IDC_RADIO_MOST_WANTED);
+  pCheck->SetCheck(FALSE);
+
+  
+
+  return TRUE;  // return TRUE unless you set the focus to a control
+  // EXCEPTION: OCX Property Pages should return FALSE
+}
