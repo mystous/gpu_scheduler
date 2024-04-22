@@ -15,9 +15,50 @@ void server_entry::set_server_setting(string server_name, int accelator_count, a
 
 void server_entry::build_accelator_status() {
   reserved.clear();
+  job_id_for_reserved.clear();
+  utilization_list.clear();
+  job_list.clear();
 
   for (int i = 0; i < accelator_count; ++i) {
 	  reserved.push_back(false);
+    job_id_for_reserved.push_back("");
+    utilization_list.push_back(0.0);
+  }
+}
+
+double server_entry::get_server_utilization() {
+  double utilization = 0.;
+  for (int i = 0; i < reserved.size(); ++i) {
+    if (true == reserved[i]) {
+      utilization += utilization_list[i];
+    }
+  }
+
+  return utilization / (double)get_accelerator_count();
+}
+
+void server_entry::ticktok(int duration_count) {
+  for (auto&& job : job_list) {
+    for (int i = 0; i < duration_count; ++i) {
+      job->ticktok();
+    }
+  }
+}
+
+void server_entry::flush() {
+  for (auto&& job : job_list) {
+    if (false == job->flush()) {
+      continue;
+    }
+
+    string id = job->get_job_id();
+    for (int i = 0; i < job->get_accelerator_count(); ++i) {
+      if (reserved[i] && id == job_id_for_reserved[i]) {
+        reserved[i] = false;
+        job_id_for_reserved[i] = "";
+        utilization_list[i] = 0.0;
+      }
+    }
   }
 }
 
@@ -33,6 +74,12 @@ bool server_entry::assign_accelator(job_entry* job, int required_accelator_count
 
     job->assign_accelerator(i);
     reserved[i] = true;
+    job_id_for_reserved[i] = job->get_job_id();
+    utilization_list[i] = job->get_utilization();
+    required_accelator_count--;
+    if (0 == required_accelator_count) {
+      break;
+    }
   }
   job_list.push_back(job);
 

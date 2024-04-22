@@ -28,7 +28,7 @@ class job_emulator {
 public:
   job_emulator() = default;
   struct job_entry_element {
-    vector<job_entry> job_list_in_slot;
+    vector<job_entry*> job_list_in_slot;
   };
 
   using job_entry_struct = struct job_entry_element;
@@ -60,9 +60,10 @@ public:
   void stop_progress();
   void start_progress();
   void exit_thread();
-  void update_wait_queue();
-  void scheduling_job();
   void set_callback(std::function<void()> callback) { step_forward_callback = callback; };
+  int get_ticktok_duration() const { return ticktok_duration; };
+  void set_ticktok_duration(int duration) { ticktok_duration = duration; };
+  int get_emulation_step() { return emulation_step; };
 
 private:
   vector<job_entry> job_list;
@@ -80,7 +81,15 @@ private:
   job_scheduler* scheduler_obj = nullptr;
   atomic<emulation_status> progress_status = emulation_status::stop;
   thread emulation_player;
-  queue<job_entry> wait_queue;
+  queue<job_entry*> wait_queue;
+  int ticktok_duration = 1;
+  const int sleep_for_drawing = 1;
+
   std::function<void()> step_forward_callback;
+  void update_wait_queue();
+  void scheduling_job();
+  void computing_forward();
+  void initialize_server_state();
+  void initialize_job_state();
 };
 

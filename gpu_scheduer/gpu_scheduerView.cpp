@@ -1,4 +1,3 @@
-
 // gpu_scheduerView.cpp : implementation of the CgpuscheduerView class
 //
 
@@ -32,8 +31,9 @@ constexpr int margin = 12;
 constexpr COLORREF defaultColor = RGB(0, 0, 0);
 constexpr COLORREF highlightColor = RGB(0, 0, 255);
 constexpr COLORREF grayColor = RGB(112, 112, 112);
+constexpr COLORREF whitegrayColor = RGB(214, 214, 214);
 constexpr COLORREF ratioColor = RGB(102, 153, 255);
-
+constexpr COLORREF greenColor = RGB(91, 194, 75);
 
 // CgpuscheduerView
 
@@ -68,6 +68,19 @@ CgpuscheduerView::CgpuscheduerView() noexcept
 
 CgpuscheduerView::~CgpuscheduerView()
 {
+  delete_rate_array();
+}
+
+void CgpuscheduerView::delete_rate_array() {
+  if (nullptr != allocation_rate) {
+    delete allocation_rate;
+    allocation_rate = nullptr;
+  }
+  if (nullptr != utilization_rate) {
+    delete utilization_rate;
+    utilization_rate = nullptr;
+  }
+  allocation_rate_index = 0;
 }
 
 BOOL CgpuscheduerView::PreCreateWindow(CREATESTRUCT& cs)
@@ -155,10 +168,25 @@ CgpuscheduerDoc* CgpuscheduerView::GetDocument() const // non-debug version is i
 
 void CgpuscheduerView::function_call() {
   CRect rect;
+  job_emulator& job_emul = GetDocument()->get_job_element_obj();
+  vector<server_entry>* server_list = job_emul.get_server_list();
+  int total_reserved_count = 0, total_GPU_count = 0;
+  double reserved_utilization = 0.0;
+  int server_size = server_list->size();
+
+  for (int i = 0; i < server_size ; ++i ) {
+    server_entry server = server_list->at(i);
+    total_GPU_count += server.get_accelerator_count();
+    total_reserved_count += (server.get_accelerator_count() - server.get_avaliable_accelator_count());
+    reserved_utilization += server.get_server_utilization();
+  }
+  //allocation_list.push_back((double)total_reserved_count / (double)total_GPU_count * 100);
+  allocation_rate[allocation_rate_index] = (double)total_reserved_count / (double)total_GPU_count * 100;
+  utilization_rate[allocation_rate_index] = reserved_utilization / (double)server_size;
+  allocation_rate_index++;
   GetClientRect(&rect);
   InvalidateRect(rect);
 }
-
 
 void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
 {
@@ -174,22 +202,20 @@ void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
   DrawTotalInfo(dc, rect, job_emul, start_position);
   auto[reserved, total_count] = DrawGPUInfo(dc, rect, job_emul, start_position);
   DrawTotalAllocationRatio(dc, rect, CPoint(startx, starty), reserved, total_count);
+  DrawProgress(dc, rect, job_emul, start_position, reserved, total_count);
 
   dc.SelectObject(pOldFont);
 }
-
 
 void CgpuscheduerView::OnEmulationStart()
 {
   StartEmul();
 }
 
-
 void CgpuscheduerView::OnEmulationStop()
 {
   // TODO: 여기에 명령 처리기 코드를 추가합니다.
 }
-
 
 void CgpuscheduerView::OnEmulationSetting()
 {
@@ -207,27 +233,103 @@ void CgpuscheduerView::OnEmulationSetting()
   }
 }
 
-
 void CgpuscheduerView::OnEmulationSaveresult()
 {
   // TODO: 여기에 명령 처리기 코드를 추가합니다.
 }
-
 
 void CgpuscheduerView::OnEmulationPause()
 {
   // TODO: 여기에 명령 처리기 코드를 추가합니다.
 }
 
-
 void CgpuscheduerView::OnEmulationShowjoblist()
 {
   gpu_log_dialog  dlg;
   CgpuscheduerDoc* pDoc = (CgpuscheduerDoc*)m_pDocument;
   job_emulator& job_emul = pDoc->get_job_element_obj();
-
+    
   dlg.set_job_list(job_emul.get_job_list_ptr());
   dlg.DoModal();
+}
+
+void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count) {
+  CString message, total_job, total_time_slot, temp, progress;
+
+  total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
+  total_job = FormatWithCommas(job_emul.get_emulation_step() + 1);
+  progress.Format(_T("%-2.2f %%"), (double)(job_emul.get_emulation_step() + 1) / (double)job_emul.get_total_time_slot() * 100);
+
+  message.Format(_T("Progress : %s / %s (%s)"), total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer());
+
+  start_position.y -= 60;
+  dc.SetTextColor(defaultColor);
+  dc.TextOut(start_position.x, start_position.y, message);
+  //DrawColorText(dc, message, total_job, highlightColor, start_position);
+  //DrawColorText(dc, message, total_time_slot, highlightColor, start_position);
+  DrawColorText(dc, message, progress, highlightColor, start_position);
+
+  start_position.y += (font_size + margin);
+  const int plot_width = 1750;
+  const int plot_height = 300;
+
+  CRect plotr_rect(start_position.x, start_position.y, start_position.x + plot_width, start_position.y + plot_height);
+  //dc.Rectangle(plotr_rect);
+  int column_count = 20;
+  int row_count = 5;
+  int i;
+
+  CPen gray_pen(PS_DOT, 1, whitegrayColor);
+  CPen* old_pen = dc.SelectObject(&gray_pen);
+
+  for (i = 0; i < row_count - 1; ++i) {
+    dc.MoveTo(start_position.x, start_position.y + (double)(plot_height /  row_count) * (i+1));
+    dc.LineTo(start_position.x + plot_width, start_position.y + (double)(plot_height / row_count) * (i + 1));
+  }
+
+  for (i = 0; i < column_count - 1; ++i) {
+    dc.MoveTo(start_position.x + (double)(plot_width / column_count) * (i + 1), start_position.y );
+    dc.LineTo(start_position.x + (double)(plot_width / column_count) * (i + 1), start_position.y + plot_height);
+  }
+
+  dc.SelectObject(old_pen);
+
+  int slot_count = job_emul.get_total_time_slot() + 2;
+  double scale_x = plot_width / (double)slot_count;
+  double scale_y = plot_height / 100.0;
+
+  int pre_x = start_position.x;
+  int pre_y = start_position.y + plot_height;
+
+  CPen green_pen(PS_SOLID, 2, greenColor);
+  old_pen = dc.SelectObject(&green_pen);
+  for ( i = 0; i < allocation_rate_index; ++i)
+  {
+    int x = start_position.x + (int)((i+1) * scale_x);
+    int y = start_position.y + (int)((100.0 - allocation_rate[i]) * scale_y);
+    dc.MoveTo(pre_x, pre_y);
+    dc.LineTo(x, y);
+    pre_x = x;
+    pre_y = y;
+  }
+  dc.SelectObject(old_pen);
+
+  pre_x = start_position.x;
+  pre_y = start_position.y + plot_height;
+  for (i = 0; i < allocation_rate_index; ++i)
+  {
+    int x = start_position.x + (int)((i + 1) * scale_x);
+    int y = start_position.y + (int)((100.0 - utilization_rate[i]) * scale_y);
+    dc.MoveTo(pre_x, pre_y);
+    dc.LineTo(x, y);
+    pre_x = x;
+    pre_y = y;
+  }
+
+  CBrush* old_brush = (CBrush*)dc.SelectStockObject(NULL_BRUSH);
+  dc.Rectangle(plotr_rect);
+  dc.SelectObject(old_brush);
+
 }
 
 void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint start_position, int reserved, int total_count) {
@@ -253,7 +355,7 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
 {
   CString message, total_job, total_time_slot, temp;
 
-  total_job = FormatWithCommas(job_emul.get_job_list_ptr()->size());
+  total_job = FormatWithCommas(static_cast<int>(job_emul.get_job_list_ptr()->size()));
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
 
   message.Format(_T("Total Job : %s - Whole time slot(min) : %s"), total_job.GetBuffer(), total_time_slot.GetBuffer());
@@ -277,7 +379,7 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
 
   start_position.y += (font_size + margin);
 
-  temp = FormatWithCommas(job_emul.get_server_list()->size());
+  temp = FormatWithCommas(static_cast<int>(job_emul.get_server_list()->size()));
   message.Format(_T("Server - #%s"), temp.GetBuffer());
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, message);
@@ -323,8 +425,8 @@ std::pair<int, int> CgpuscheduerView::DrawGPUInfo(CDC& dc, CRect& rect, job_emul
     total_GPU_count += total_count;
   }
 
-  int row = server_list->size() / columun_count + 1;
-  start_position.y = ( row * box_width ) + ((row - 1)*box_gap);
+  int row = static_cast<int>(server_list->size()) / columun_count + 1;
+  start_position.y = ( ( row + 1 ) * box_width ) + ((row - 1)*box_gap);
 
   dc.SelectObject(pOldFont);
 
@@ -337,7 +439,7 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
 
   CString temp(CA2T(server.get_server_name().c_str()));
   int textHeight = dc.GetTextExtent(temp.GetBuffer()).cy;
-  int textYPos = rect.top + (rect.Height() * 0.1) - (textHeight / 2);
+  int textYPos = rect.top + static_cast<int>(rect.Height() * 0.1) - (textHeight / 2);
   int margin = 5;
 
   CSize sizeFirstLine = dc.GetTextExtent(temp);
@@ -432,7 +534,7 @@ void CgpuscheduerView::DrawColorText(CDC& dc, CString message, CString highlight
 
 CString CgpuscheduerView::FormatWithCommas(int value) {
   std::string numStr = std::to_string(value);
-  int insertPosition = numStr.length() - 3;
+  int insertPosition = static_cast<int>(numStr.length()) - 3;
 
   while (insertPosition > 0) {
     numStr.insert(insertPosition, ",");
@@ -476,6 +578,12 @@ void CgpuscheduerView::StartEmul()
 
   std::function<void()> callback_func = global_callback;
   emul.set_callback(callback_func);
+  utilization_list.clear();
+  allocation_list.clear();
+  delete_rate_array();
+  allocation_rate = new double[emul.get_total_time_slot()];
+  utilization_rate = new double[emul.get_total_time_slot()];
+  allocation_rate_index = 0;
   emul.start_progress();
 }
 

@@ -19,14 +19,19 @@ public:
   vector<bool>* get_reserved_status() { return &reserved; };
   int get_avaliable_accelator_count();
   bool assign_accelator(job_entry* job, int required_accelator_count);
+  void ticktok(int duration_count);
+  void flush();
+  void build_accelator_status();
+  double get_server_utilization();
 
 private:
   int accelator_count = 0;
   string server_name = "";
   accelator_type coprocessor_type = accelator_type::cpu;
   vector<bool> reserved;
+  vector<string> job_id_for_reserved;
+  vector<double> utilization_list;
   vector<job_entry*> job_list;
 
-  void build_accelator_status();
 };
 

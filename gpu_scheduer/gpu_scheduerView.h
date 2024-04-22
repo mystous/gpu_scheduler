@@ -28,6 +28,13 @@ protected:
 	virtual BOOL OnPreparePrinting(CPrintInfo* pInfo);
 	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
+private:
+  vector<double> utilization_list;
+  vector<double> allocation_list;
+  double* allocation_rate = nullptr;
+  double* utilization_rate = nullptr;
+  int allocation_rate_index = 0;
+  void delete_rate_array();
 
 // Implementation
 public:
@@ -55,6 +62,7 @@ public:
   pair<int, int> DrawGPUInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
   pair<int, int> DrawGPUSingleInfo(CDC& dc, CRect& rect, server_entry& server, CPoint& start_position);
   void DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint start_position, int reserved, int total_count);
+  void DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count);
   CString FormatWithCommas(int value);
   afx_msg BOOL OnEraseBkgnd(CDC* pDC);
   afx_msg void OnServersettingReloadserverlist();
