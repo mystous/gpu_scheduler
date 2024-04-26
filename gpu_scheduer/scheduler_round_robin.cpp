@@ -4,7 +4,6 @@
 int scheduler_round_robin::arrange_server(job_entry& job) {
   int arrange_server = -1, i;
 
-  current_server_index = 0;
   for (i = 0; i < target_server->size(); ++i) {
     server_entry *target = &target_server->at(current_server_index);
     if (target->get_avaliable_accelator_count() < job.get_accelerator_count()) {
@@ -15,7 +14,6 @@ int scheduler_round_robin::arrange_server(job_entry& job) {
     arrange_server = current_server_index;
     get_next_server_index();
     break;
-
   }
   
   return arrange_server;
@@ -32,5 +30,5 @@ int scheduler_round_robin::get_next_server_index() {
 }
 
 void scheduler_round_robin::postproessing_set_server(){
-  current_server_index = 0;
+  
 }

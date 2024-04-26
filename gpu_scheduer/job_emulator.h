@@ -64,8 +64,17 @@ public:
   int get_ticktok_duration() const { return ticktok_duration; };
   void set_ticktok_duration(int duration) { ticktok_duration = duration; };
   int get_emulation_step() { return emulation_step; };
+  emulation_status get_emulation_status() { return progress_status; };
+  double* get_allocation_rate() { return allocation_rate; };
+  double* get_utilization_rate() { return utilization_rate; };
+  int get_rate_index() { return rate_index; };
+  bool save_result_log(string file_name);
+  string get_savefile_candidate_name();
+  bool save_result_log();
+  string get_setting_scheduling_name() { return scheduling_name; };
 
 private:
+  string scheduling_name = "round_robin";
   vector<job_entry> job_list;
   vector<server_entry> server_list;
   scheduler_type selected_scheduler = scheduler_type::most_wanted;
@@ -84,6 +93,15 @@ private:
   queue<job_entry*> wait_queue;
   int ticktok_duration = 1;
   const int sleep_for_drawing = 1;
+  double* allocation_rate = nullptr;
+  double* utilization_rate = nullptr;
+  int rate_index = 0;
+  vector<double*> server_utilization_rate;
+  vector<int*> server_allocation_count;
+  const string compact_scheduler_name = "compact";
+  const string fare_share_scheduler_name = "fare_share";
+  const string most_wanted_scheduler_name = "most_wanted";
+  const string round_robin_scheduler_name = "round_robin";
 
   std::function<void()> step_forward_callback;
   void update_wait_queue();
@@ -91,5 +109,8 @@ private:
   void computing_forward();
   void initialize_server_state();
   void initialize_job_state();
+  void delete_rate_array();
+  void log_rate_info();
+  void delete_server_info_log();
 };
 

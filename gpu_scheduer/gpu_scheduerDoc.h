@@ -17,6 +17,7 @@ protected: // create from serialization only
 // Attributes
 private:
   job_emulator job_emulator_obj;
+  void save_result();
 
 // Operations
 public:
@@ -60,4 +61,6 @@ public:
   afx_msg void OnServersettingReloadserverlist();
   bool ReloadServerList();
   void callback();
+  afx_msg void OnFileSaveAs();
+  afx_msg void OnFileSave();
 };

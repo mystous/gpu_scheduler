@@ -55,6 +55,7 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
   ON_COMMAND(ID_BUTTON_EMUL_START, &CgpuscheduerView::OnButtonEmulStart)
   ON_COMMAND(ID_BUTTON_EMUL_PAUSE, &CgpuscheduerView::OnButtonEmulPause)
   ON_COMMAND(ID_BUTTON_EMUL_STOP, &CgpuscheduerView::OnButtonEmulStop)
+//  ON_COMMAND(ID_FILE_SAVE_AS, &CgpuscheduerView::OnFileSaveAs)
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -68,19 +69,9 @@ CgpuscheduerView::CgpuscheduerView() noexcept
 
 CgpuscheduerView::~CgpuscheduerView()
 {
-  delete_rate_array();
-}
-
-void CgpuscheduerView::delete_rate_array() {
-  if (nullptr != allocation_rate) {
-    delete allocation_rate;
-    allocation_rate = nullptr;
+  if (nullptr != old_bitmap_for_graph) {
+    graph_dc.SelectObject(old_bitmap_for_graph);
   }
-  if (nullptr != utilization_rate) {
-    delete utilization_rate;
-    utilization_rate = nullptr;
-  }
-  allocation_rate_index = 0;
 }
 
 BOOL CgpuscheduerView::PreCreateWindow(CREATESTRUCT& cs)
@@ -168,22 +159,6 @@ CgpuscheduerDoc* CgpuscheduerView::GetDocument() const // non-debug version is i
 
 void CgpuscheduerView::function_call() {
   CRect rect;
-  job_emulator& job_emul = GetDocument()->get_job_element_obj();
-  vector<server_entry>* server_list = job_emul.get_server_list();
-  int total_reserved_count = 0, total_GPU_count = 0;
-  double reserved_utilization = 0.0;
-  int server_size = server_list->size();
-
-  for (int i = 0; i < server_size ; ++i ) {
-    server_entry server = server_list->at(i);
-    total_GPU_count += server.get_accelerator_count();
-    total_reserved_count += (server.get_accelerator_count() - server.get_avaliable_accelator_count());
-    reserved_utilization += server.get_server_utilization();
-  }
-  //allocation_list.push_back((double)total_reserved_count / (double)total_GPU_count * 100);
-  allocation_rate[allocation_rate_index] = (double)total_reserved_count / (double)total_GPU_count * 100;
-  utilization_rate[allocation_rate_index] = reserved_utilization / (double)server_size;
-  allocation_rate_index++;
   GetClientRect(&rect);
   InvalidateRect(rect);
 }
@@ -198,11 +173,13 @@ void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
   CFont* pOldFont = dc.SelectObject(&font);
 
   dc.SetBkMode(TRANSPARENT);
-
-  DrawTotalInfo(dc, rect, job_emul, start_position);
-  auto[reserved, total_count] = DrawGPUInfo(dc, rect, job_emul, start_position);
-  DrawTotalAllocationRatio(dc, rect, CPoint(startx, starty), reserved, total_count);
-  DrawProgress(dc, rect, job_emul, start_position, reserved, total_count);
+  try {
+    DrawTotalInfo(dc, rect, job_emul, start_position);
+    auto [reserved, total_count] = DrawGPUInfo(dc, rect, job_emul, start_position);
+    DrawTotalAllocationRatio(dc, rect, CPoint(startx, starty), reserved, total_count);
+    DrawProgress(dc, rect, job_emul, start_position, reserved, total_count);
+  }
+  catch (...) {}
 
   dc.SelectObject(pOldFont);
 }
@@ -259,7 +236,7 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
   total_job = FormatWithCommas(job_emul.get_emulation_step() + 1);
   progress.Format(_T("%-2.2f %%"), (double)(job_emul.get_emulation_step() + 1) / (double)job_emul.get_total_time_slot() * 100);
-
+  
   message.Format(_T("Progress : %s / %s (%s)"), total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer());
 
   start_position.y -= 60;
@@ -294,42 +271,91 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
 
   dc.SelectObject(old_pen);
 
-  int slot_count = job_emul.get_total_time_slot() + 2;
-  double scale_x = plot_width / (double)slot_count;
-  double scale_y = plot_height / 100.0;
+  double* allocation_rate = job_emul.get_allocation_rate();
+  double* utilization_rate = job_emul.get_utilization_rate();
 
-  int pre_x = start_position.x;
-  int pre_y = start_position.y + plot_height;
+  if (job_emulator::emulation_status::start != job_emul.get_emulation_status() &&
+    nullptr != allocation_rate && nullptr != utilization_rate) {
 
-  CPen green_pen(PS_SOLID, 2, greenColor);
-  old_pen = dc.SelectObject(&green_pen);
-  for ( i = 0; i < allocation_rate_index; ++i)
-  {
-    int x = start_position.x + (int)((i+1) * scale_x);
-    int y = start_position.y + (int)((100.0 - allocation_rate[i]) * scale_y);
-    dc.MoveTo(pre_x, pre_y);
-    dc.LineTo(x, y);
-    pre_x = x;
-    pre_y = y;
+    draw_buffer(dc, start_position, allocation_rate, utilization_rate, job_emul, plot_width, plot_height);
+    dc.BitBlt(start_position.x, start_position.y, plot_width, plot_height, &graph_dc, 0, 0, SRCCOPY);
   }
-  dc.SelectObject(old_pen);
 
-  pre_x = start_position.x;
-  pre_y = start_position.y + plot_height;
-  for (i = 0; i < allocation_rate_index; ++i)
-  {
-    int x = start_position.x + (int)((i + 1) * scale_x);
-    int y = start_position.y + (int)((100.0 - utilization_rate[i]) * scale_y);
-    dc.MoveTo(pre_x, pre_y);
-    dc.LineTo(x, y);
-    pre_x = x;
-    pre_y = y;
-  }
 
   CBrush* old_brush = (CBrush*)dc.SelectStockObject(NULL_BRUSH);
   dc.Rectangle(plotr_rect);
   dc.SelectObject(old_brush);
 
+  start_position.x += plot_width;
+  start_position.x += margin;
+}
+
+void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double* allocation_rate, double* utilization_rate, 
+  job_emulator &job_emul, const int plot_width, const int plot_height) {
+  if (is_buffer_created) {
+    return;
+  }
+
+  CRect rect(0, 0, plot_width, plot_height);
+  int i;
+  int pre_x = 0;
+  int pre_y = plot_height;
+  int slot_count = job_emul.get_total_time_slot() + 2;
+  double scale_x = plot_width / (double)slot_count;
+  double scale_y = plot_height / 100.0;
+
+  graph_dc.CreateCompatibleDC(&dc);
+  graph_bitmap.CreateCompatibleBitmap(&dc, plot_width, plot_height);
+  old_bitmap_for_graph = graph_dc.SelectObject(&graph_bitmap);
+
+  graph_dc.FillSolidRect(&rect, RGB(255, 255, 255));
+
+  int column_count = 20;
+  int row_count = 5;
+
+  CPen gray_pen(PS_DOT, 1, whitegrayColor);
+  CPen* old_pen = graph_dc.SelectObject(&gray_pen);
+
+  for (i = 0; i < row_count - 1; ++i) {
+    graph_dc.MoveTo(0, (double)(plot_height / row_count) * (i + 1));
+    graph_dc.LineTo(plot_width, (double)(plot_height / row_count) * (i + 1));
+  }
+
+  for (i = 0; i < column_count - 1; ++i) {
+    graph_dc.MoveTo((double)(plot_width / column_count) * (i + 1), 0);
+    graph_dc.LineTo((double)(plot_width / column_count) * (i + 1), plot_height);
+  }
+
+  graph_dc.SelectObject(old_pen);
+
+  int allocation_rate_index = job_emul.get_rate_index();
+
+  CPen green_pen(PS_SOLID, 2, greenColor);
+  old_pen = graph_dc.SelectObject(&green_pen);
+  for (i = 0; i < allocation_rate_index; ++i)
+  {
+    int x = (int)((i + 1) * scale_x);
+    int y = (int)((100.0 - allocation_rate[i]) * scale_y);
+    graph_dc.MoveTo(pre_x, pre_y);
+    graph_dc.LineTo(x, y);
+    pre_x = x;
+    pre_y = y;
+  }
+  graph_dc.SelectObject(old_pen);
+
+  pre_x = 0;
+  pre_y = plot_height;
+  for (i = 0; i < allocation_rate_index; ++i)
+  {
+    int x = (int)((i + 1) * scale_x);
+    int y = (int)((100.0 - utilization_rate[i]) * scale_y);
+    graph_dc.MoveTo(pre_x, pre_y);
+    graph_dc.LineTo(x, y);
+    pre_x = x;
+    pre_y = y;
+  }
+
+  is_buffer_created = true;
 }
 
 void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint start_position, int reserved, int total_count) {
@@ -353,7 +379,7 @@ void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint sta
 
 void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint &start_position)
 {
-  CString message, total_job, total_time_slot, temp;
+  CString message, total_job, total_time_slot, temp, scheduler_name;
 
   total_job = FormatWithCommas(static_cast<int>(job_emul.get_job_list_ptr()->size()));
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
@@ -380,10 +406,12 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
   start_position.y += (font_size + margin);
 
   temp = FormatWithCommas(static_cast<int>(job_emul.get_server_list()->size()));
-  message.Format(_T("Server - #%s"), temp.GetBuffer());
+  scheduler_name = A2CT(job_emul.get_setting_scheduling_name().c_str());
+  message.Format(_T("Server - #%s, Scheduler: %s"), temp.GetBuffer(), scheduler_name.GetBuffer());
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, message);
   DrawColorText(dc, message, temp, highlightColor, start_position);
+  DrawColorText(dc, message, scheduler_name, highlightColor, start_position);
 
   start_position.y += 2* (font_size + margin);
 }
@@ -464,10 +492,8 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
   CSize sizeSecondLine = dc.GetTextExtent(strSecondLine);
   dc.TextOut(rect.left + (rect.Width() - sizeSecondLine.cx) / 2, textYPos + textHeight + margin, strSecondLine);
 
-
   int boxSize = 20, boxSpacingW = 20, boxSpacingH = 10;
-
-  int totalWidth = boxSize * 4 + boxSpacingW * 3;
+    int totalWidth = boxSize * 4 + boxSpacingW * 3;
   int totalHeight = boxSize * 2 + boxSpacingH;
   int startX = rect.left + (rect.Width() - totalWidth) / 2;
   int startY = rect.top + (rect.Height() - totalHeight) / 5 * 2;
@@ -511,8 +537,7 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
   textHeight = dc.GetTextExtent(allocation_rate.GetBuffer()).cy;
   textYPos = rect.top +160 - (textHeight / 2);
 
-
-  dc.SetTextColor(ratioColor);
+    dc.SetTextColor(ratioColor);
   sizeFirstLine = dc.GetTextExtent(allocation_rate);
   dc.TextOut(rect.left + (rect.Width() - sizeFirstLine.cx) / 2, textYPos, allocation_rate);
   dc.SetTextColor(defaultColor);
@@ -578,15 +603,10 @@ void CgpuscheduerView::StartEmul()
 
   std::function<void()> callback_func = global_callback;
   emul.set_callback(callback_func);
-  utilization_list.clear();
-  allocation_list.clear();
-  delete_rate_array();
-  allocation_rate = new double[emul.get_total_time_slot()];
-  utilization_rate = new double[emul.get_total_time_slot()];
-  allocation_rate_index = 0;
+  GetDocument()->SetModifiedFlag(TRUE);
+  is_buffer_created = false;
   emul.start_progress();
 }
-
 
 void CgpuscheduerView::OnButtonEmulPause()
 {
@@ -595,7 +615,6 @@ void CgpuscheduerView::OnButtonEmulPause()
 
 }
 
-
 void CgpuscheduerView::OnButtonEmulStop()
 {
   job_emulator& emul = GetDocument()->get_job_element_obj();
@@ -603,4 +622,7 @@ void CgpuscheduerView::OnButtonEmulStop()
 
 }
 
-
+//void CgpuscheduerView::OnFileSaveAs()
+//{
+//  int i = 0;
+//}

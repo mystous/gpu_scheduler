@@ -32,6 +32,8 @@ BEGIN_MESSAGE_MAP(CgpuscheduerDoc, CDocument)
 //  ON_COMMAND(ID_GPUSERVERSETTING_ADDGPU, &CgpuscheduerDoc::OnGpuserversettingAddgpu)
   ON_BN_CLICKED(IDC_BUTTON_ADD, &CgpuscheduerDoc::OnBnClickedButtonAdd)
   ON_COMMAND(ID_SERVERSETTING_RELOADSERVERLIST, &CgpuscheduerDoc::OnServersettingReloadserverlist)
+    ON_COMMAND(ID_FILE_SAVE_AS, &CgpuscheduerDoc::OnFileSaveAs)
+  ON_COMMAND(ID_FILE_SAVE, &CgpuscheduerDoc::OnFileSave)
 END_MESSAGE_MAP()
 
 
@@ -93,6 +95,7 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     
   }
 
+  SetModifiedFlag();
 	// TODO: add reinitialization code here
 	// (SDI documents will reuse this document)
 
@@ -254,4 +257,38 @@ bool CgpuscheduerDoc::ReloadServerList()
 
 void CgpuscheduerDoc::callback() {
   
+}
+
+void CgpuscheduerDoc::OnFileSaveAs()
+{
+  save_result();
+}
+
+void CgpuscheduerDoc::OnFileSave()
+{
+  save_result();
+}
+
+void CgpuscheduerDoc::save_result() {
+  bool result = false;
+  USES_CONVERSION;
+  CFileDialog dlg(FALSE, _T("result"), A2CT(job_emulator_obj.get_savefile_candidate_name().c_str()),
+    OFN_OVERWRITEPROMPT, _T("Emulation Result Files (*.result)|*.result|All Files (*.*)|*.*||"));
+
+  if (dlg.DoModal() == IDOK)
+  {
+    CString filePath = dlg.GetPathName();
+    string str_file = std::string(CT2CA(filePath));
+    CWaitCursor *wait = new CWaitCursor();
+    result = job_emulator_obj.save_result_log(str_file);
+    delete wait;
+  }
+
+  if (result) {
+    SetModifiedFlag(FALSE);
+    AfxMessageBox(L"Result has been saved!", MB_ICONINFORMATION);
+  }
+  else {
+    AfxMessageBox(L"Result was not saved!", MB_ICONSTOP);
+  }
 }
