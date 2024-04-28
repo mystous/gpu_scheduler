@@ -178,6 +178,7 @@ void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
     auto [reserved, total_count] = DrawGPUInfo(dc, rect, job_emul, start_position);
     DrawTotalAllocationRatio(dc, rect, CPoint(startx, starty), reserved, total_count);
     DrawProgress(dc, rect, job_emul, start_position, reserved, total_count);
+    DrawResult(dc, rect, job_emul, start_position);
   }
   catch (...) {}
 
@@ -286,8 +287,8 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   dc.Rectangle(plotr_rect);
   dc.SelectObject(old_brush);
 
-  start_position.x += plot_width;
-  start_position.x += margin;
+  start_position.y += plot_height;
+  start_position.y += margin;
 }
 
 void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double* allocation_rate, double* utilization_rate, 
@@ -414,6 +415,27 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
   DrawColorText(dc, message, scheduler_name, highlightColor, start_position);
 
   start_position.y += 2* (font_size + margin);
+}
+
+void CgpuscheduerView::DrawResult(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position) {
+  CString message, wait_job, remain_job, total_finished_job, total_scheduled_job;
+
+  total_scheduled_job = FormatWithCommas(job_emul.get_scheduled_job_count());
+  remain_job = FormatWithCommas(job_emul.get_remain_job_count());
+  wait_job = FormatWithCommas(job_emul.get_wait_job_count());
+
+  message.Format(_T("Processing : %s , Remainded : %s, Job in wait queue : %s"), 
+    total_scheduled_job.GetBuffer(), remain_job.GetBuffer(), wait_job.GetBuffer());
+  //message.Format(_T("Remainded : %s"), remain_job.GetBuffer());
+
+
+  dc.SetTextColor(defaultColor);
+  dc.TextOut(start_position.x, start_position.y, message);
+  DrawColorText(dc, message, total_scheduled_job, highlightColor, start_position);
+  DrawColorText(dc, message, remain_job, highlightColor, start_position);
+  DrawColorText(dc, message, wait_job, highlightColor, start_position);
+
+  start_position.y += (font_size + margin);
 }
 
 std::pair<int, int> CgpuscheduerView::DrawGPUInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position) {
@@ -622,7 +644,3 @@ void CgpuscheduerView::OnButtonEmulStop()
 
 }
 
-//void CgpuscheduerView::OnFileSaveAs()
-//{
-//  int i = 0;
-//}

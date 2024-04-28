@@ -182,9 +182,9 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
     scheduler_obj = new scheduler_fare_share();
     scheduling_name = fare_share_scheduler_name;
     break;
-  case scheduler_type::most_wanted:
-    scheduler_obj = new scheduler_most_wanted();
-    scheduling_name = most_wanted_scheduler_name;
+  case scheduler_type::mostallocated:
+    scheduler_obj = new scheduler_mostallocated();
+    scheduling_name = mostallocated_scheduler_name;
     break;
   case scheduler_type::round_robin:
   default:
@@ -192,6 +192,7 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
     scheduling_name = round_robin_scheduler_name;
     break;
   }
+  scheduler_obj->set_wait_queue(&wait_queue);
 }
 
 void job_emulator::step_foward() {
@@ -210,7 +211,8 @@ void job_emulator::step_foward() {
 #endif
       computing_forward();
       update_wait_queue();
-      scheduling_job();
+      //scheduling_job();
+      scheduled_job_count += scheduler_obj->scheduling_job();
       log_rate_info();
       step_forward_callback();
     }
@@ -257,14 +259,18 @@ void job_emulator::scheduling_job() {
 void job_emulator::computing_forward() {
   for (auto&& server : server_list) {
     server.ticktok(ticktok_duration);
-    server.flush();
+    finished_job_count += server.flush();
   }
 }
 
+static int gcount = 0;
+
 void job_emulator::update_wait_queue() {
+ 
   if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
     for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
       wait_queue.push(job);
+      gcount++;
     }
   }
 }
@@ -321,6 +327,8 @@ void job_emulator::start_progress() {
   delete_server_info_log();
 
   rate_index = 0;
+  finished_job_count = 0;
+  scheduled_job_count = 0;
   allocation_rate = new double[get_total_time_slot()];
   utilization_rate = new double[get_total_time_slot()];
 

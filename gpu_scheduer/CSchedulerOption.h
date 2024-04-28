@@ -25,4 +25,5 @@ public:
   int scheduler_selection;
   BOOL using_preemtion;
   virtual BOOL OnInitDialog();
+  afx_msg void OnBnClickedOk();
 };

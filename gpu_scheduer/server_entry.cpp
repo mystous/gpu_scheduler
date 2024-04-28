@@ -45,7 +45,8 @@ void server_entry::ticktok(int duration_count) {
   }
 }
 
-void server_entry::flush() {
+int server_entry::flush() {
+  int flushed_job = 0;
   for (auto&& job : job_list) {
     if (false == job->flush()) {
       continue;
@@ -57,9 +58,12 @@ void server_entry::flush() {
         reserved[i] = false;
         job_id_for_reserved[i] = "";
         utilization_list[i] = 0.0;
+        flushed_job++;
       }
     }
   }
+
+  return flushed_job;
 }
 
 bool server_entry::assign_accelator(job_entry* job, int required_accelator_count) {

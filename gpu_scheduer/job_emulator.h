@@ -18,7 +18,7 @@
 #include "job_scheduler.h"
 #include "scheduler_compact.h"
 #include "scheduler_fare_share.h"
-#include "scheduler_most_wanted.h"
+#include "scheduler_mostallocated.h"
 #include "scheduler_round_robin.h"
 
 using namespace std;
@@ -35,7 +35,7 @@ public:
 
   virtual ~job_emulator();
   enum class scheduler_type : int {
-    most_wanted = 0, compact, round_robin, fare_share
+    mostallocated = 0, compact, round_robin, fare_share
   };
 
   enum class emulation_status : int {
@@ -72,12 +72,19 @@ public:
   string get_savefile_candidate_name();
   bool save_result_log();
   string get_setting_scheduling_name() { return scheduling_name; };
+  int get_total_job_count() { return job_list.size(); };
+  int get_remain_job_count() { return get_total_job_count() - get_scheduled_job_count(); };
+  int get_wait_job_count() { return wait_queue.size(); };
+  int get_finished_job_count(){ return finished_job_count; };
+  int get_scheduled_job_count() { return scheduled_job_count; };
 
 private:
   string scheduling_name = "round_robin";
+  int finished_job_count = 0;
+  int scheduled_job_count = 0;
   vector<job_entry> job_list;
   vector<server_entry> server_list;
-  scheduler_type selected_scheduler = scheduler_type::most_wanted;
+  scheduler_type selected_scheduler = scheduler_type::mostallocated;
   bool preemtion_enabling = false;
   system_clock::time_point min_start_time;
   system_clock::time_point max_end_time;
@@ -100,7 +107,7 @@ private:
   vector<int*> server_allocation_count;
   const string compact_scheduler_name = "compact";
   const string fare_share_scheduler_name = "fare_share";
-  const string most_wanted_scheduler_name = "most_wanted";
+  const string mostallocated_scheduler_name = "mostallocated";
   const string round_robin_scheduler_name = "round_robin";
 
   std::function<void()> step_forward_callback;

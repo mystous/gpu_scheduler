@@ -58,6 +58,7 @@ private:
   void DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count);
   CString FormatWithCommas(int value);
   void DrawGPUStatus(CDC& dc, CRect& rect);
+  void DrawResult(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
   void StartEmul();
 
 // Generated message map functions
