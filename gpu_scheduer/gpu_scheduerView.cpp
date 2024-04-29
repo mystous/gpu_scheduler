@@ -305,10 +305,12 @@ void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double
   double scale_x = plot_width / (double)slot_count;
   double scale_y = plot_height / 100.0;
 
-  graph_dc.CreateCompatibleDC(&dc);
-  graph_bitmap.CreateCompatibleBitmap(&dc, plot_width, plot_height);
-  old_bitmap_for_graph = graph_dc.SelectObject(&graph_bitmap);
-
+  if (!is_grapch_dc_created) {
+    graph_dc.CreateCompatibleDC(&dc);
+    graph_bitmap.CreateCompatibleBitmap(&dc, plot_width, plot_height);
+    old_bitmap_for_graph = graph_dc.SelectObject(&graph_bitmap);
+    is_grapch_dc_created = true;
+  }
   graph_dc.FillSolidRect(&rect, RGB(255, 255, 255));
 
   int column_count = 20;

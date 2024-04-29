@@ -19,6 +19,7 @@ public:
 
 private:
   bool is_buffer_created = false;
+  bool is_grapch_dc_created = false;
   CDC graph_dc;
   CBitmap graph_bitmap, * old_bitmap_for_graph = nullptr;
 

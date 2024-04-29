@@ -52,6 +52,9 @@ void job_emulator::delete_server_info_log() {
       server_allocation = nullptr;
     }
   }
+
+  server_utilization_rate.clear();
+  server_allocation_count.clear();
 }
 
 void job_emulator::build_server_list(string filename) {
