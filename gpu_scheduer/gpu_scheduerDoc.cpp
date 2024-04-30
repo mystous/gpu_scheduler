@@ -68,10 +68,11 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     int scheduler_selection = 0;
 
     CSchedulerOption dlg_option;
+    dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection);
     if (dlg_option.DoModal() == IDOK)
     {
-      scheduler_selection = dlg_option.scheduler_selection;
-      preemtion_enabling = dlg_option.using_preemtion;
+      //scheduler_selection = dlg_option.get_scheduler_type();
+      //preemtion_enabling = dlg_option.using_preemtion;
 
       //job_emulator_obj.set_option((job_emulator::scheduler_type)dlg_option.scheduler_selection, dlg_option.using_preemtion);
     }

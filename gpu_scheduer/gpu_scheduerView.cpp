@@ -203,12 +203,18 @@ void CgpuscheduerView::OnEmulationSetting()
 
   CSchedulerOption dlg_option;
 
-  dlg_option.scheduler_selection = (int)job_emul.get_selction_scheduler();
+  bool preemtion_enabling = false;
+  int scheduler_selection = 0;
+
+  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection);
+
+  dlg_option.set_scheduler_type((int)job_emul.get_selction_scheduler());
   dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
 
   if (dlg_option.DoModal() == IDOK) {
-    job_emul.set_option((job_emulator::scheduler_type)dlg_option.scheduler_selection, dlg_option.using_preemtion);
+    job_emul.set_option((job_emulator::scheduler_type)scheduler_selection, preemtion_enabling);
   }
+  Invalidate();
 }
 
 void CgpuscheduerView::OnEmulationSaveresult()

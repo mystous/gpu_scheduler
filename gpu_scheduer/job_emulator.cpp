@@ -199,6 +199,7 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
     break;
   }
   scheduler_obj->set_wait_queue(&wait_queue);
+  scheduler_obj->set_server(&server_list);
 }
 
 void job_emulator::step_foward() {
