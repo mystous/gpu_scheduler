@@ -12,7 +12,8 @@ job_entry::job_entry(string pod_name_param, string pod_type, string project_para
 
   start_tp = parse_time_string(start_time_string);
   finish_tp = parse_time_string(finish_time_string);
-  wall_time_min = finish_tp - start_tp;
+  //wall_time_min = finish_tp - start_tp;
+  wall_time_min = duration_cast<std::chrono::minutes>(finish_tp - start_tp);
   wall_time_min_record = wall_time_min;
 
   if ("task" == pod_type) {

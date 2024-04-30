@@ -2,6 +2,7 @@
 #include "job_emulator.h"
 #include <ctime>
 
+
 #ifdef _WIN32
 #include <Windows.h>
 #include <mmsystem.h>
@@ -163,7 +164,9 @@ void job_emulator::build_job_queue() {
     auto startDiff = duration_cast<std::chrono::minutes>(job->get_start_tp() - min_start_time);
     job_queue[startDiff.count()].job_list_in_slot.push_back(job);
 
-#ifndef _WIN32
+#ifdef _WIN32
+    //TRACE("Queue Idx: %d - %d\n", startDiff.count(), stoi(job->get_job_id()));
+#else
     printf("Job queue Index(% s) : % d\n", job->get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"), startDiff.count());
 #endif
   }

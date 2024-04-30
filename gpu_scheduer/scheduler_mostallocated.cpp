@@ -23,6 +23,9 @@ int scheduler_mostallocated::arrange_server(job_entry& job) {
 
   int min_accelator = max_value;
   for (auto& [index, server_accelator_count, gap] : candidate) {
+    if (min_gap != gap) {
+      continue;
+    }
     if (server_accelator_count < min_accelator) {
       min_accelator = server_accelator_count;
       arrange_server = index;
