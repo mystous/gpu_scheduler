@@ -1,5 +1,12 @@
 #include "pch.h"
 #include "scheduler_mostallocated.h"
+#include <algorithm>
+
+using namespace std;
+
+scheduler_mostallocated::~scheduler_mostallocated() {
+  //accelerator_count_hash_list.clear();
+}
 
 int scheduler_mostallocated::arrange_server(job_entry& job) {
   const int max_value = 999999;
@@ -21,9 +28,7 @@ int scheduler_mostallocated::arrange_server(job_entry& job) {
   }
 
   for (auto& [index, server_accelator_count, gap] : candidate) {
-    if (min_gap != gap) {
-      continue;
-    }
+    if (min_gap != gap) { continue; }
     arrange_server = index;
     break;
   }
@@ -34,12 +39,13 @@ int scheduler_mostallocated::arrange_server(job_entry& job) {
     return arrange_server;
   }
 
+  if (strict_allocation) {
+    return arrange_server;
+  }
+
   for (i = 0; i < target_server->size(); ++i) {
     server_entry* target = &target_server->at(i);
-    if (target->get_avaliable_accelator_count() < job.get_accelerator_count()) {
-      continue;
-    }
-
+    if (target->get_avaliable_accelator_count() < job.get_accelerator_count()) { continue; }
     arrange_server = i;
     break;
   }
@@ -52,9 +58,30 @@ int scheduler_mostallocated::arrange_server(job_entry& job) {
 }
 
 void scheduler_mostallocated::get_suitable_server(vector<tuple<int, server_entry*>>& server, int required_accelerator){
-  // return most suitable accelerator group
+  int max_accelrator_count = accelerator_count_hash_list.size();
+  if (required_accelerator > max_accelrator_count - 1) { return; }
+
+  for (int i = required_accelerator; i <= max_accelrator_count; ++i) {
+    if (accelerator_count_hash_list[i].size() > 0) {
+      server = accelerator_count_hash_list[i];
+      break;
+    }
+  }
 }
 
 void scheduler_mostallocated::postproessing_set_server() {
-  // Grouping Server with accelerator counts
+  int max_accelerator_count = 0;
+  for (int i = 0; i < target_server->size(); i++) {
+    server_entry* server = &target_server->at(i);
+    int accelerator_count = server->get_accelerator_count();
+    max_accelerator_count = max(max_accelerator_count, accelerator_count);
+  }
+  accelerator_count_hash_list.resize(max_accelerator_count + 1);
+
+  for (int i = 0; i < target_server->size(); i++) {
+    server_entry* server = &target_server->at(i);
+    int accelerator_count = server->get_accelerator_count();
+    accelerator_count_hash_list[accelerator_count].emplace_back(i, server);
+  }
+
 }

@@ -288,13 +288,26 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
     dc.BitBlt(start_position.x, start_position.y, plot_width, plot_height, &graph_dc, 0, 0, SRCCOPY);
   }
 
-
   CBrush* old_brush = (CBrush*)dc.SelectStockObject(NULL_BRUSH);
   dc.Rectangle(plotr_rect);
   dc.SelectObject(old_brush);
 
   start_position.y += plot_height;
   start_position.y += margin;
+
+  vector<int> request;
+  job_emul.get_wait_job_request_acclerator(request);
+  CString wait_queue;
+  wait_queue.Format(_T("Waiting job request acclerator(%d): "), request.size());
+  for (auto&& count : request) {
+    CString request_count;
+    request_count.Format(_T("%d, "), count);
+    wait_queue += request_count;
+  }
+
+  dc.SetTextColor(defaultColor);
+  dc.TextOut(start_position.x, start_position.y, wait_queue);
+  start_position.y += (font_size + margin);
 }
 
 void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double* allocation_rate, double* utilization_rate, 

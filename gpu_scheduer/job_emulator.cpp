@@ -172,6 +172,19 @@ void job_emulator::build_job_queue() {
   }
 }
 
+void job_emulator::get_wait_job_request_acclerator(vector<int>& request) {
+  queue<job_entry*> wait_queue_replica = wait_queue;
+  int inquired_count = wait_queue_replica.size();
+
+  inquired_count = inquired_count > 10 ? 10 : inquired_count;
+  for (int i = 0; i < inquired_count; ++i) {
+    auto job = wait_queue_replica.front();
+    request.push_back(job->get_accelerator_count());
+    wait_queue_replica.pop();
+  }
+  
+}
+
 void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool using_preemetion) {
   preemtion_enabling = using_preemetion;
   selected_scheduler = scheduler_index;
@@ -188,9 +201,12 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
     scheduler_obj = new scheduler_fare_share();
     scheduling_name = fare_share_scheduler_name;
     break;
-  case scheduler_type::mostallocated:
+  case scheduler_type::mostallocated: {
     scheduler_obj = new scheduler_mostallocated();
     scheduling_name = mostallocated_scheduler_name;
+    /*scheduler_mostallocated* obj = (scheduler_mostallocated*)scheduler_obj;
+    obj->set_strick_policy(true);*/
+  }
     break;
   case scheduler_type::round_robin:
   default:
