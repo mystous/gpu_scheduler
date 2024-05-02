@@ -244,7 +244,14 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   total_job = FormatWithCommas(job_emul.get_emulation_step() + 1);
   progress.Format(_T("%-2.2f %%"), (double)(job_emul.get_emulation_step() + 1) / (double)job_emul.get_total_time_slot() * 100);
   
-  message.Format(_T("Progress : %s / %s (%s)"), total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer());
+  message.Format(_T("Progress : %s / %s (%s) ,Elapsed time - %s"), total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer(),
+    [](int minutes) {
+      std::wstringstream ss;
+      ss << std::setw(2) << std::setfill(L'0') << minutes / 1440 << L" Day(s) "
+        << std::setw(2) << std::setfill(L'0') << (minutes % 1440) / 60 << L":"
+        << std::setw(2) << std::setfill(L'0') << minutes % 60;
+      return CString(ss.str().c_str());
+    }(job_emul.get_emulation_step() + 1).GetBuffer());
 
   start_position.y -= 60;
   dc.SetTextColor(defaultColor);
@@ -536,7 +543,7 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
   dc.TextOut(rect.left + (rect.Width() - sizeSecondLine.cx) / 2, textYPos + textHeight + margin, strSecondLine);
 
   int boxSize = 20, boxSpacingW = 20, boxSpacingH = 10;
-    int totalWidth = boxSize * 4 + boxSpacingW * 3;
+  int totalWidth = boxSize * 4 + boxSpacingW * 3;
   int totalHeight = boxSize * 2 + boxSpacingH;
   int startX = rect.left + (rect.Width() - totalWidth) / 2;
   int startY = rect.top + (rect.Height() - totalHeight) / 5 * 2;
@@ -570,6 +577,13 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
       break;
   }
 
+  CString strJobCount;
+  strJobCount.Format(_T("%d jobs loaded"), server.get_loaded_job_count());
+  CSize sizeJobCountLine = dc.GetTextExtent(strJobCount);
+  textYPos = rect.top + 110 - (textHeight / 2);
+  dc.TextOut(rect.left + (rect.Width() - sizeJobCountLine.cx) / 2, textYPos + textHeight + margin, strJobCount);
+
+
   CFont font;
   font.CreatePointFont(font_size * 16, _T("Arial"));
   CFont* pOldFont = dc.SelectObject(&font);
@@ -578,7 +592,7 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
   allocation_rate.Format(_T("%2.2f %%"), (double)reserved_count / (double)total_count * 100);
 
   textHeight = dc.GetTextExtent(allocation_rate.GetBuffer()).cy;
-  textYPos = rect.top +160 - (textHeight / 2);
+  textYPos = rect.top +170 - (textHeight / 2);
 
     dc.SetTextColor(ratioColor);
   sizeFirstLine = dc.GetTextExtent(allocation_rate);

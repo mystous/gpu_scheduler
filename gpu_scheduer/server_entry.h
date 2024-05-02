@@ -23,6 +23,7 @@ public:
   int flush();
   void build_accelator_status();
   double get_server_utilization();
+  int get_loaded_job_count();
 
 private:
   int accelator_count = 0;
