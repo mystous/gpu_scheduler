@@ -21,8 +21,10 @@
 #define IDC_LIST_JOB_LIST               1007
 #define IDC_RADIO1                      1008
 #define IDC_RADIO_MOSTALLOCATED         1008
-#define IDC_COMBO1                      1009
 #define IDC_COMBO_SCHEDULER             1009
+#define IDC_CHECK_FLAVOR                1010
+#define IDC_CHECK1                      1011
+#define IDC_CHECK_INF                   1011
 #define ID_GPUSERVERSETTING_SHOWGPULIST 32771
 #define ID_GPUSERVERSETTING_ADDGPU      32772
 #define ID_EMULATION_START              32773
@@ -47,7 +49,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        314
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           314
 #endif
 #endif

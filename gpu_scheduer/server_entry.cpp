@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "server_entry.h"
 #include <unordered_set>
+#include <algorithm>
 
 server_entry::server_entry(string server_name, accelator_type coprocessor_type, int accelator_count) :
   accelator_count(accelator_count), server_name(server_name), coprocessor_type(coprocessor_type) {
@@ -54,7 +55,8 @@ int server_entry::flush() {
     }
 
     string id = job->get_job_id();
-    for ( i = 0; i < job->get_accelerator_count(); ++i) {
+    //for ( i = 0; i < job->get_accelerator_count(); ++i) {
+    for (i = 0; i < get_accelerator_count(); ++i) {
       if (reserved[i] && id == job_id_for_reserved[i]) {
         reserved[i] = false;
         job_id_for_reserved[i] = "";
@@ -110,4 +112,19 @@ int server_entry::get_avaliable_accelator_count() {
     }
   }
   return avaliable_count;
+}
+
+accelator_type server_entry::get_accelerator_type(string accelerator) {
+  for_each(accelerator.begin(), accelerator.end(), [](char& c) { c = tolower(c); });
+  if ("a100" == accelerator) {
+    return accelator_type::a100;
+  }
+  else if ("a30" == accelerator) {
+    return accelator_type::a30;
+  }
+  else if ("cpu" == accelerator) {
+    return accelator_type::cpu;
+  }
+
+  return accelator_type::cpu;
 }

@@ -13,6 +13,7 @@
 #include "gpu_scheduerDoc.h"
 #include "CSchedulerOption.h"
 #include "CGPUStatus.h"
+#include "enum_definition.h"
 
 #include <propkey.h>
 
@@ -66,17 +67,12 @@ BOOL CgpuscheduerDoc::OnNewDocument()
 
     bool preemtion_enabling = false;
     int scheduler_selection = 0;
+    bool scheduler_with_flaver = false;
+    bool working_till_end = false;
 
     CSchedulerOption dlg_option;
-    dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection);
-    if (dlg_option.DoModal() == IDOK)
-    {
-      //scheduler_selection = dlg_option.get_scheduler_type();
-      //preemtion_enabling = dlg_option.using_preemtion;
-
-      //job_emulator_obj.set_option((job_emulator::scheduler_type)dlg_option.scheduler_selection, dlg_option.using_preemtion);
-    }
-    else {
+    dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, &working_till_end);
+    if (dlg_option.DoModal() != IDOK) {
       AfxMessageBox(L"Select Scheduling method first!");
       return FALSE;
     }
@@ -84,7 +80,7 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     job_emulator_obj.build_job_list([&](CString filaname) -> string {
       CT2A asciiString(filaname);
       return std::string(asciiString);
-      }(filePath), (job_emulator::scheduler_type)scheduler_selection, preemtion_enabling);
+      }(filePath), (scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end);
 
     DWORD size = MAX_PATH;
     std::vector<TCHAR> currentDir(size);

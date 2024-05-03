@@ -20,6 +20,7 @@
 #include "scheduler_fare_share.h"
 #include "scheduler_mostallocated.h"
 #include "scheduler_round_robin.h"
+#include "enum_definition.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -34,24 +35,21 @@ public:
   using job_entry_struct = struct job_entry_element;
 
   virtual ~job_emulator();
-  enum class scheduler_type : int {
-    mostallocated = 0, compact, round_robin, fare_share
-  };
 
-  enum class emulation_status : int {
-    stop, pause, start
-  };
 
-  void build_job_list(string filename, job_emulator::scheduler_type scheduler_index, bool using_preemetion);
+  void build_job_list(string filename, scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end);
   void build_job_queue();
   void build_server_list(string filename);
-  void set_option(job_emulator::scheduler_type scheduler_index, bool using_preemetion);
+  void set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end);
 
   scheduler_type get_selction_scheduler() { return selected_scheduler; };
   bool get_preemtion_enabling() { return preemtion_enabling; };
+  bool get_scheduling_with_flavor_option() { return scheduling_with_flavor; };
+  bool get_finishing_condition() { return perform_until_finish; };
   vector<job_entry>* get_job_list_ptr() { return &job_list; };
   vector<server_entry>* get_server_list() { return &server_list; };
-  int get_total_time_slot() { return total_time_sloct; };
+  int get_total_time_slot() { return total_time_slot; };
+  int get_progress_time_slot();
   int get_emulation_play_priod() { return emulation_play_priod; };
   void set_emulation_play_priod(int priod) { emulation_play_priod = priod; };
   string get_job_file_name() { return job_file_name; };
@@ -87,12 +85,15 @@ private:
   vector<server_entry> server_list;
   scheduler_type selected_scheduler = scheduler_type::mostallocated;
   bool preemtion_enabling = false;
+  bool scheduling_with_flavor = false;
+  bool perform_until_finish = false;
   system_clock::time_point min_start_time;
   system_clock::time_point max_end_time;
   job_entry_struct* job_queue = nullptr;
-  int total_time_sloct = 0;
+  int total_time_slot = 0;
   string job_file_name = "";
   int emulation_step = -1;
+  int last_emulation_step = -1;
   int emulation_play_priod = 1;
   emulation_status emul_status= emulation_status::stop;
   job_scheduler* scheduler_obj = nullptr;
@@ -110,6 +111,7 @@ private:
   const string fare_share_scheduler_name = "fare_share";
   const string mostallocated_scheduler_name = "mostallocated";
   const string round_robin_scheduler_name = "round_robin";
+  bool saving_possiblity = false;
 
   std::function<void()> step_forward_callback;
   void update_wait_queue();
@@ -120,5 +122,6 @@ private:
   void delete_rate_array();
   void log_rate_info();
   void delete_server_info_log();
+  bool check_finishing();
 };
 

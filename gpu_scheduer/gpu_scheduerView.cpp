@@ -14,6 +14,7 @@
 
 #include "CSchedulerOption.h"
 #include "gpu_log_dialog.h"
+#include "enum_definition.h"
 #include "CGPUStatus.h"
 #include <atlbase.h>
 #include <string>
@@ -203,16 +204,19 @@ void CgpuscheduerView::OnEmulationSetting()
 
   CSchedulerOption dlg_option;
 
-  bool preemtion_enabling = false;
+  bool preemtion_enabling = job_emul.get_preemtion_enabling();
   int scheduler_selection = 0;
+  bool scheduler_with_flaver = job_emul.get_scheduling_with_flavor_option();
+  bool working_till_end = job_emul.get_finishing_condition();
 
-  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection);
+  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, &working_till_end);
 
   dlg_option.set_scheduler_type((int)job_emul.get_selction_scheduler());
-  dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
+  //dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
+  //dlg_option.scheduler_with_flavor = job_emul.get_scheduling_with_flavor_option();
 
   if (dlg_option.DoModal() == IDOK) {
-    job_emul.set_option((job_emulator::scheduler_type)scheduler_selection, preemtion_enabling);
+    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end);
   }
   Invalidate();
 }
@@ -288,7 +292,7 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   double* allocation_rate = job_emul.get_allocation_rate();
   double* utilization_rate = job_emul.get_utilization_rate();
 
-  if (job_emulator::emulation_status::start != job_emul.get_emulation_status() &&
+  if (emulation_status::start != job_emul.get_emulation_status() &&
     nullptr != allocation_rate && nullptr != utilization_rate) {
 
     draw_buffer(dc, start_position, allocation_rate, utilization_rate, job_emul, plot_width, plot_height);
@@ -523,15 +527,15 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
   CSize sizeFirstLine = dc.GetTextExtent(temp);
   dc.TextOut(rect.left + (rect.Width() - sizeFirstLine.cx) / 2, textYPos, temp);
 
-  CString strSecondLine = [](server_entry::accelator_type accelerator_type)->CString {
+  CString strSecondLine = [](accelator_type accelerator_type)->CString {
     switch (accelerator_type) {
-    case server_entry::accelator_type::a100:
+    case accelator_type::a100:
       return _T("A100");
       break;
-    case server_entry::accelator_type::a30:
+    case accelator_type::a30:
       return _T("A30");
       break;
-    case server_entry::accelator_type::cpu:
+    case accelator_type::cpu:
       return _T("CPU");
       break;
     default:

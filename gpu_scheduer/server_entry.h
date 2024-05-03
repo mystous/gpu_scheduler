@@ -2,15 +2,12 @@
 #include <iostream>
 #include <vector>
 #include "job_entry.h"
+#include "enum_definition.h"
 
 using namespace std;
 class server_entry
 {
 public:
-  enum class accelator_type : int {
-    a100, a30, cpu
-  };
-
   server_entry(string server_name, accelator_type coprocessor_type, int accelator_count);
   int get_accelerator_count() { return accelator_count; };
   string get_server_name() { return server_name; };
@@ -24,6 +21,7 @@ public:
   void build_accelator_status();
   double get_server_utilization();
   int get_loaded_job_count();
+  static accelator_type get_accelerator_type(string accelerator);
 
 private:
   int accelator_count = 0;

@@ -14,12 +14,15 @@ public:
     target_server = server_list; 
     postproessing_set_server();
   };
-  virtual void set_using_preemtion(bool using_preemetion) { preemtion_enabling = using_preemetion; };
+  void set_scheduling_condition(bool using_preemetion, bool scheduling_follow_flavor, bool work_till_end);
   virtual int scheduling_job();
+  virtual void get_wait_job_request_acclerator(vector<int>& request);
   void set_wait_queue(queue<job_entry*>* queue) { wait_queue = queue; };
 protected:
   vector<server_entry>* target_server = nullptr;
   bool preemtion_enabling = false;
+  bool scheduling_with_flavor = false;
+  bool perform_until_finish = false;
   virtual void postproessing_set_server() = 0;
   queue<job_entry*>* wait_queue = nullptr;
 };

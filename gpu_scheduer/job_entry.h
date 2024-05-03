@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <chrono>
 #include <vector>
+#include "enum_definition.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -15,7 +16,8 @@ public:
     task, instance
   };
   job_entry(string pod_name_param, string pod_type, string project_param, string namespace_param, 
-            string user_team_param, string start_time_string, string finish_time_string, int accelerator_count, int computing_level, double gpu_utilization);
+            string user_team_param, string start_time_string, string finish_time_string, int accelerator_count, 
+            int computing_level, double gpu_utilization, accelator_type accelator);
 
   string get_pod_name() { return pod_name; };
   string get_user_team() { return user_team; };
@@ -56,5 +58,6 @@ private:
   job_type job_type_category;
   int computaion_load;
   double utilization;
+  accelator_type accelator_flavor;
 };
 

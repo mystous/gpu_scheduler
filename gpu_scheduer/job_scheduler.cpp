@@ -18,3 +18,22 @@ int job_scheduler::scheduling_job() {
 
   return scheduled;
 }
+
+void job_scheduler::set_scheduling_condition(bool using_preemetion, bool scheduling_follow_flavor, bool work_till_end) {
+  scheduling_with_flavor = scheduling_follow_flavor;
+  preemtion_enabling = using_preemetion;
+  perform_until_finish = work_till_end;
+}
+
+void job_scheduler::get_wait_job_request_acclerator(vector<int>& request) {
+  queue<job_entry*> wait_queue_replica = *wait_queue;
+  int inquired_count = wait_queue_replica.size();
+
+  inquired_count = inquired_count > 10 ? 10 : inquired_count;
+  for (int i = 0; i < inquired_count; ++i) {
+    auto job = wait_queue_replica.front();
+    request.push_back(job->get_accelerator_count());
+    wait_queue_replica.pop();
+  }
+
+}

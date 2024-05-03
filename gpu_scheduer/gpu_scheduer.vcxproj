@@ -190,6 +190,7 @@
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="coprocessor_server.h" />
     <ClInclude Include="CSchedulerOption.h" />
+    <ClInclude Include="enum_definition.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="gpu_log_dialog.h" />
     <ClInclude Include="gpu_scheduer.h" />

@@ -84,6 +84,9 @@
     <ClInclude Include="scheduler_mostallocated.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="enum_definition.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gpu_scheduer.cpp">

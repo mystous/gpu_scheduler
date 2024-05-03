@@ -76,6 +76,11 @@ void scheduler_mostallocated::postproessing_set_server() {
     int accelerator_count = server->get_accelerator_count();
     max_accelerator_count = max(max_accelerator_count, accelerator_count);
   }
+
+  for (auto&& list : accelerator_count_hash_list) {
+    list.clear();
+  }
+  accelerator_count_hash_list.clear();
   accelerator_count_hash_list.resize(max_accelerator_count + 1);
 
   for (int i = 0; i < target_server->size(); i++) {
@@ -83,5 +88,4 @@ void scheduler_mostallocated::postproessing_set_server() {
     int accelerator_count = server->get_accelerator_count();
     accelerator_count_hash_list[accelerator_count].emplace_back(i, server);
   }
-
 }

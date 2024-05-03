@@ -79,22 +79,8 @@ void job_emulator::build_server_list(string filename) {
     }
 
     int accelerator_count = stoi(tokens[1]);
-    server_entry new_element(tokens[0], [](string accelerator_type)->server_entry::accelator_type {
-      if ("a100" == accelerator_type) {
-        return server_entry::accelator_type::a100;
-      }
-      else if ("a30" == accelerator_type) {
-        return server_entry::accelator_type::a30;
-      }
-      else if ("cpu" == accelerator_type) {
-        return server_entry::accelator_type::cpu;
-      }
-      else {
-        return server_entry::accelator_type::cpu;
-      } }(tokens[2]), accelerator_count);
+    server_entry new_element(tokens[0], server_entry::get_accelerator_type(tokens[2]), accelerator_count);
     server_list.push_back(new_element);
-
-    
   }
 
   scheduler_obj->set_server(&server_list);
@@ -102,7 +88,7 @@ void job_emulator::build_server_list(string filename) {
   file.close();
 }
 
-void job_emulator::build_job_list(string filename, job_emulator::scheduler_type scheduler_index, bool using_preemetion) {
+void job_emulator::build_job_list(string filename, scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end) {
   ifstream file(filename);
 
   if (!file.is_open()) {
@@ -111,7 +97,7 @@ void job_emulator::build_job_list(string filename, job_emulator::scheduler_type 
   }
 
   job_file_name = filename;
-  set_option(scheduler_index, using_preemetion);
+  set_option(scheduler_index, using_preemetion, scheduleing_with_flavor_option, working_till_end);
 
   string line;
   while (getline(file, line)) {
@@ -125,13 +111,19 @@ void job_emulator::build_job_list(string filename, job_emulator::scheduler_type 
 
     int computation_level = 1;
     double gpu_utilization = 50.;
+    accelator_type accelator = accelator_type::cpu;
+
     if (tokens.size() > 9) {
       computation_level = stoi(tokens[9]);
       gpu_utilization = stod(tokens[10]);
     }
 
+    if (tokens.size() > 11) {
+      accelator = server_entry::get_accelerator_type(tokens[11]);
+    }
+
     job_entry new_element(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], 
-                          tokens[6], stoi(tokens[7]), computation_level, gpu_utilization);
+                          tokens[6], stoi(tokens[7]), computation_level, gpu_utilization, accelator);
     job_list.push_back(new_element);
   }
 
@@ -156,8 +148,8 @@ void job_emulator::build_job_queue() {
   }
 
   auto diff = duration_cast<minutes>(max_end_time - min_start_time);
-  total_time_sloct = diff.count();
-  job_queue = new job_entry_struct[total_time_sloct];
+  total_time_slot = diff.count();
+  job_queue = new job_entry_struct[total_time_slot];
 
   for (int i = 0; i < job_list.size(); ++i) {
     job_entry* job = &job_list[i];
@@ -173,21 +165,14 @@ void job_emulator::build_job_queue() {
 }
 
 void job_emulator::get_wait_job_request_acclerator(vector<int>& request) {
-  queue<job_entry*> wait_queue_replica = wait_queue;
-  int inquired_count = wait_queue_replica.size();
-
-  inquired_count = inquired_count > 10 ? 10 : inquired_count;
-  for (int i = 0; i < inquired_count; ++i) {
-    auto job = wait_queue_replica.front();
-    request.push_back(job->get_accelerator_count());
-    wait_queue_replica.pop();
-  }
-  
+  scheduler_obj->get_wait_job_request_acclerator(request);
 }
 
-void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool using_preemetion) {
+void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end) {
   preemtion_enabling = using_preemetion;
+  scheduling_with_flavor = scheduleing_with_flavor_option;
   selected_scheduler = scheduler_index;
+  perform_until_finish = working_till_end;
   if (nullptr != scheduler_obj) {
     delete scheduler_obj;
   }
@@ -216,11 +201,12 @@ void job_emulator::set_option(job_emulator::scheduler_type scheduler_index, bool
   }
   scheduler_obj->set_wait_queue(&wait_queue);
   scheduler_obj->set_server(&server_list);
+  scheduler_obj->set_scheduling_condition(preemtion_enabling, scheduling_with_flavor, perform_until_finish);
 }
 
 void job_emulator::step_foward() {
   for (int i = 0; i < ticktok_duration; ++i) {
-    if ((total_time_sloct - 1) == emulation_step) {
+    if (check_finishing()) {
       emulation_step = -1;
       progress_status = emulation_status::stop;
       initialize_server_state();
@@ -230,7 +216,7 @@ void job_emulator::step_foward() {
     else {
       emulation_step++;
 #ifndef _WIN32
-      printf("Step foward %d/%d", emulation_step, total_time_sloct);
+      printf("Step foward %d/%d", emulation_step, total_time_slot);
 #endif
       computing_forward();
       update_wait_queue();
@@ -240,6 +226,30 @@ void job_emulator::step_foward() {
       step_forward_callback();
     }
   }
+}
+
+bool job_emulator::check_finishing() {
+  bool finished_condition = false;
+  if (perform_until_finish) {
+    if (get_total_job_count() == get_scheduled_job_count()) {
+      int server_size = server_list.size();
+      finished_condition = true;
+      for (int i = 0; i < server_size; ++i) {
+        server_entry server = server_list.at(i);
+        if (server.get_loaded_job_count() > 0) {
+          finished_condition = false;
+          break;
+        }
+      }
+    }
+    return finished_condition;
+  }
+  
+  if ((total_time_slot - 1) == emulation_step) {
+    finished_condition = true;
+  }
+
+  return finished_condition;
 }
 
 void job_emulator::log_rate_info() {
@@ -289,6 +299,7 @@ void job_emulator::computing_forward() {
 static int gcount = 0;
 
 void job_emulator::update_wait_queue() {
+  if (emulation_step >= get_total_time_slot()) { return; }
  
   if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
     for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
@@ -300,6 +311,7 @@ void job_emulator::update_wait_queue() {
 
 void job_emulator::pause_progress() {
   progress_status = emulation_status::pause;
+  last_emulation_step = emulation_step;
 
 #ifdef _WIN32
   TRACE(_T("\nPause progress\n"));
@@ -310,6 +322,7 @@ void job_emulator::pause_progress() {
 
 void job_emulator::stop_progress() {
   if (emulation_status::pause == progress_status) {
+    last_emulation_step = emulation_step;
     emulation_step = -1;
   }
   progress_status = emulation_status::stop;
@@ -352,18 +365,18 @@ void job_emulator::start_progress() {
   rate_index = 0;
   finished_job_count = 0;
   scheduled_job_count = 0;
-  allocation_rate = new double[get_total_time_slot()];
-  utilization_rate = new double[get_total_time_slot()];
+  allocation_rate = new double[get_total_time_slot()*20];
+  utilization_rate = new double[get_total_time_slot()*20];
 
   int server_count = server_list.size();
 
   for (int i = 0; i < server_count; ++i) {
-    double* utilization = new double[get_total_time_slot()];
-    memset(utilization, 0.0, sizeof(double) * get_total_time_slot());
+    double* utilization = new double[get_total_time_slot() * 20];
+    memset(utilization, 0.0, sizeof(double) * get_total_time_slot() * 20);
     server_utilization_rate.push_back(utilization);
 
-    int* allocation = new int[get_total_time_slot()];
-    memset(allocation, 0, sizeof(int) * get_total_time_slot());
+    int* allocation = new int[get_total_time_slot() * 20];
+    memset(allocation, 0, sizeof(int) * get_total_time_slot() * 20);
     server_allocation_count.push_back(allocation);
   }
 
@@ -379,6 +392,7 @@ void job_emulator::start_progress() {
       timeEndPeriod(sleep_period);
 #else // USE_TIME_BEGIN
       auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
+      saving_possiblity = true;
       this->step_foward();
       std::this_thread::sleep_until(next_call);
 #endif //USE_TIME_BEGIN
@@ -396,11 +410,16 @@ bool job_emulator::save_result_log() {
   return save_result_log(get_savefile_candidate_name());
 }
 
+int job_emulator::get_progress_time_slot() {
+  return last_emulation_step;
+}
+
 bool job_emulator::save_result_log(string file_name) {
   ofstream file(file_name);
-  if (!file.is_open()) {
-    return false;
-  }
+
+  if (!saving_possiblity) { return false; }
+  if (!file.is_open()) { return false; }
+
   file << "Allocation Rate,Utilization Rate";
   for (int i = 0; i < server_list.size(); i++)
   {
@@ -409,7 +428,7 @@ bool job_emulator::save_result_log(string file_name) {
   }
   file << "\n";
 
-  for (int i = 0; i < get_total_time_slot(); i++)
+  for (int i = 0; i < get_progress_time_slot(); i++)
   {
     file << allocation_rate[i] << "," << utilization_rate[i];
     for (int j = 0; j < server_list.size(); j++)

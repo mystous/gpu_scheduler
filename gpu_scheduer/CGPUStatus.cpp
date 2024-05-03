@@ -5,6 +5,7 @@
 #include "gpu_scheduer.h"
 #include "afxdialogex.h"
 #include "CGPUStatus.h"
+#include "enum_definition.h"
 #include <string>
 
 #include <atlbase.h>
@@ -51,15 +52,15 @@ BOOL CGPUStatus::OnInitDialog()
 
   for (auto&& server : *server_list) {
     int index = server_list_ctrl.InsertItem(server_list_ctrl.GetItemCount(), CA2T(server.get_server_name().c_str()));
-    server_list_ctrl.SetItemText(index, 1, [](server_entry::accelator_type type)->LPCTSTR {
+    server_list_ctrl.SetItemText(index, 1, [](accelator_type type)->LPCTSTR {
       switch (type) {
-      case server_entry::accelator_type::a100:
+      case accelator_type::a100:
         return _T("A100");
         break;
-      case server_entry::accelator_type::a30:
+      case accelator_type::a30:
         return _T("A30");
         break;
-      case server_entry::accelator_type::cpu:
+      case accelator_type::cpu:
         return _T("CPU");
         break;
       default:
