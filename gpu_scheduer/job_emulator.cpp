@@ -14,6 +14,14 @@
 using namespace std;
 using namespace std::chrono;
 
+template <typename T>
+T* reallocate(T* oldArray, size_t oldSize, size_t newSize) {
+  T* newArray = new T[newSize];
+  std::memcpy(newArray, oldArray, oldSize * sizeof(T));
+  delete[] oldArray;
+  return newArray;
+}
+
 job_emulator::~job_emulator() {
   if (nullptr != job_queue) {
     delete[] job_queue;
@@ -252,9 +260,10 @@ bool job_emulator::check_finishing() {
   return finished_condition;
 }
 
+
 void job_emulator::log_rate_info() {
-  if (rate_index >= get_total_time_slot()) {
-    return;
+  if (rate_index >= memory_alloc_size) {
+    reallocation_log_memory();
   }
   int total_reserved_count = 0, total_GPU_count = 0;
   double reserved_utilization = 0.0;
@@ -353,6 +362,45 @@ void job_emulator::delete_rate_array() {
   }
 }
 
+
+void job_emulator::reallocation_log_memory() {
+  int old_memory_size = memory_alloc_size;
+  memory_alloc_size *= 2;
+  allocation_rate = reallocate(allocation_rate, old_memory_size, memory_alloc_size);
+  utilization_rate = reallocate(utilization_rate, old_memory_size, memory_alloc_size);
+  int server_count = server_list.size();
+
+  for (int i = 0; i < server_list.size(); ++i) {
+    server_entry server = server_list.at(i);
+
+    server_utilization_rate[i] = reallocate(server_utilization_rate[i], old_memory_size, memory_alloc_size);
+    server_allocation_count[i] = reallocate(server_allocation_count[i], old_memory_size, memory_alloc_size);
+  }
+}
+
+void job_emulator::initialize_progress_variables() {
+  rate_index = 0;
+  finished_job_count = 0;
+  scheduled_job_count = 0;
+  memory_alloc_size = get_total_time_slot();
+
+  allocation_rate = new double[memory_alloc_size];
+  utilization_rate = new double[memory_alloc_size];
+
+
+  int server_count = server_list.size();
+
+  for (int i = 0; i < server_count; ++i) {
+    double* utilization = new double[memory_alloc_size];
+    memset(utilization, 0.0, sizeof(double) * memory_alloc_size);
+    server_utilization_rate.push_back(utilization);
+
+    int* allocation = new int[memory_alloc_size];
+    memset(allocation, 0, sizeof(int) * memory_alloc_size);
+    server_allocation_count.push_back(allocation);
+  }
+}
+
 //#define USE_TIME_BEGIN
 
 void job_emulator::start_progress() {
@@ -361,25 +409,8 @@ void job_emulator::start_progress() {
   swap(wait_queue, new_one);
   delete_rate_array();
   delete_server_info_log();
-
-  rate_index = 0;
-  finished_job_count = 0;
-  scheduled_job_count = 0;
-  allocation_rate = new double[get_total_time_slot()*20];
-  utilization_rate = new double[get_total_time_slot()*20];
-
-  int server_count = server_list.size();
-
-  for (int i = 0; i < server_count; ++i) {
-    double* utilization = new double[get_total_time_slot() * 20];
-    memset(utilization, 0.0, sizeof(double) * get_total_time_slot() * 20);
-    server_utilization_rate.push_back(utilization);
-
-    int* allocation = new int[get_total_time_slot() * 20];
-    memset(allocation, 0, sizeof(int) * get_total_time_slot() * 20);
-    server_allocation_count.push_back(allocation);
-  }
-
+  initialize_progress_variables();
+  
   emulation_player = thread([this]() {
     this->progress_status = emulation_status::start;
 

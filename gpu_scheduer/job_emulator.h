@@ -112,6 +112,7 @@ private:
   const string mostallocated_scheduler_name = "mostallocated";
   const string round_robin_scheduler_name = "round_robin";
   bool saving_possiblity = false;
+  int memory_alloc_size = 0;
 
   std::function<void()> step_forward_callback;
   void update_wait_queue();
@@ -123,5 +124,7 @@ private:
   void log_rate_info();
   void delete_server_info_log();
   bool check_finishing();
+  void initialize_progress_variables();
+  void reallocation_log_memory();
 };
 
