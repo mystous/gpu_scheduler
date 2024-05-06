@@ -327,7 +327,7 @@ void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double
   int i;
   int pre_x = 0;
   int pre_y = plot_height;
-  int slot_count = job_emul.get_total_time_slot() + 2;
+  int slot_count = job_emul.get_done_emulation_step() + 2;
   double scale_x = plot_width / (double)slot_count;
   double scale_y = plot_height / 100.0;
 
@@ -357,7 +357,8 @@ void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double
 
   graph_dc.SelectObject(old_pen);
 
-  int allocation_rate_index = job_emul.get_rate_index();
+  //int allocation_rate_index = job_emul.get_rate_index();
+  int allocation_rate_index = job_emul.get_done_emulation_step();
 
   CPen green_pen(PS_SOLID, 2, greenColor);
   old_pen = graph_dc.SelectObject(&green_pen);
