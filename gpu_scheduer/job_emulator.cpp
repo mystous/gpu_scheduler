@@ -215,6 +215,7 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
 void job_emulator::step_foward() {
   for (int i = 0; i < ticktok_duration; ++i) {
     if (check_finishing()) {
+      last_emulation_step = emulation_step;
       emulation_step = -1;
       progress_status = emulation_status::stop;
       initialize_server_state();
@@ -492,8 +493,8 @@ string job_emulator::get_savefile_candidate_name() {
   ss << std::put_time(&localTime, "%Y%m%d_%H%M%S");
   string formattedTime = ss.str();
 
-  filename = std::format("{}_{}_server({})_accelerator({}).result", 
-    get_setting_scheduling_name(), formattedTime, server_number, accelerator_number);
+  filename = std::format("{}_{}_server({})_accelerator({})_elapsed({}).result", 
+    get_setting_scheduling_name(), formattedTime, server_number, accelerator_number, get_done_emulation_step());
   return filename;
 }
 

@@ -76,6 +76,7 @@ public:
   void get_wait_job_request_acclerator(vector<int> &request);
   int get_finished_job_count(){ return finished_job_count; };
   int get_scheduled_job_count() { return scheduled_job_count; };
+  int get_done_emulation_step() { return last_emulation_step; };
 
 private:
   string scheduling_name = "round_robin";

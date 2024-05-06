@@ -260,8 +260,6 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   start_position.y -= 60;
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, message);
-  //DrawColorText(dc, message, total_job, highlightColor, start_position);
-  //DrawColorText(dc, message, total_time_slot, highlightColor, start_position);
   DrawColorText(dc, message, progress, highlightColor, start_position);
 
   start_position.y += (font_size + margin);
@@ -269,10 +267,8 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   const int plot_height = 300;
 
   CRect plotr_rect(start_position.x, start_position.y, start_position.x + plot_width, start_position.y + plot_height);
-  //dc.Rectangle(plotr_rect);
   int column_count = 20;
-  int row_count = 5;
-  int i;
+  int row_count = 5, i;
 
   CPen gray_pen(PS_DOT, 1, whitegrayColor);
   CPen* old_pen = dc.SelectObject(&gray_pen);
@@ -387,6 +383,28 @@ void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double
     pre_x = x;
     pre_y = y;
   }
+
+  CString message, time;
+  
+  time = [](int minutes) {
+    std::wstringstream ss;
+    ss << std::setw(2) << std::setfill(L'0') << minutes / 1440 << L" Day(s) "
+      << std::setw(2) << std::setfill(L'0') << (minutes % 1440) / 60 << L":"
+      << std::setw(2) << std::setfill(L'0') << minutes % 60;
+    return CString(ss.str().c_str());
+    }(job_emul.get_done_emulation_step() + 1).GetBuffer();
+
+  message.Format(_T("Total emulation time: %s"), time.GetBuffer());
+
+  CFont font;
+  font.CreatePointFont(font_size * 8, _T("Arial"));
+  CFont* pOldFont = graph_dc.SelectObject(&font);
+
+  CPoint text_position(10, 10);
+  graph_dc.SetTextColor(defaultColor);
+  graph_dc.TextOut(text_position.x, text_position.y, message);
+  DrawColorText(graph_dc, message, time, highlightColor, text_position);
+  graph_dc.SelectObject(pOldFont);
 
   is_buffer_created = true;
 }
