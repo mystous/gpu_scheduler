@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "scheduler_round_robin.h"
 
-int scheduler_round_robin::arrange_server(job_entry& job) {
+int scheduler_round_robin::arrange_server(job_entry& job, accelator_type coprocessor) {
   int arrange_server = -1, i;
 
   for (i = 0; i < target_server->size(); ++i) {

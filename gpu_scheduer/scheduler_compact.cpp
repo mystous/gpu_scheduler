@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "scheduler_compact.h"
 
-int scheduler_compact::arrange_server(job_entry& job) {
+int scheduler_compact::arrange_server(job_entry& job, accelator_type coprocessor) {
   int arrange_server = -1, i;
 
   int current_server_index = 0;

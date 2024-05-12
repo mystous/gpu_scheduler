@@ -22,6 +22,17 @@ T* reallocate(T* oldArray, size_t oldSize, size_t newSize) {
   return newArray;
 }
 
+job_emulator::job_emulator() {
+
+}
+
+void job_emulator::initialize_wait_queue() {
+  for (int i = 0; i < global_const::accelator_category_count + 1; ++i) {
+    queue<job_entry*>* new_element = new queue<job_entry*>();
+    wait_queue_group.push_back(new_element);
+  }
+}
+
 job_emulator::~job_emulator() {
   if (nullptr != job_queue) {
     delete[] job_queue;
@@ -31,6 +42,7 @@ job_emulator::~job_emulator() {
     delete scheduler_obj;
   }
 
+  delete_wait_queue();
   delete_rate_array();
   delete_server_info_log();
 }
@@ -62,8 +74,18 @@ void job_emulator::delete_server_info_log() {
     }
   }
 
+  
   server_utilization_rate.clear();
   server_allocation_count.clear();
+}
+
+void job_emulator::delete_wait_queue() {
+  for (auto && queue : wait_queue_group) {
+    if (nullptr != queue) {
+      delete queue;
+      queue = nullptr;
+    }
+  }
 }
 
 void job_emulator::build_server_list(string filename) {
@@ -207,7 +229,8 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
     scheduling_name = round_robin_scheduler_name;
     break;
   }
-  scheduler_obj->set_wait_queue(&wait_queue);
+  //scheduler_obj->set_wait_queue(&wait_queue);
+  scheduler_obj->set_wait_queue(&wait_queue_group);
   scheduler_obj->set_server(&server_list);
   scheduler_obj->set_scheduling_condition(preemtion_enabling, scheduling_with_flavor, perform_until_finish);
 }
@@ -290,12 +313,14 @@ void job_emulator::log_rate_info() {
 }
 
 void job_emulator::scheduling_job() {
-  while (false == wait_queue.empty()) {
-    auto job = wait_queue.front();
-    if (-1 == scheduler_obj->arrange_server(*job)) {
-      break;
+  for (auto&& wait_queue : wait_queue_group) {
+    while (false == wait_queue->empty()) {
+      auto job = wait_queue->front();
+      if (-1 == scheduler_obj->arrange_server(*job)) {
+        break;
+      }
+      wait_queue->pop();
     }
-    wait_queue.pop();
   }
 }
 
@@ -306,15 +331,17 @@ void job_emulator::computing_forward() {
   }
 }
 
-static int gcount = 0;
-
 void job_emulator::update_wait_queue() {
   if (emulation_step >= get_total_time_slot()) { return; }
  
   if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
     for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
-      wait_queue.push(job);
-      gcount++;
+      //wait_queue.push(job);
+      int queue_index = 0;
+      if (scheduling_with_flavor) {
+        queue_index = static_cast<int>(job->get_flavor());
+      }
+      wait_queue_group[queue_index]->push(job);
     }
   }
 }
@@ -402,15 +429,25 @@ void job_emulator::initialize_progress_variables() {
   }
 }
 
+int job_emulator::get_wait_job_count() {
+  int wait_job_count = 0;
+
+  for (auto&& queue : wait_queue_group) {
+    wait_job_count += queue->size();
+  }
+  return wait_job_count;
+}
+
 //#define USE_TIME_BEGIN
 
 void job_emulator::start_progress() {
   set_emulation_play_priod(0.1);
-  queue<job_entry*> new_one;
-  swap(wait_queue, new_one);
+
   delete_rate_array();
   delete_server_info_log();
+  delete_wait_queue();
   initialize_progress_variables();
+  initialize_wait_queue();
   
   emulation_player = thread([this]() {
     this->progress_status = emulation_status::start;

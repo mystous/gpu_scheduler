@@ -3,7 +3,7 @@
 class scheduler_mostallocated :public job_scheduler {
 public:
   virtual ~scheduler_mostallocated();
-  virtual int arrange_server(job_entry& job) override;
+  virtual int arrange_server(job_entry& job, accelator_type coprocessor = accelator_type::any) override;
   void set_strick_policy(bool strict) { strict_allocation = strict; };
 
 protected:

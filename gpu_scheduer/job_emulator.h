@@ -27,7 +27,7 @@ using namespace std::chrono;
 
 class job_emulator {
 public:
-  job_emulator() = default;
+  job_emulator();
   struct job_entry_element {
     vector<job_entry*> job_list_in_slot;
   };
@@ -72,7 +72,7 @@ public:
   string get_setting_scheduling_name() { return scheduling_name; };
   int get_total_job_count() { return job_list.size(); };
   int get_remain_job_count() { return get_total_job_count() - get_scheduled_job_count(); };
-  int get_wait_job_count() { return wait_queue.size(); };
+  int get_wait_job_count();// { return wait_queue.size(); };
   void get_wait_job_request_acclerator(vector<int> &request);
   int get_finished_job_count(){ return finished_job_count; };
   int get_scheduled_job_count() { return scheduled_job_count; };
@@ -100,7 +100,8 @@ private:
   job_scheduler* scheduler_obj = nullptr;
   atomic<emulation_status> progress_status = emulation_status::stop;
   thread emulation_player;
-  queue<job_entry*> wait_queue;
+  //queue<job_entry*> wait_queue;
+  vector<queue<job_entry*>*> wait_queue_group;
   int ticktok_duration = 1;
   const int sleep_for_drawing = 1;
   double* allocation_rate = nullptr;
@@ -115,13 +116,15 @@ private:
   bool saving_possiblity = false;
   int memory_alloc_size = 0;
 
-  std::function<void()> step_forward_callback;
+  function<void()> step_forward_callback;
   void update_wait_queue();
   void scheduling_job();
   void computing_forward();
   void initialize_server_state();
   void initialize_job_state();
+  void initialize_wait_queue();
   void delete_rate_array();
+  void delete_wait_queue();
   void log_rate_info();
   void delete_server_info_log();
   bool check_finishing();

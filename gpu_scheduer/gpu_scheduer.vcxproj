@@ -205,7 +205,6 @@
     <ClInclude Include="scheduler_compact.h" />
     <ClInclude Include="scheduler_fare_share.h" />
     <ClInclude Include="scheduler_mostallocated.h" />
-    <ClInclude Include="scheduler_most_wanted.h" />
     <ClInclude Include="scheduler_round_robin.h" />
     <ClInclude Include="server_entry.h" />
     <ClInclude Include="targetver.h" />
@@ -233,7 +232,6 @@
     <ClCompile Include="scheduler_compact.cpp" />
     <ClCompile Include="scheduler_fare_share.cpp" />
     <ClCompile Include="scheduler_mostallocated.cpp" />
-    <ClCompile Include="scheduler_most_wanted.cpp" />
     <ClCompile Include="scheduler_round_robin.cpp" />
     <ClCompile Include="server_entry.cpp" />
   </ItemGroup>

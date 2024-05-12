@@ -304,16 +304,25 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
 
   vector<int> request;
   job_emul.get_wait_job_request_acclerator(request);
-  CString wait_queue;
-  wait_queue.Format(_T("Waiting job request acclerator(%d): "), request.size());
+  int queue_stack_size = request.size();
+  CString wait_queue = _T("");
+  CString wait_queue_title;
   for (auto&& count : request) {
     CString request_count;
-    request_count.Format(_T("%d, "), count);
+    if (-1 != count) {
+      request_count.Format(_T("%d, "), count);
+    }
+    else {
+      request_count = _T(" | ");
+      queue_stack_size--;
+    }
     wait_queue += request_count;
   }
+  wait_queue_title.Format(_T("Waiting job request acclerator(%d): %s"), queue_stack_size, wait_queue.GetBuffer());
+
 
   dc.SetTextColor(defaultColor);
-  dc.TextOut(start_position.x, start_position.y, wait_queue);
+  dc.TextOut(start_position.x, start_position.y, wait_queue_title);
   start_position.y += (font_size + margin);
 }
 

@@ -8,7 +8,7 @@ scheduler_mostallocated::~scheduler_mostallocated() {
   //accelerator_count_hash_list.clear();
 }
 
-int scheduler_mostallocated::arrange_server(job_entry& job) {
+int scheduler_mostallocated::arrange_server(job_entry& job, accelator_type coprocessor) {
   const int max_value = 999999;
   int arrange_server = -1, i;
   int min_gap = max_value;

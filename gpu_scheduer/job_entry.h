@@ -33,6 +33,7 @@ public:
   const string get_job_id() { return job_id; };
   bool flush();
   void reset();
+  accelator_type get_flavor() { return accelator_flavor; };
   void ticktok() { 
     if (wall_time_min > minutes(0)) {
       wall_time_min = wall_time_min - minutes(1); 
