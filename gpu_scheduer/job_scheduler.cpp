@@ -34,13 +34,14 @@ void job_scheduler::get_wait_job_request_acclerator(vector<int>& request) {
 
   for (int i = 0; i < wait_queue_group->size(); ++i) {
     queue<job_entry*>* wait_queue = wait_queue_group->at(i);
-    int inquired_count = wait_queue->size();
+    queue<job_entry*> queue_temp = *wait_queue;
+    int inquired_count = queue_temp.size();
 
     inquired_count = inquired_count > 5 ? 5 : inquired_count;
     for (int i = 0; i < inquired_count; ++i) {
-      auto job = wait_queue->front();
+      auto job = queue_temp.front();
       request.push_back(job->get_accelerator_count());
-      wait_queue->pop();
+      queue_temp.pop();
     }
     request.push_back(-1);
   }
