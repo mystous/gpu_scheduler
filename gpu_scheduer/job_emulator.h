@@ -96,11 +96,9 @@ private:
   int emulation_step = -1;
   int last_emulation_step = -1;
   int emulation_play_priod = 1;
-  emulation_status emul_status= emulation_status::stop;
   job_scheduler* scheduler_obj = nullptr;
   atomic<emulation_status> progress_status = emulation_status::stop;
   thread emulation_player;
-  //queue<job_entry*> wait_queue;
   vector<queue<job_entry*>*> wait_queue_group;
   int ticktok_duration = 1;
   const int sleep_for_drawing = 1;

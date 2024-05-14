@@ -86,6 +86,7 @@ void job_emulator::delete_wait_queue() {
       queue = nullptr;
     }
   }
+  wait_queue_group.clear();
 }
 
 void job_emulator::build_server_list(string filename) {
@@ -219,8 +220,6 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
   case scheduler_type::mostallocated: {
     scheduler_obj = new scheduler_mostallocated();
     scheduling_name = mostallocated_scheduler_name;
-    /*scheduler_mostallocated* obj = (scheduler_mostallocated*)scheduler_obj;
-    obj->set_strick_policy(true);*/
   }
     break;
   case scheduler_type::round_robin:
@@ -229,7 +228,6 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
     scheduling_name = round_robin_scheduler_name;
     break;
   }
-  //scheduler_obj->set_wait_queue(&wait_queue);
   scheduler_obj->set_wait_queue(&wait_queue_group);
   scheduler_obj->set_server(&server_list);
   scheduler_obj->set_scheduling_condition(preemtion_enabling, scheduling_with_flavor, perform_until_finish);
@@ -252,7 +250,6 @@ void job_emulator::step_foward() {
 #endif
       computing_forward();
       update_wait_queue();
-      //scheduling_job();
       scheduled_job_count += scheduler_obj->scheduling_job();
       log_rate_info();
       step_forward_callback();
