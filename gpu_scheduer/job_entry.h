@@ -17,7 +17,7 @@ public:
   };
   job_entry(string pod_name_param, string pod_type, string project_param, string namespace_param, 
             string user_team_param, string start_time_string, string finish_time_string, int accelerator_count, 
-            int computing_level, double gpu_utilization, accelator_type accelator);
+            int computing_level, double gpu_utilization, accelator_type accelator, bool preemtion_enable);
 
   string get_pod_name() { return pod_name; };
   string get_user_team() { return user_team; };
@@ -33,6 +33,7 @@ public:
   const string get_job_id() { return job_id; };
   bool flush();
   void reset();
+  bool is_preemtion_possible() { return preemtion_possible; };
   accelator_type get_flavor() { return accelator_flavor; };
   void ticktok() { 
     if (wall_time_min > minutes(0)) {
@@ -60,5 +61,6 @@ private:
   int computaion_load;
   double utilization;
   accelator_type accelator_flavor;
+  bool preemtion_possible;
 };
 

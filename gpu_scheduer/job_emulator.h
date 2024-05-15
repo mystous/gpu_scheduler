@@ -58,7 +58,7 @@ public:
   void stop_progress();
   void start_progress();
   void exit_thread();
-  void set_callback(std::function<void()> callback) { step_forward_callback = callback; };
+  void set_callback(std::function<void(void*)> callback, void *object);
   int get_ticktok_duration() const { return ticktok_duration; };
   void set_ticktok_duration(int duration) { ticktok_duration = duration; };
   int get_emulation_step() { return emulation_step; };
@@ -80,6 +80,7 @@ public:
 
 private:
   string scheduling_name = "round_robin";
+  void* call_back_object = nullptr;
   int finished_job_count = 0;
   int scheduled_job_count = 0;
   vector<job_entry> job_list;
@@ -114,7 +115,7 @@ private:
   bool saving_possiblity = false;
   int memory_alloc_size = 0;
 
-  function<void()> step_forward_callback;
+  function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void scheduling_job();
   void computing_forward();

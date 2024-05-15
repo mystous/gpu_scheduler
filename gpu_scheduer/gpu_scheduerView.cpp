@@ -57,11 +57,11 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
   ON_COMMAND(ID_BUTTON_EMUL_PAUSE, &CgpuscheduerView::OnButtonEmulPause)
   ON_COMMAND(ID_BUTTON_EMUL_STOP, &CgpuscheduerView::OnButtonEmulStop)
 //  ON_COMMAND(ID_FILE_SAVE_AS, &CgpuscheduerView::OnFileSaveAs)
+ON_WM_HSCROLL()
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
 
-CgpuscheduerView *global_view = nullptr;
 
 CgpuscheduerView::CgpuscheduerView() noexcept
 {
@@ -685,18 +685,19 @@ void CgpuscheduerView::OnButtonEmulStart()
 }
 
 
-void global_callback() {
-  global_view->function_call();
+void global_callback(void *object) {
+  if (nullptr == object) { return; }
+  CgpuscheduerView* view = (CgpuscheduerView*)object;
+
+  view->function_call();
 }
 
 void CgpuscheduerView::StartEmul()
 {
   job_emulator &emul = GetDocument()->get_job_element_obj() ;
 
-  global_view = this;
-
-  std::function<void()> callback_func = global_callback;
-  emul.set_callback(callback_func);
+  std::function<void(void*)> callback_func = global_callback;
+  emul.set_callback(callback_func, (void*)this);
   GetDocument()->SetModifiedFlag(TRUE);
   is_buffer_created = false;
   emul.start_progress();
@@ -716,3 +717,11 @@ void CgpuscheduerView::OnButtonEmulStop()
 
 }
 
+
+
+void CgpuscheduerView::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+  // TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+  __super::OnHScroll(nSBCode, nPos, pScrollBar);
+}

@@ -142,6 +142,7 @@ void job_emulator::build_job_list(string filename, scheduler_type scheduler_inde
 
     int computation_level = 1;
     double gpu_utilization = 50.;
+    bool preemption_enable = false;
     accelator_type accelator = accelator_type::cpu;
 
     if (tokens.size() > 9) {
@@ -149,17 +150,29 @@ void job_emulator::build_job_list(string filename, scheduler_type scheduler_inde
       gpu_utilization = stod(tokens[10]);
     }
 
+
     if (tokens.size() > 11) {
       accelator = server_entry::get_accelerator_type(tokens[11]);
     }
 
-    job_entry new_element(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], 
-                          tokens[6], stoi(tokens[7]), computation_level, gpu_utilization, accelator);
+    if (tokens.size() > 12) {
+      preemption_enable = tokens[12] == "y" ? true : false;
+    }
+
+    job_entry new_element(tokens[0], tokens[1], tokens[2], tokens[3], 
+                          tokens[4], tokens[5], tokens[6], stoi(tokens[7]), 
+                          computation_level, gpu_utilization, accelator, preemption_enable);
     job_list.push_back(new_element);
   }
 
   file.close();
 }
+
+void job_emulator::set_callback(std::function<void(void*)> callback, void* object) {
+  step_forward_callback = callback; 
+  call_back_object = object;
+};
+
 
 void job_emulator::build_job_queue() {
   if (job_list.size() < 1) {
@@ -252,7 +265,7 @@ void job_emulator::step_foward() {
       update_wait_queue();
       scheduled_job_count += scheduler_obj->scheduling_job();
       log_rate_info();
-      step_forward_callback();
+      step_forward_callback(call_back_object);
     }
   }
 }

@@ -78,6 +78,7 @@ public:
   afx_msg void OnButtonEmulPause();
   afx_msg void OnButtonEmulStop();
 //  afx_msg void OnFileSaveAs();
+  afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp
