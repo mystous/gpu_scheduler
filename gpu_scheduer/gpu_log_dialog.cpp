@@ -5,6 +5,7 @@
 #include "gpu_scheduer.h"
 #include "afxdialogex.h"
 #include "gpu_log_dialog.h"
+#include "utility_class.h"
 
 #include <atlbase.h>
 
@@ -52,16 +53,7 @@ BOOL gpu_log_dialog::OnInitDialog()
   CDialog::OnInitDialog();
   USES_CONVERSION;
 
-  auto conver_tp_str = [](const system_clock::time_point tp)->string {
-    string time_string = format("{:%Y-%m-%d %H:%M:%S}", tp);
-    return time_string;
-    };
 
-  auto double_to_string = [](double value) -> string {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(0) << value;
-    return oss.str();
-    };
 
 
   job_list_ctrl.InsertColumn(0, _T("pod_name"), LVCFMT_LEFT, 350);
@@ -76,9 +68,9 @@ BOOL gpu_log_dialog::OnInitDialog()
     job_list_ctrl.SetItemText(index, 1, job.get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"));
     job_list_ctrl.SetItemText(index, 2, CA2T(to_string(job.get_accelerator_count()).c_str()));
 
-    job_list_ctrl.SetItemText(index, 3, CA2T(conver_tp_str(job.get_start_tp()).c_str()));
-    job_list_ctrl.SetItemText(index, 4, CA2T(conver_tp_str(job.get_finish_tp()).c_str()));
-    job_list_ctrl.SetItemText(index, 5, CA2T(double_to_string(job.get_wall_time().count()).c_str()));
+    job_list_ctrl.SetItemText(index, 3, CA2T(utility_class::conver_tp_str(job.get_start_tp()).c_str()));
+    job_list_ctrl.SetItemText(index, 4, CA2T(utility_class::conver_tp_str(job.get_finish_tp()).c_str()));
+    job_list_ctrl.SetItemText(index, 5, CA2T(utility_class::double_to_string(job.get_wall_time().count()).c_str()));
   }
 
   return TRUE;  // return TRUE unless you set the focus to a control

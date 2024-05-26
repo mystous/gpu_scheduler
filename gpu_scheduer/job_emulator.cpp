@@ -140,6 +140,8 @@ void job_emulator::build_job_list(string filename, scheduler_type scheduler_inde
       tokens.push_back(token);
     }
 
+    if (tokens[0] == "pod_name" && tokens[1] == "pod_type") { continue; }
+
     int computation_level = 1;
     double gpu_utilization = 50.;
     bool preemption_enable = false;

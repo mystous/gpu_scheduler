@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "job_entry.h"
+#include "utility_class.h"
 
 #include <sstream>
 
@@ -11,8 +12,8 @@ job_entry::job_entry(string pod_name_param, string pod_type, string project_para
   : pod_name(pod_name_param), project_name(project_param), user_team(user_team_param), name_space(namespace_param), accelerator_count(accelerator_count), 
   computaion_load(computing_level), utilization(gpu_utilization), accelator_flavor(accelator), preemtion_possible(preemtion_enable){
 
-  start_tp = parse_time_string(start_time_string);
-  finish_tp = parse_time_string(finish_time_string);
+  start_tp = utility_class::parse_time_string(start_time_string);
+  finish_tp = utility_class::parse_time_string(finish_time_string);
   //wall_time_min = finish_tp - start_tp;
   wall_time_min = duration_cast<std::chrono::minutes>(finish_tp - start_tp);
   wall_time_min_record = wall_time_min;
@@ -60,10 +61,4 @@ void job_entry::assign_accelerator(int position) {
   //accelerator_count++;
 }
 
-system_clock::time_point job_entry::parse_time_string(const string& time_str) {
-  std::tm tm = {};
-  istringstream ss(time_str);
-  ss >> get_time(&tm, "%Y-%m-%d %H:%M:%S");
-  auto tp = system_clock::from_time_t(std::mktime(&tm));
-  return tp;
-}
+

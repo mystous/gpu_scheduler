@@ -41,8 +41,6 @@ public:
     }
   };
 private:
-
-  system_clock::time_point parse_time_string(const string& time_str);
   string get_sequencial_id();
   system_clock::time_point start_tp, finish_tp;
   duration<double, ratio<60>> wall_time_min;
