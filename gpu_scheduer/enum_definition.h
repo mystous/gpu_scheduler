@@ -15,3 +15,7 @@ enum class scheduler_type : int {
 enum class emulation_status : int {
   stop, pause, start
 };
+
+enum class distribution_type : int {
+  norm, expon, lognorm, gamma, beta, weibull_min, uniform, poisson, chi2
+};

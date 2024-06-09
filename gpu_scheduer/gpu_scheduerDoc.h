@@ -18,6 +18,7 @@ protected: // create from serialization only
 private:
   job_emulator job_emulator_obj;
   void save_result();
+  void generation_task();
 
 // Operations
 public:

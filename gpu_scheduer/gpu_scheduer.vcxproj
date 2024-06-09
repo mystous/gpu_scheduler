@@ -200,6 +200,7 @@
     <ClInclude Include="job_entry.h" />
     <ClInclude Include="job_scheduler.h" />
     <ClInclude Include="log_generator.h" />
+    <ClInclude Include="log_gen_dialog.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
@@ -225,6 +226,7 @@
     <ClCompile Include="job_entry.cpp" />
     <ClCompile Include="job_scheduler.cpp" />
     <ClCompile Include="log_generator.cpp" />
+    <ClCompile Include="log_gen_dialog.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

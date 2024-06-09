@@ -14,6 +14,8 @@
 #include "CSchedulerOption.h"
 #include "CGPUStatus.h"
 #include "enum_definition.h"
+#include "log_gen_dialog.h"
+#include "log_generator.h"
 
 #include <propkey.h>
 
@@ -289,3 +291,13 @@ void CgpuscheduerDoc::save_result() {
     AfxMessageBox(L"Result was not saved!", MB_ICONSTOP);
   }
 }
+
+void CgpuscheduerDoc::generation_task() {
+  log_gen_dialog dlg;
+
+  dlg.task_count_string = _T("100");
+  if (IDOK == dlg.DoModal()) {
+    log_generator log_gen(_ttoi(dlg.task_count_string));
+  }
+}
+

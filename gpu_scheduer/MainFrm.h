@@ -16,6 +16,9 @@ public:
 // Operations
 public:
 
+private:
+  void generate_log();
+
 // Overrides
 public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
@@ -44,6 +47,8 @@ public:
 //    afx_msg void OnFileNew();
     afx_msg void OnUpdateFileOpen(CCmdUI* pCmdUI);
     afx_msg void OnClose();
+    afx_msg void OnTaskgenerationGenerationEmpty();
+    afx_msg void OnTaskgenerationGeneration();
 };
 
 

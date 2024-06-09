@@ -725,3 +725,5 @@ void CgpuscheduerView::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 
   __super::OnHScroll(nSBCode, nPos, pScrollBar);
 }
+
+

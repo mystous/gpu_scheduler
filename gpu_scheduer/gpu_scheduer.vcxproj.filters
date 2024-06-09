@@ -84,6 +84,15 @@
     <ClInclude Include="enum_definition.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="log_generator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="utility_class.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="log_gen_dialog.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gpu_scheduer.cpp">
@@ -141,6 +150,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="scheduler_mostallocated.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="log_generator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="utility_class.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="log_gen_dialog.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

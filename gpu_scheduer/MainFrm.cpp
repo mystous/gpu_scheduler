@@ -5,9 +5,11 @@
 #include "pch.h"
 #include "framework.h"
 #include "gpu_scheduer.h"
+#include "log_generator.h"
 
 #include "MainFrm.h"
 #include "CSchedulerOption.h"
+#include "log_gen_dialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -25,6 +27,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 //  ON_COMMAND(ID_FILE_NEW, &CMainFrame::OnFileNew)
   ON_UPDATE_COMMAND_UI(ID_FILE_OPEN, &CMainFrame::OnUpdateFileOpen)
     ON_WM_CLOSE()
+  ON_COMMAND(ID_TASKGENERATION_GENERATION_EMPTY, &CMainFrame::OnTaskgenerationGenerationEmpty)
+  ON_COMMAND(ID_TASKGENERATION_GENERATION, &CMainFrame::OnTaskgenerationGeneration)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -169,4 +173,63 @@ void CMainFrame::OnClose()
   pApp->WriteProfileInt(_T("WindowPlacement"), _T("rcNormalPosition_bottom"), wp.rcNormalPosition.bottom);
 
   CMDIFrameWnd::OnClose();
+}
+
+void CMainFrame::generate_log() {
+  log_gen_dialog dlg;
+
+  dlg.task_count_string = _T("100");
+  if (IDOK == dlg.DoModal()) {
+    int task_count = _ttoi(dlg.task_count_string);
+    log_generator* log_gen = nullptr;
+
+    if (true == dlg.all_random_dist) { log_gen = new log_generator(task_count); }
+    else {
+      log_gen = new log_generator(task_count,
+        dlg.selected_parameter_distribution[0],
+        dlg.selected_parameter_distribution[1],
+        dlg.selected_parameter_distribution[2],
+        dlg.selected_parameter_distribution[3],
+        dlg.selected_parameter_distribution[4]);
+    }
+
+    bool result = false;
+    USES_CONVERSION;
+    CFileDialog dlg(FALSE, _T("csv"), A2CT(log_gen->get_savefile_candidate_name().c_str()),
+      OFN_OVERWRITEPROMPT, _T("Generated task Files (*.csv)|*.csv|All Files (*.*)|*.*||"));
+
+    if (dlg.DoModal() == IDOK)
+    {
+      CString filePath = dlg.GetPathName();
+      string str_file = std::string(CT2CA(filePath));
+      CWaitCursor* wait = new CWaitCursor();
+      result = log_gen->save_log(str_file);
+      delete wait;
+    }
+
+    if (result) {
+      AfxMessageBox(L"Result has been saved!", MB_ICONINFORMATION);
+    }
+    else {
+      AfxMessageBox(L"Result was not saved!", MB_ICONSTOP);
+    }
+
+    if (nullptr != log_gen) {
+      delete log_gen;
+      log_gen = nullptr;
+    }
+  }
+
+  
+}
+
+void CMainFrame::OnTaskgenerationGenerationEmpty()
+{
+  generate_log();
+}
+
+
+void CMainFrame::OnTaskgenerationGeneration()
+{
+  generate_log();
 }
