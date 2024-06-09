@@ -45,9 +45,13 @@ public:
 private:
   static string generate_random_string(int length);
   static string generate_random_timestamp();
+  void generate_seed_tp();
+  void start_generation();
+  void set_whole_walltime(int day_count);
   void generate_random_task(task_entity &task);
   int task_count = 100;
   task_entity* gen_data = nullptr;
+  system_clock::time_point seed_tp;
   void finialize_pointer();
   void generate_random_tasks();
   void generate_tasks();
@@ -58,5 +62,7 @@ private:
   distribution_type computation_distribution; 
   distribution_type flaver_distribution; 
   distribution_type preemetion_diststribution;
+  bool start_from_now = true;
+  int gen_time_duration_tp = 180;
 };
 

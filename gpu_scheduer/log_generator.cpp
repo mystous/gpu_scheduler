@@ -9,8 +9,7 @@ log_generator::log_generator() : log_generator(10000) {
 }
 
 log_generator::log_generator(int task_size) : task_count(task_size), random_generation(true) {
-  initialize_pointer(task_count);
-  generate_random_tasks();
+  start_generation();
 }
 
 
@@ -19,12 +18,31 @@ log_generator::log_generator(int task_size, distribution_type gpu_count_dist, di
   : task_count(task_size), random_generation(false), gpu_count_distribution(gpu_count_dist),
     wall_time_distribution(wall_time_dist), computation_distribution(computation_dist),
     flaver_distribution(flaver_dist), preemetion_diststribution(preemetion_dist){
-  initialize_pointer(task_count);
-  generate_tasks();
+  start_generation();
 }
 
 log_generator::~log_generator() {
   finialize_pointer();
+}
+
+void log_generator::start_generation() {
+  initialize_pointer(task_count);
+  generate_seed_tp();
+  set_whole_walltime(180); // Temporary
+  generate_random_tasks();
+}
+
+void log_generator::generate_seed_tp() {
+  if (start_from_now) {
+    seed_tp = system_clock::now();
+    return;
+  }
+
+  seed_tp = utility_class::parse_time_string("2023-11-08 12:15:00+00:00"); // Temporary setting specific time stamp
+}
+
+void log_generator::set_whole_walltime(int day_count) {
+  gen_time_duration_tp += (day_count * 24 * 60);
 }
 
 void log_generator::finialize_pointer() {
@@ -99,8 +117,8 @@ void log_generator::generate_random_task(task_entity& task) {
   task.project = "PROJECT_" + std::to_string(rand() % 20 + 1);
   task.namespace_ = "ns-" + std::to_string(rand() % 1000000000);
   task.user_team = "TEAM_" + std::to_string(rand() % 5 + 1);
-  task.start = generate_random_timestamp();
-  task.start_tp = utility_class::parse_time_string(task.start);
+  task.start_tp = utility_class::get_time_after(seed_tp, rand() % gen_time_duration_tp);
+  task.start = utility_class::conver_tp_str(task.start_tp);
   task.finish_tp = utility_class::get_time_after(task.start_tp, rand() % 3600);
   task.finish = utility_class::conver_tp_str(task.finish_tp);
   task.count = rand() % 8 + 1;
