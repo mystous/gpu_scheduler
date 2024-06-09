@@ -9,6 +9,31 @@ system_clock::time_point utility_class::parse_time_string(const string& time_str
   return tp;
 }
 
+string utility_class::get_accelerator_name(accelator_type type) {
+  switch (type) {
+  case accelator_type::any:
+    return "any";
+  case accelator_type::cpu:
+    return "CPU";
+  case accelator_type::v100:
+    return "V100";
+  case accelator_type::a100:
+    return "A100";
+  case accelator_type::a30:
+    return "A30";
+  case accelator_type::h100:
+    return "H100";
+  case accelator_type::l4:
+    return "L4";
+  case accelator_type::l40:
+    return "L40";
+  case accelator_type::b200:
+    return "B200";
+  default:
+    return "CPU";
+  }
+}
+
 string utility_class::conver_tp_str(const system_clock::time_point tp){
 
  /* string time_string = format("{:%Y-%m-%d %H:%M:%S}", tp);
