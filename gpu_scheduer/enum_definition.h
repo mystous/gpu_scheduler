@@ -8,6 +8,8 @@ enum class accelator_type : int {
   any = 0, cpu = 1, v100, a100, a30, h100, l4, l40, b200
 };
 
+const int accelerator_counts = 7;
+
 enum class scheduler_type : int {
   mostallocated = 0, compact, round_robin, fare_share
 };

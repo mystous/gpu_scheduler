@@ -2,6 +2,7 @@
 #include "log_generator.h"
 #include "utility_class.h"
 #include <filesystem>
+#include <cmath>
 
 namespace fs = std::filesystem;
 
@@ -29,12 +30,11 @@ bool log_generator::start_generation() {
   if (false == initialize_pointer(task_count)) { return false; }
   generate_seed_tp();
   set_whole_walltime(180); // Temporary
-  if (random_gen_index == random_generation) {
+  if (true == random_generation) {
     return generate_random_tasks();
   }
 
   return generate_distribution_tasks();
-
 }
 
 void log_generator::generate_seed_tp() {
@@ -57,14 +57,12 @@ void log_generator::finialize_pointer() {
   }
 }
 
-
-
 bool log_generator::save_log(string filename) {
   bool dir_exited = true;
   string generated_filename = "";
   const string dir_prefix = "generated_task";
 
-  if (!generation_sucessed) { return false; }
+  if (!get_generation_sucessed_result()) { return false; }
 
   
   generated_filename += filename;
@@ -146,7 +144,7 @@ bool log_generator::generate_task(task_entity& task, distribution_values* data, 
   task.count = data->counts[index];
   task.gpu_utilization = data->utilizations[index];
   task.flavor = utility_class::get_accelerator_name(data->accelerators[index]);
-  task.preemption = data->preemptions[index];
+  task.preemption = data->preemptions[index] ? "y" : "n";
 
   return true;
 }
@@ -202,15 +200,264 @@ bool log_generator::generate_distribution_task(task_entity& task, distribution_v
   return true;
 }
 
-void log_generator::generate_time_point_distribution(system_clock::time_point* tp, distribution_type distribution_method, 
-                                                      system_clock::time_point* start_tp, duration<double, ratio<60>>range) {
+template<typename distribution>
+void log_generator::generate_time_point_distribution_inner(system_clock::time_point* tp, system_clock::time_point* start_tp, distribution& dist, int task_size) {
+  random_device rd;
+  mt19937 gen(rd());
+
+  for (int i = 0; i < task_size; ++i) {
+    auto offset = duration_cast<std::chrono::minutes>(duration<double, ratio<60>>(dist(gen)));
+    tp[i] = start_tp[i] + abs(offset);
+  }
+}
+
+template<typename T, typename distribution_data>
+void log_generator::generate_array_distribution_inner(T* array, T* seed, distribution_data& dist, int task_size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  for (int i = 0; i < task_size; ++i) {
+    array[i] = static_cast<T>(dist(gen));
+  }
+}
+
+template<typename TT, typename distribution_value>
+void log_generator::generate_discrete_distribution_inner(TT* array, TT* seed, distribution_value& dist, int seed_size, int task_size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  for (int i = 0; i < task_size; ++i) {
+    double random_value = dist(gen);
+    int seed_index = static_cast<int>(random_value * seed_size);
+    if (seed_index >= seed_size) {
+      seed_index = seed_size - 1;
+    }
+    array[i] = seed[seed_index];
+  }
+}
+
+template<typename datatype>
+void log_generator::generate_array_distribution(datatype* array, datatype* seed, distribution_type distribution_method, datatype range, int task_size) {
+  random_device rd;
+  mt19937 gen(rd());
+
+  switch (distribution_method) {
+    case distribution_type::norm: {
+      std::normal_distribution<> dist(range / 2.0, pow(range / 2.0, 2.0));
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::expon: {
+      std::exponential_distribution<> dist(1.0 / (range / 2.0));
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::lognorm: {
+      std::lognormal_distribution<> dist(0.0, range / 2.0);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::gamma: {
+      std::gamma_distribution<> dist(2.0, range / 4.0);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::beta: {
+      std::gamma_distribution<> dist_alpha(2.0, 1.0);
+      std::gamma_distribution<> dist_beta(2.0, 1.0);
+      for (int i = 0; i < task_size; ++i) {
+        double alpha_sample = dist_alpha(gen);
+        double beta_sample = dist_beta(gen);
+        double beta_random = alpha_sample / (alpha_sample + beta_sample);
+          array[i] = static_cast<datatype>(beta_random * range);
+      }
+      break;
+    }
+    case distribution_type::weibull_min: {
+      std::weibull_distribution<> dist(2.0, range / 2.0);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::uniform: {
+      std::uniform_real_distribution<> dist(0.0, range);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::poisson: {
+      std::poisson_distribution<> dist(range / 2.0);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+    case distribution_type::chi2: {
+      std::chi_squared_distribution<> dist(2.0);
+      generate_array_distribution_inner(array, seed, dist, task_size);
+      break;
+    }
+  }
+}
+
+template<typename datatype>
+void log_generator::generate_discrete_distribution(datatype* array, datatype* seed, distribution_type distribution_method, int seed_size, int task_size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  switch (distribution_method) {
+    case distribution_type::norm: {
+      std::normal_distribution<> dist(0.0, static_cast<double>(seed_size) / 2.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::expon: {
+      std::exponential_distribution<> dist(1.0 / (static_cast<double>(seed_size) / 2.0));
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::lognorm: {
+      std::lognormal_distribution<> dist(0.0, static_cast<double>(seed_size) / 2.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::gamma: {
+      std::gamma_distribution<> dist(2.0, static_cast<double>(seed_size) / 4.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::beta: {
+      std::gamma_distribution<> dist_alpha(2.0, 1.0);
+      std::gamma_distribution<> dist_beta(2.0, 1.0);
+      for (int i = 0; i < task_size; ++i) {
+        double alpha_sample = dist_alpha(gen);
+        double beta_sample = dist_beta(gen);
+        double beta_random = alpha_sample / (alpha_sample + beta_sample);
+
+        if constexpr (std::is_same_v<datatype, bool>) {
+          int seed_index = static_cast<int>(beta_random * 2);
+          if (seed_index >= 2) {
+            seed_index = 1;  // 최대 인덱스는 1
+          }
+          array[i] = seed[seed_index];
+        }
+        else if constexpr (std::is_same_v<datatype, accelator_type>) {
+          int seed_index = static_cast<int>(beta_random * accelerator_counts);
+          if (seed_index >= accelerator_counts) {
+            seed_index = accelerator_counts - 1;  // 최대 인덱스는 accelerator_counts - 1
+          }
+          array[i] = seed[seed_index];
+        }
+        break;
+      }
+    }
+    case distribution_type::weibull_min: {
+      std::weibull_distribution<> dist(2.0, static_cast<double>(seed_size) / 2.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::uniform: {
+      std::uniform_real_distribution<> dist(0.0, static_cast<double>(seed_size));
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::poisson: {
+      std::poisson_distribution<> dist(static_cast<double>(seed_size) / 2.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+    case distribution_type::chi2: {
+      std::chi_squared_distribution<> dist(2.0);
+      generate_discrete_distribution_inner(array, seed, dist, seed_size, task_size);
+      break;
+    }
+   }
+}
+
+void log_generator::generate_time_point_distribution(system_clock::time_point* tp, distribution_type distribution_method,
+                                                      system_clock::time_point* start_tp, duration<double, ratio<60>>range, int task_size) {
+  random_device rd;
+  mt19937 gen(rd());
+
+  switch (distribution_method) {
+    case distribution_type::norm: {
+      normal_distribution<> dist(range.count() / 2.0, sqrt(range.count() / 2.0));
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::expon: {
+      exponential_distribution<> dist(1.0 / (range.count() / 2.0));
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::lognorm: {
+      lognormal_distribution<> dist(0.0, range.count() / 2.0);
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::gamma: {
+      gamma_distribution<> dist(2.0, range.count() / 4.0);
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::beta: {
+      gamma_distribution<> dist_alpha(2.0, 1.0);
+      gamma_distribution<> dist_beta(2.0, 1.0);
+      for (int i = 0; i < task_size; ++i) {
+        double alpha_sample = dist_alpha(gen);
+        double beta_sample = dist_beta(gen);
+        double beta_random = alpha_sample / (alpha_sample + beta_sample);
+        auto offset = duration_cast<system_clock::duration>(duration<double>(beta_random * range.count()));
+        tp[i] = start_tp[i] + offset;
+      }
+      break;
+    }
+    case distribution_type::weibull_min: {
+      weibull_distribution<> dist(2.0, range.count() / 2.0);
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::uniform: {
+      uniform_real_distribution<> dist(0.0, range.count());
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::poisson: {
+      poisson_distribution<> dist(range.count() / 2.0);
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+    case distribution_type::chi2: {
+      chi_squared_distribution<> dist(2.0);
+      generate_time_point_distribution_inner(tp, start_tp, dist, task_size);
+      break;
+    }
+  }
+
 }
 
 void log_generator::generate_distribution(distribution_values& dist, int task_size) {
   for (int i = 0; i < task_size; ++i) {
     dist.start_tp[i] = utility_class::get_time_after(seed_tp, rand() % gen_time_duration_tp);
+    dist.accelerators[i] = (rand() % 2 == 0) ? accelator_type::a100 : accelator_type::a30;
+    dist.preemptions[i] = (rand() % 2 == 0) ? true : false;
+
   }
-  generate_time_point_distribution(dist.finish_tp, wall_time_distribution, dist.start_tp, duration<double, ratio<60>>(max_task_running));
+  generate_time_point_distribution(dist.finish_tp, wall_time_distribution, dist.start_tp, duration<double, ratio<60>>(max_task_running), task_size);
+  generate_array_distribution(dist.counts, (int*)nullptr, gpu_count_distribution, 8, task_size);
+  for (int i = 0; i < task_size; ++i) {
+    if (dist.counts[i] >= 8 ) {
+      dist.counts[i] = 8;
+      continue; 
+    }
+    dist.counts[i] += 1;
+    if (dist.counts[i] <= 0) { 
+      dist.counts[i] = 0; 
+    }
+  }
+  generate_array_distribution(dist.utilizations, (float*)nullptr, computation_distribution, 100.0f, task_size);
+  dist.array_size = task_size;
+  /*bool preemptions_seed[] = {true, false};
+  generate_discrete_distribution_inner(dist.preemptions, preemptions_seed, preemetion_diststribution, 2, task_size);
+  accelator_type accelator_type_seed[accelerator_counts] = { accelator_type::v100, accelator_type::a100, accelator_type::a30, 
+                                                              accelator_type::h100, accelator_type::l4, accelator_type::l40, accelator_type::b200 };
+  generate_discrete_distribution_inner(dist.accelerators, accelator_type_seed, flaver_distribution, accelerator_counts, task_size);*/
 }
 
 bool log_generator::generate_distribution_tasks() {
@@ -219,6 +466,7 @@ bool log_generator::generate_distribution_tasks() {
   generate_distribution(dist, task_count);
   for (int i = 0; i < task_count; ++i) {
     if (false == generate_distribution_task(gen_data[i], dist, i)) {
+      finialize_distribution(dist);
       return false;
     }
   }
@@ -243,10 +491,10 @@ bool log_generator::generate_random_task(task_entity& task) {
 }
 
 bool log_generator::initialize_pointer(int task_size) {
-  if (nullptr == gen_data) { finialize_pointer(); }
+  if (nullptr != gen_data) { finialize_pointer(); }
 
   gen_data = new task_entity[task_size];
-  if (nullptr != gen_data) { return false; }
+  if (nullptr == gen_data) { return false; }
 
   return true;
 }

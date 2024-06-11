@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <random>
 #include "enum_definition.h"
 
 using namespace std;
@@ -52,6 +53,7 @@ public:
   virtual ~log_generator();
   string get_savefile_candidate_name();
   bool save_log(string filename);
+  bool get_generation_sucessed_result() { return generation_sucessed; };
 
 private:
   static string generate_random_string(int length);
@@ -68,8 +70,34 @@ private:
   task_entity* gen_data = nullptr;
   system_clock::time_point seed_tp;
   void finialize_pointer();
-  void generate_time_point_distribution(system_clock::time_point* tp, distribution_type distribution_method,
-                                        system_clock::time_point* start_tp, duration<double, ratio<60>>range);
+  void generate_time_point_distribution(system_clock::time_point* tp, 
+                                        distribution_type distribution_method,
+                                        system_clock::time_point* start_tp, 
+                                        duration<double, ratio<60>>range, 
+                                        int task_size);
+  template<typename distribution>
+  void generate_time_point_distribution_inner(system_clock::time_point* tp,
+                                              system_clock::time_point* start_tp,
+                                              distribution& dist,
+                                              int task_size);
+  template<typename datatype>
+  void generate_array_distribution(datatype* array, 
+                                  datatype* seed,
+                                  distribution_type distribution_method,
+                                  datatype range,
+                                  int task_size);
+  template<typename T, typename distribution_data>
+  void generate_array_distribution_inner(T* array,
+                                        T* seed,
+                                        distribution_data& dist,
+                                        int task_size);
+
+  template<typename TT, typename distribution_value>
+  void generate_discrete_distribution_inner(TT* array, TT* seed, distribution_value& dist, int seed_size, int task_size);
+
+  template<typename datatype>
+  void generate_discrete_distribution(datatype* array, datatype* seed, distribution_type distribution_method, int seed_size, int task_size);
+
   void generate_distribution(distribution_values& dist, int task_size);
   void finialize_distribution(distribution_values& dist);
   bool generate_random_tasks();
@@ -86,5 +114,6 @@ private:
   const static int random_gen_index = -1;
   bool generation_sucessed = false;
   int max_task_running = 3600;
+  random_device rd;
 };
 
