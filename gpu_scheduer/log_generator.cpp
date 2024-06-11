@@ -243,7 +243,7 @@ void log_generator::generate_array_distribution(datatype* array, datatype* seed,
 
   switch (distribution_method) {
     case distribution_type::norm: {
-      std::normal_distribution<> dist(range / 2.0, pow(range / 2.0, 2.0));
+      std::normal_distribution<> dist(range / 2.0, sqrt(range / 2.0));
       generate_array_distribution_inner(array, seed, dist, task_size);
       break;
     }
