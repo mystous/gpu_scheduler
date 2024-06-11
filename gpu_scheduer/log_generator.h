@@ -77,20 +77,26 @@ private:
                                         int task_size);
   template<typename distribution>
   void generate_time_point_distribution_inner(system_clock::time_point* tp,
-                                              system_clock::time_point* start_tp,
+                                              system_clock::time_point* start_tp, 
+                                              distribution_type distribution_method,
                                               distribution& dist,
                                               int task_size);
   template<typename datatype>
   void generate_array_distribution(datatype* array, 
-                                  datatype* seed,
+                                  datatype* seed, 
                                   distribution_type distribution_method,
                                   datatype range,
-                                  int task_size);
+                                  int task_size, 
+                                  datatype min_value, 
+                                  datatype max_value);
+
   template<typename T, typename distribution_data>
   void generate_array_distribution_inner(T* array,
                                         T* seed,
                                         distribution_data& dist,
-                                        int task_size);
+                                        int task_size,
+                                        T min_value,
+                                        T max_value);
 
   template<typename TT, typename distribution_value>
   void generate_discrete_distribution_inner(TT* array, TT* seed, distribution_value& dist, int seed_size, int task_size);
@@ -102,6 +108,7 @@ private:
   void finialize_distribution(distribution_values& dist);
   bool generate_random_tasks();
   bool initialize_distribution(distribution_values& dist, int task_size);
+
   bool initialize_pointer(int task_size);
   bool random_generation = true;
   distribution_type gpu_count_distribution;
@@ -112,6 +119,7 @@ private:
   bool start_from_now = true;
   int gen_time_duration_tp = 180;
   const static int random_gen_index = -1;
+  double chi_dof = 10.0;
   bool generation_sucessed = false;
   int max_task_running = 3600;
   random_device rd;
