@@ -277,7 +277,7 @@ void log_generator::generate_array_distribution(datatype* array, datatype* seed,
           double alpha_sample = dist_alpha(gen);
           double beta_sample = dist_beta(gen);
           double beta_random = alpha_sample / (alpha_sample + beta_sample);
-          array[i] = static_cast<datatype>(beta_random * range);
+          array[i] = static_cast<datatype>(beta_random * (range+1));
           if (array[i] >= min_value && array[i] <= max_value) { break; }
         }
 
@@ -290,7 +290,7 @@ void log_generator::generate_array_distribution(datatype* array, datatype* seed,
       break;
     }
     case distribution_type::uniform: {
-      std::uniform_real_distribution<> dist(0.0, range);
+      std::uniform_real_distribution<> dist(0.0, range + 1);
       generate_array_distribution_inner(array, seed, dist, task_size, min_value, max_value);
       break;
     }
