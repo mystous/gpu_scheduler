@@ -542,8 +542,9 @@ string job_emulator::get_savefile_candidate_name() {
   ss << std::put_time(&localTime, "%Y%m%d_%H%M%S");
   string formattedTime = ss.str();
 
-  filename = std::format("{}_{}_server({})_accelerator({})_elapsed({}).result", 
-    get_setting_scheduling_name(), formattedTime, server_number, accelerator_number, get_done_emulation_step());
+  filename = std::format("{}_{}_server({})_accelerator({})_elapsed({})_flavor({}).result", 
+    get_setting_scheduling_name(), formattedTime, server_number, accelerator_number, 
+    get_done_emulation_step(), scheduling_with_flavor ? "true" : "false");
   return filename;
 }
 

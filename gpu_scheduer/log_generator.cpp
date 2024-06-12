@@ -273,10 +273,14 @@ void log_generator::generate_array_distribution(datatype* array, datatype* seed,
       std::gamma_distribution<> dist_alpha(2.0, 1.0);
       std::gamma_distribution<> dist_beta(2.0, 1.0);
       for (int i = 0; i < task_size; ++i) {
-        double alpha_sample = dist_alpha(gen);
-        double beta_sample = dist_beta(gen);
-        double beta_random = alpha_sample / (alpha_sample + beta_sample);
+        while (1) {
+          double alpha_sample = dist_alpha(gen);
+          double beta_sample = dist_beta(gen);
+          double beta_random = alpha_sample / (alpha_sample + beta_sample);
           array[i] = static_cast<datatype>(beta_random * range);
+          if (array[i] >= min_value && array[i] <= max_value) { break; }
+        }
+
       }
       break;
     }
@@ -440,27 +444,48 @@ void log_generator::generate_time_point_distribution(system_clock::time_point* t
 }
 
 void log_generator::generate_distribution(distribution_values& dist, int task_size) {
-  int i = 0;
+  int i = 0, a30_count = 0, a100_count = 0;
+  int* a30_index = new int[task_size];
+  int* a100_index = new int[task_size];
+
   for (i = 0; i < task_size; ++i) {
     dist.start_tp[i] = utility_class::get_time_after(seed_tp, rand() % gen_time_duration_tp);
-    dist.accelerators[i] = (rand() % 4 == 0) ? accelator_type::a30 : accelator_type::a100;
     dist.preemptions[i] = (rand() % 4 == 0) ? true : false;
 
-  }
-  chi_dof = 10.0;
-  generate_time_point_distribution(dist.finish_tp, wall_time_distribution, dist.start_tp, duration<double, ratio<60>>(max_task_running), task_size);
-  chi_dof = 8.0;
-  generate_array_distribution(dist.counts, (int*)nullptr, gpu_count_distribution, 8, task_size, 0, 8);
-  for (int i = 0; i < task_size; ++i) {
-    if (dist.counts[i] >= 8) {
-      dist.counts[i] = 8;
+    dist.accelerators[i] = (rand() % 4 == 0) ? accelator_type::a30 : accelator_type::a100;
+
+    if (accelator_type::a30 == dist.accelerators[i]) {
+      a30_index[a30_count++] = i;
       continue;
     }
-    dist.counts[i] += 1;
-    if (dist.counts[i] <= 0) {
-      dist.counts[i] = 0;
-    }
+
+    a100_index[a100_count++] = i;
   }
+
+  int* a30_accelerator_counts = new int[a30_count];
+  int* a100_accelerator_counts = new int[a100_count];
+
+
+  chi_dof = 10.0;
+  generate_time_point_distribution(dist.finish_tp, wall_time_distribution, dist.start_tp, duration<double, ratio<60>>(max_task_running), task_size);
+ 
+  chi_dof = 8.0;
+  generate_array_distribution(a30_accelerator_counts, (int*)nullptr, gpu_count_distribution, 4, a30_count, 1, 4);
+  generate_array_distribution(a100_accelerator_counts, (int*)nullptr, gpu_count_distribution, 8, a100_count, 1, 8);
+  for (i = 0; i < a30_count; ++i) {
+    dist.counts[a30_index[i]] = a30_accelerator_counts[i];
+  }
+  for (i = 0; i < a100_count; ++i) {
+    dist.counts[a100_index[i]] = a100_accelerator_counts[i];
+  }
+  
+  //generate_array_distribution(dist.counts, (int*)nullptr, gpu_count_distribution, 8, task_size, 0, 8);
+
+  delete[] a30_index;
+  delete[] a100_index;
+  delete[] a30_accelerator_counts;
+  delete[] a100_accelerator_counts;
+
   chi_dof = 10.0;
   generate_array_distribution(dist.utilizations, (float*)nullptr, computation_distribution, 100.0f, task_size, 20.0f, 100.0f);
   if (distribution_type::chi2 == computation_distribution) {
