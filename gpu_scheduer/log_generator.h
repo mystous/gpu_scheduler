@@ -66,7 +66,7 @@ private:
   bool generate_distribution_tasks();
   bool generate_task(task_entity& task, distribution_values* data, int index = random_gen_index);
   void generate_task_postproecess(task_entity& task);
-  int task_count = 100;
+  int task_count = 1000;
   task_entity* gen_data = nullptr;
   system_clock::time_point seed_tp;
   void finialize_pointer();
@@ -119,6 +119,7 @@ private:
   bool start_from_now = true;
   int gen_time_duration_tp = 180;
   const static int random_gen_index = -1;
+  const static int multi_const = 200;
   double chi_dof = 10.0;
   bool generation_sucessed = false;
   int max_task_running = 3600;

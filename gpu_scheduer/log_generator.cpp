@@ -208,7 +208,7 @@ void log_generator::generate_time_point_distribution_inner(system_clock::time_po
   for (int i = 0; i < task_size; ++i) {
     auto offset = duration_cast<std::chrono::minutes>(duration<double, ratio<60>>(dist(gen)));
     if (distribution_type::chi2 == distribution_method) {
-      offset *= 200;
+      offset *= multi_const;
     }
     tp[i] = start_tp[i] + abs(offset);
   }
@@ -394,7 +394,7 @@ void log_generator::generate_time_point_distribution(system_clock::time_point* t
       break;
     }
     case distribution_type::lognorm: {
-      lognormal_distribution<> dist(0.0, range.count() / 2.0);
+      lognormal_distribution<> dist(0.0, range.count() / 3.0);
       generate_time_point_distribution_inner(tp, start_tp, distribution_method, dist, task_size);
       break;
     }
@@ -411,7 +411,7 @@ void log_generator::generate_time_point_distribution(system_clock::time_point* t
         double beta_sample = dist_beta(gen);
         double beta_random = alpha_sample / (alpha_sample + beta_sample);
         auto offset = duration_cast<system_clock::duration>(duration<double>(beta_random * range.count()));
-        tp[i] = start_tp[i] + offset;
+        tp[i] = start_tp[i] + offset * multi_const / 2;
       }
       break;
     }
@@ -447,7 +447,9 @@ void log_generator::generate_distribution(distribution_values& dist, int task_si
     dist.preemptions[i] = (rand() % 4 == 0) ? true : false;
 
   }
+  chi_dof = 10.0;
   generate_time_point_distribution(dist.finish_tp, wall_time_distribution, dist.start_tp, duration<double, ratio<60>>(max_task_running), task_size);
+  chi_dof = 8.0;
   generate_array_distribution(dist.counts, (int*)nullptr, gpu_count_distribution, 8, task_size, 0, 8);
   for (int i = 0; i < task_size; ++i) {
     if (dist.counts[i] >= 8) {
@@ -459,6 +461,7 @@ void log_generator::generate_distribution(distribution_values& dist, int task_si
       dist.counts[i] = 0;
     }
   }
+  chi_dof = 10.0;
   generate_array_distribution(dist.utilizations, (float*)nullptr, computation_distribution, 100.0f, task_size, 20.0f, 100.0f);
   if (distribution_type::chi2 == computation_distribution) {
     float min_value = 1000000.0f, max_value = 0.0f;

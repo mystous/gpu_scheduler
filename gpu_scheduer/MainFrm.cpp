@@ -178,10 +178,12 @@ void CMainFrame::OnClose()
 void CMainFrame::generate_log() {
   log_gen_dialog dlg;
 
-  dlg.task_count_string = _T("100");
+  dlg.task_count_string = _T("1000");
   if (IDOK == dlg.DoModal()) {
     int task_count = _ttoi(dlg.task_count_string);
     log_generator* log_gen = nullptr;
+
+    CWaitCursor* wait = new CWaitCursor();
 
     if (true == dlg.all_random_dist) { log_gen = new log_generator(task_count); }
     else {
@@ -192,6 +194,7 @@ void CMainFrame::generate_log() {
         dlg.selected_parameter_distribution[3],
         dlg.selected_parameter_distribution[4]);
     }
+    delete wait;
 
     bool result = false;
     USES_CONVERSION;
@@ -202,9 +205,9 @@ void CMainFrame::generate_log() {
     {
       CString filePath = dlg.GetPathName();
       string str_file = std::string(CT2CA(filePath));
-      CWaitCursor* wait = new CWaitCursor();
+      CWaitCursor* wait2 = new CWaitCursor();
       result = log_gen->save_log(str_file);
-      delete wait;
+      delete wait2;
     }
 
     if (result) {
