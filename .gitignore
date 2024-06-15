@@ -5,6 +5,7 @@
 
 *.o
 *.swp
+.ipynb_checkpoints/
 
 # User-specific files
 *.rsuser

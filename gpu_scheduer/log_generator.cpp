@@ -129,9 +129,14 @@ bool log_generator::generate_task(task_entity& task, distribution_values* data, 
   if (random_gen_index == index) {
     task.start_tp = utility_class::get_time_after(seed_tp, rand() % gen_time_duration_tp);
     task.finish_tp = utility_class::get_time_after(task.start_tp, rand() % max_task_running);
-    task.count = rand() % 8 + 1;
     task.gpu_utilization = (rand() % 10000) / 100.0;
     task.flavor = (rand() % 2 == 0) ? "A100" : "A30";
+    task.count = rand() % 4 + 1;
+
+    if ("A100" == task.flavor) {
+      task.count += rand() % 5;
+    }
+
     task.preemption = (rand() % 2 == 0) ? "y" : "n";
 
     return true;
