@@ -20,6 +20,7 @@
 #include "scheduler_fare_share.h"
 #include "scheduler_mostallocated.h"
 #include "scheduler_round_robin.h"
+#include "scheduler_mcts.h"
 #include "enum_definition.h"
 
 using namespace std;
@@ -111,6 +112,7 @@ private:
   const string compact_scheduler_name = "compact";
   const string fare_share_scheduler_name = "fare_share";
   const string mostallocated_scheduler_name = "mostallocated";
+  const string mcts_scheduler_name = "mcts";
   const string round_robin_scheduler_name = "round_robin";
   bool saving_possiblity = false;
   int memory_alloc_size = 0;

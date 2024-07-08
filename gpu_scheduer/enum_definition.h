@@ -11,7 +11,7 @@ enum class accelator_type : int {
 const int accelerator_counts = 7;
 
 enum class scheduler_type : int {
-  mostallocated = 0, compact, round_robin, fare_share
+  mostallocated = 0, compact, round_robin, mcts, fare_share
 };
 
 enum class emulation_status : int {

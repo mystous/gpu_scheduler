@@ -232,10 +232,13 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
     scheduler_obj = new scheduler_fare_share();
     scheduling_name = fare_share_scheduler_name;
     break;
-  case scheduler_type::mostallocated: {
+  case scheduler_type::mostallocated: 
     scheduler_obj = new scheduler_mostallocated();
     scheduling_name = mostallocated_scheduler_name;
-  }
+    break;
+  case scheduler_type::mcts:
+    scheduler_obj = new scheduler_mcts();
+    scheduling_name = mcts_scheduler_name;
     break;
   case scheduler_type::round_robin:
   default:

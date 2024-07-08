@@ -52,6 +52,7 @@ BOOL CSchedulerOption::OnInitDialog()
   scheduler_combo.AddString(_T("Mostallocated"));
   scheduler_combo.AddString(_T("Compact"));
   scheduler_combo.AddString(_T("Round Robin"));
+  scheduler_combo.AddString(_T("MCTS"));
   scheduler_combo.AddString(_T("Fare Share"));
 
   //select_scheduler = 0;
