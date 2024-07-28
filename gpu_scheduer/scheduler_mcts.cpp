@@ -13,6 +13,7 @@ scheduler_mcts::~scheduler_mcts() {
 }
 
 int scheduler_mcts::arrange_server(job_entry& job, int queue_index, accelator_type coprocessor) {
+  if (!can_be_scheduled(job.get_accelerator_count(), *target_server, coprocessor)) { return -1; }
   clear_tree();
   root = make_unique<MCTSNode>(nullptr, -1, &job, -1);
   queue_number = queue_index;
@@ -22,7 +23,7 @@ int scheduler_mcts::arrange_server(job_entry& job, int queue_index, accelator_ty
   for (int i = 0; i < job_list.size(); i++) {
     MCTSNode* node = select_node(root.get());
     expand_node(node, coprocessor);
-    double value = simulate(node, job_list);
+    double value = simulate(node, job_list, coprocessor);
     backpropagate(node, value);
   }
 
@@ -66,7 +67,7 @@ void scheduler_mcts::expand_node(MCTSNode* node, accelator_type coprocessor) {
   }
 }
 
-double scheduler_mcts::simulate(MCTSNode* node, vector<job_entry*>& job_list) {
+double scheduler_mcts::simulate(MCTSNode* node, vector<job_entry*>& job_list, accelator_type coprocessor) {
   vector<server_entry> simulated_servers = *target_server;
   double total_utilization = 0;
   int allocated_jobs = 0;
@@ -99,7 +100,7 @@ double scheduler_mcts::simulate(MCTSNode* node, vector<job_entry*>& job_list) {
     int job_list_count = job_list.size();
     vector<server_entry> servers_copy = simulated_servers;
     for (int j = node->depth + 1; j < job_list_count; ++j) {
-      if (!can_be_scheduled(job_list[j]->get_accelerator_count(), servers_copy)) { break; }
+      if (!can_be_scheduled(job_list[j]->get_accelerator_count(), servers_copy, coprocessor)) { break; }
       int repeat_count = 0;
       do {
         int random_server = dist(rng);
@@ -118,16 +119,17 @@ double scheduler_mcts::simulate(MCTSNode* node, vector<job_entry*>& job_list) {
 
     double allocation = (double)allocated_accelrator_count / (double)total_accelerator_count;
     if (max_allocation < allocation) { max_allocation = allocation; }
-    if (1.0 == max_allocation) { 
-      break; 
-    }
   }
 
   return max_allocation;
 }
 
-bool scheduler_mcts::can_be_scheduled(int accelerator_request, vector<server_entry>& servers_copy) {
+bool scheduler_mcts::can_be_scheduled(int accelerator_request, vector<server_entry>& servers_copy, accelator_type coprocessor) {
   for (auto&& server : servers_copy) {
+    if (scheduling_with_flavor) {
+      accelator_type typet = server.get_accelator_type();
+      if (coprocessor != typet) { continue; }
+    }
     if (server.get_avaliable_accelator_count() >= accelerator_request) { return true; }
   }
   return false;

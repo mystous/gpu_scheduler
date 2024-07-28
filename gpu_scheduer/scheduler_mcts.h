@@ -34,11 +34,11 @@ private:
 
   MCTSNode* select_node(MCTSNode* node);
   void expand_node(MCTSNode* node, accelator_type coprocessor);
-  double simulate(MCTSNode* node, vector<job_entry*>& job_list);
+  double simulate(MCTSNode* node, vector<job_entry*>& job_list, accelator_type coprocessor);
   void backpropagate(MCTSNode* node, double value);
   int best_child(MCTSNode* node);
   double calculate_ucb(MCTSNode* node, MCTSNode* child);
   void create_job_vector(vector<job_entry*> &job_list);
   void clear_tree();
-  bool can_be_scheduled(int accelerator_request, vector<server_entry>& servers_copy);
+  bool can_be_scheduled(int accelerator_request, vector<server_entry>& servers_copy, accelator_type coprocessor);
 };
