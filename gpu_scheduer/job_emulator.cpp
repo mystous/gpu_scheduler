@@ -175,6 +175,25 @@ void job_emulator::set_callback(std::function<void(void*)> callback, void* objec
   call_back_object = object;
 };
 
+string job_emulator::get_job_elapsed_time_string() {
+  auto elapsed = get_job_elapsed_time();
+
+  auto hours = chrono::duration_cast<chrono::hours>(elapsed);
+  elapsed -= hours;
+  auto minutes = chrono::duration_cast<chrono::minutes>(elapsed);
+  elapsed -= minutes;
+  auto seconds = chrono::duration_cast<chrono::seconds>(elapsed);
+  elapsed -= seconds;
+  auto milliseconds = chrono::duration_cast<chrono::milliseconds>(elapsed);
+
+  ostringstream oss;
+  oss << setw(2) << setfill('0') << hours.count() << ":"
+    << setw(2) << setfill('0') << minutes.count() << ":"
+    << setw(2) << setfill('0') << seconds.count() << ":"
+    << std::setw(3) << std::setfill('0') << milliseconds.count();
+
+  return oss.str();
+}
 
 void job_emulator::build_job_queue() {
   if (job_list.size() < 1) {
@@ -273,6 +292,8 @@ void job_emulator::step_foward() {
       step_forward_callback(call_back_object);
     }
   }
+
+  progress_tp = system_clock::now();
 }
 
 bool job_emulator::check_finishing() {
@@ -463,6 +484,10 @@ void job_emulator::start_progress() {
   delete_wait_queue();
   initialize_progress_variables();
   initialize_wait_queue();
+
+  if (emulation_status::pause != this->progress_status) {
+    job_start_tp = system_clock::now();
+  }
   
   emulation_player = thread([this]() {
     this->progress_status = emulation_status::start;
@@ -475,9 +500,9 @@ void job_emulator::start_progress() {
       Sleep(sleep_period);
       timeEndPeriod(sleep_period);
 #else // USE_TIME_BEGIN
-      auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
       saving_possiblity = true;
       this->step_foward();
+      auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
       std::this_thread::sleep_until(next_call);
 #endif //USE_TIME_BEGIN
 

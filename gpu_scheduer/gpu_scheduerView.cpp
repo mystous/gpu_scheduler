@@ -242,20 +242,24 @@ void CgpuscheduerView::OnEmulationShowjoblist()
 }
 
 void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count) {
-  CString message, total_job, total_time_slot, temp, progress;
+  CString message, total_job, total_time_slot, temp, progress, walltime;
 
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
   total_job = FormatWithCommas(job_emul.get_emulation_step() + 1);
   progress.Format(_T("%-2.2f %%"), (double)(job_emul.get_emulation_step() + 1) / (double)job_emul.get_total_time_slot() * 100);
-  
-  message.Format(_T("Progress : %s / %s (%s) ,Elapsed time - %s"), total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer(),
+  USES_CONVERSION;
+  walltime = CA2T(job_emul.get_job_elapsed_time_string().c_str());
+
+  message.Format(_T("Progress : %s / %s (%s), Elapsed time - %s, Emulation walltime - %s"), 
+    total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer(),
     [](int minutes) {
       std::wstringstream ss;
       ss << std::setw(2) << std::setfill(L'0') << minutes / 1440 << L" Day(s) "
         << std::setw(2) << std::setfill(L'0') << (minutes % 1440) / 60 << L":"
         << std::setw(2) << std::setfill(L'0') << minutes % 60;
       return CString(ss.str().c_str());
-    }(job_emul.get_emulation_step() + 1).GetBuffer());
+    }(job_emul.get_emulation_step() + 1).GetBuffer(), 
+    walltime.GetBuffer());
 
   start_position.y -= 60;
   dc.SetTextColor(defaultColor);

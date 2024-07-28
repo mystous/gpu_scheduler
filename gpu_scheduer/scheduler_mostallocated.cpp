@@ -8,7 +8,7 @@ scheduler_mostallocated::~scheduler_mostallocated() {
   //accelerator_count_hash_list.clear();
 }
 
-int scheduler_mostallocated::arrange_server(job_entry& job, accelator_type coprocessor) {
+int scheduler_mostallocated::arrange_server(job_entry& job, int queue_index, accelator_type coprocessor) {
   const int max_value = 999999;
   int arrange_server = -1, i;
   int min_gap = max_value;
@@ -17,6 +17,11 @@ int scheduler_mostallocated::arrange_server(job_entry& job, accelator_type copro
 
   get_suitable_server(suitable_server_list, job.get_accelerator_count());
   for (auto& [index, server] : suitable_server_list) {
+
+    if (scheduling_with_flavor) {
+      if (coprocessor != server->get_accelator_type()) { continue; }
+    }
+
     if (server->get_avaliable_accelator_count() < job.get_accelerator_count()) { continue; }
 
     int gap = server->get_avaliable_accelator_count() - job.get_accelerator_count();

@@ -101,23 +101,6 @@ BOOL CgpuscheduerDoc::OnNewDocument()
 	return TRUE;
 }
 
-
-
-
-// CgpuscheduerDoc serialization
-
-//void CgpuscheduerDoc::Serialize(CArchive& ar)
-//{
-//	if (ar.IsStoring())
-//	{
-		// TODO: add storing code here
-//	}
-//	else
-//	{
-//
-//	}
-//}
-
 #ifdef SHARED_HANDLERS
 
 // Support for thumbnails
@@ -203,7 +186,7 @@ BOOL CgpuscheduerDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 BOOL CgpuscheduerDoc::OnSaveDocument(LPCTSTR lpszPathName)
 {
-  AfxMessageBox(L"This application doesn't support save document", MB_ICONSTOP);
+  //AfxMessageBox(L"This application doesn't support save document", MB_ICONSTOP);
 
   return FALSE;
 
@@ -217,12 +200,6 @@ void CgpuscheduerDoc::OnGpuserversettingShowgpulist()
   dlg.set_server_list(job_emulator_obj.get_server_list());
   dlg.DoModal();
 }
-
-
-//void CgpuscheduerDoc::OnGpuserversettingAddgpu()
-//{
-  // TODO: 여기에 명령 처리기 코드를 추가합니다.
-//}
 
 
 void CgpuscheduerDoc::OnBnClickedButtonAdd()

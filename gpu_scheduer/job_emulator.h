@@ -78,6 +78,8 @@ public:
   int get_finished_job_count(){ return finished_job_count; };
   int get_scheduled_job_count() { return scheduled_job_count; };
   int get_done_emulation_step() { return last_emulation_step; };
+  chrono::duration<double> get_job_elapsed_time() { return progress_tp - job_start_tp; };
+  string get_job_elapsed_time_string();
 
 private:
   string scheduling_name = "round_robin";
@@ -116,6 +118,8 @@ private:
   const string round_robin_scheduler_name = "round_robin";
   bool saving_possiblity = false;
   int memory_alloc_size = 0;
+  system_clock::time_point job_start_tp;
+  system_clock::time_point progress_tp;
 
   function<void(void*)> step_forward_callback;
   void update_wait_queue();

@@ -9,7 +9,7 @@ using namespace std;
 class job_scheduler{
 public:
   virtual ~job_scheduler() {};
-  virtual int arrange_server(job_entry& job, accelator_type coprocessor = accelator_type::any) = 0;
+  virtual int arrange_server(job_entry& job, int queue_index = 0, accelator_type coprocessor = accelator_type::any) = 0;
   void set_server(vector<server_entry>* server_list) { 
     target_server = server_list; 
     postproessing_set_server();
