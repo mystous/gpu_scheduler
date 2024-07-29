@@ -31,7 +31,9 @@ private:
   double exploration_parameter;
   std::mt19937 rng;
   int queue_number;
+  int max_assignable_accelerator;
 
+  int get_max_schedulable_job(vector<job_entry*>& job_list);
   MCTSNode* select_node(MCTSNode* node);
   void expand_node(MCTSNode* node, accelator_type coprocessor);
   double simulate(MCTSNode* node, vector<job_entry*>& job_list, accelator_type coprocessor);

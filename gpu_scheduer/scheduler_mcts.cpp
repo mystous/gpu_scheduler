@@ -12,6 +12,21 @@ scheduler_mcts::~scheduler_mcts() {
   clear_tree();
 }
 
+int scheduler_mcts::get_max_schedulable_job(vector<job_entry*>& job_list) {
+  int accumulate_request = 0;
+  int schedulable_job_count = 0;
+
+  for (auto&& job : job_list) {
+    if (accumulate_request + job->get_accelerator_count() > max_assignable_accelerator) {
+      break;
+    }
+    schedulable_job_count++;
+    accumulate_request += job->get_accelerator_count();
+  }
+
+  return schedulable_job_count;
+}
+
 int scheduler_mcts::arrange_server(job_entry& job, int queue_index, accelator_type coprocessor) {
   if (!can_be_scheduled(job.get_accelerator_count(), *target_server, coprocessor)) { return -1; }
   clear_tree();
@@ -19,8 +34,11 @@ int scheduler_mcts::arrange_server(job_entry& job, int queue_index, accelator_ty
   queue_number = queue_index;
   vector<job_entry*> job_list;
   create_job_vector(job_list);
+  int max_job_count = get_max_schedulable_job(job_list);
 
-  for (int i = 0; i < job_list.size(); i++) {
+  // TODO : 15 is a magic numbe. It has to be changed into reasonable number or finding exit condition this loop
+  for (int i = 0; i < min(15*( max_job_count + 1), job_list.size()); i++) {
+  //for (int i = 0; i < job_list.size(); i++) {
     MCTSNode* node = select_node(root.get());
     expand_node(node, coprocessor);
     double value = simulate(node, job_list, coprocessor);
@@ -125,11 +143,13 @@ double scheduler_mcts::simulate(MCTSNode* node, vector<job_entry*>& job_list, ac
 }
 
 bool scheduler_mcts::can_be_scheduled(int accelerator_request, vector<server_entry>& servers_copy, accelator_type coprocessor) {
+  max_assignable_accelerator = 0;
   for (auto&& server : servers_copy) {
     if (scheduling_with_flavor) {
       accelator_type typet = server.get_accelator_type();
       if (coprocessor != typet) { continue; }
     }
+    max_assignable_accelerator += server.get_avaliable_accelator_count();
     if (server.get_avaliable_accelator_count() >= accelerator_request) { return true; }
   }
   return false;

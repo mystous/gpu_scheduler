@@ -11,8 +11,6 @@ int job_scheduler::scheduling_job() {
     queue<job_entry*>* wait_queue = wait_queue_group->at(i);
     
     while (false == wait_queue->empty()) {
-    //while(0 != wait_queue->size()){
-      //int size = wait_queue->size();
       auto job = wait_queue->front();
       if (-1 == arrange_server(*job, i, static_cast<accelator_type>(i))) {
         break;
