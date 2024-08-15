@@ -20,7 +20,7 @@ public:
     string pod_name;
     string pod_type;
     string project;
-    string namespace_;
+    string namespace_;  
     string user_team;
     string start;
     system_clock::time_point start_tp;

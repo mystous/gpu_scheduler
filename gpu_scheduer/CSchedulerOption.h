@@ -13,11 +13,14 @@ public:
 	virtual ~CSchedulerOption();
   int get_scheduler_type();
   void set_scheduler_type(int index);
-  void set_option_value(bool* preemtion, int* scheduler, bool *scheduer_with_flavor_opt, bool *doing_till_end) {
+  void set_option_value(bool* preemtion, int* scheduler, 
+                        bool *scheduer_with_flavor_opt, bool *doing_till_end,
+                        bool *prevent_starvation) {
     preemtion_enabling = preemtion;
     scheduler_selection = scheduler;
     scheduler_with_defined = scheduer_with_flavor_opt;
     infinity_working = doing_till_end;
+    starvation_prevention = prevent_starvation;
   };
 
 private:
@@ -26,6 +29,7 @@ private:
   int* scheduler_selection = nullptr;
   bool* scheduler_with_defined = nullptr;
   bool* infinity_working = nullptr;
+  bool* starvation_prevention = nullptr;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -50,4 +54,6 @@ public:
   CButton preemtion_option;
   CButton perform_until_finish;
   afx_msg void OnClickedCheckInf();
+  afx_msg void OnClickedStarvationPrevention();
+  CButton starvation_prevention_opt;
 };

@@ -208,15 +208,16 @@ void CgpuscheduerView::OnEmulationSetting()
   int scheduler_selection = 0;
   bool scheduler_with_flaver = job_emul.get_scheduling_with_flavor_option();
   bool working_till_end = job_emul.get_finishing_condition();
+  bool prevent_starvation = job_emul.get_prevent_starvation();
 
-  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, &working_till_end);
+  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, &working_till_end, &prevent_starvation);
 
   dlg_option.set_scheduler_type((int)job_emul.get_selction_scheduler());
   //dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
   //dlg_option.scheduler_with_flavor = job_emul.get_scheduling_with_flavor_option();
 
   if (dlg_option.DoModal() == IDOK) {
-    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end);
+    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation);
   }
   Invalidate();
 }

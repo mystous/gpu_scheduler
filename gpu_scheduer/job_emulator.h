@@ -33,20 +33,32 @@ public:
     vector<job_entry*> job_list_in_slot;
   };
 
+  struct job_age {
+    job_age(job_entry* job_element) : job{ job_element }, age{ 0 }, repriority_score{0} {};
+    int         age = 0;
+    job_entry*  job = nullptr;
+    int         repriority_score = 0;
+  };
+
+  using job_age_struct = struct job_age;
   using job_entry_struct = struct job_entry_element;
 
   virtual ~job_emulator();
 
 
-  void build_job_list(string filename, scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end);
+  void build_job_list(string filename, scheduler_type scheduler_index, 
+                      bool using_preemetion, bool scheduleing_with_flavor_option, 
+                      bool working_till_end, bool prevent_starvation);
   void build_job_queue();
   void build_server_list(string filename);
-  void set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end);
+  void set_option(scheduler_type scheduler_index, bool using_preemetion, 
+                bool scheduleing_with_flavor_option, bool working_till_end, bool prevent_starvation);
 
   scheduler_type get_selction_scheduler() { return selected_scheduler; };
   bool get_preemtion_enabling() { return preemtion_enabling; };
   bool get_scheduling_with_flavor_option() { return scheduling_with_flavor; };
   bool get_finishing_condition() { return perform_until_finish; };
+  bool get_prevent_starvation() { return starvation_prevention; };
   vector<job_entry>* get_job_list_ptr() { return &job_list; };
   vector<server_entry>* get_server_list() { return &server_list; };
   int get_total_time_slot() { return total_time_slot; };
@@ -92,6 +104,7 @@ private:
   bool preemtion_enabling = false;
   bool scheduling_with_flavor = false;
   bool perform_until_finish = false;
+  bool starvation_prevention = false;
   system_clock::time_point min_start_time;
   system_clock::time_point max_end_time;
   job_entry_struct* job_queue = nullptr;
@@ -104,10 +117,12 @@ private:
   atomic<emulation_status> progress_status = emulation_status::stop;
   thread emulation_player;
   vector<queue<job_entry*>*> wait_queue_group;
+  vector<vector<job_age_struct>> wait_queue_age;
   int ticktok_duration = 1;
   const int sleep_for_drawing = 1;
   double* allocation_rate = nullptr;
   double* utilization_rate = nullptr;
+  double latest_allocation = 0.0;
   int rate_index = 0;
   vector<double*> server_utilization_rate;
   vector<int*> server_allocation_count;
@@ -120,9 +135,12 @@ private:
   int memory_alloc_size = 0;
   system_clock::time_point job_start_tp;
   system_clock::time_point progress_tp;
-
+  int max_age_count = 0;
+  const int max_age_count_constant = 3;
+  const double starvation_prevention_criteria = 70.0;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
+  void adjust_wait_queue();
   void scheduling_job();
   void computing_forward();
   void initialize_server_state();
@@ -135,5 +153,6 @@ private:
   bool check_finishing();
   void initialize_progress_variables();
   void reallocation_log_memory();
+
 };
 

@@ -36,8 +36,8 @@ int scheduler_mcts::arrange_server(job_entry& job, int queue_index, accelator_ty
   create_job_vector(job_list);
   int max_job_count = get_max_schedulable_job(job_list);
 
-  // TODO : 15 is a magic numbe. It has to be changed into reasonable number or finding exit condition this loop
-  for (int i = 0; i < min(15*( max_job_count + 1), job_list.size()); i++) {
+  // TODO : 20 is a magic numbe. It has to be changed into reasonable number or finding exit condition this loop
+  for (int i = 0; i < min(20*( max_job_count + 1), job_list.size()); i++) {
   //for (int i = 0; i < job_list.size(); i++) {
     MCTSNode* node = select_node(root.get());
     expand_node(node, coprocessor);

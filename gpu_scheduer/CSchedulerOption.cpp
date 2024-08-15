@@ -30,6 +30,7 @@ void CSchedulerOption::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_CHECK_FLAVOR, scheduler_flavor);
   DDX_Control(pDX, IDC_CHECK_PREEMTION, preemtion_option);
   DDX_Control(pDX, IDC_CHECK_INF, perform_until_finish);
+  DDX_Control(pDX, IDC_STARVATION_PREVENTION, starvation_prevention_opt);
 }
 
 
@@ -39,6 +40,7 @@ BEGIN_MESSAGE_MAP(CSchedulerOption, CDialog)
   ON_BN_CLICKED(IDC_CHECK_PREEMTION, &CSchedulerOption::OnClickedCheckPreemtion)
   ON_BN_CLICKED(IDC_CHECK_FLAVOR, &CSchedulerOption::OnClickedCheckFlavor)
   ON_BN_CLICKED(IDC_CHECK_INF, &CSchedulerOption::OnClickedCheckInf)
+    ON_BN_CLICKED(IDC_STARVATION_PREVENTION, &CSchedulerOption::OnClickedStarvationPrevention)
 END_MESSAGE_MAP()
 
 
@@ -60,6 +62,7 @@ BOOL CSchedulerOption::OnInitDialog()
   scheduler_flavor.SetCheck(*scheduler_with_defined);
   preemtion_option.SetCheck(*preemtion_enabling);
   perform_until_finish.SetCheck(*infinity_working);
+  starvation_prevention_opt.SetCheck(*starvation_prevention);
 
   return TRUE;  // return TRUE unless you set the focus to a control
   // EXCEPTION: OCX Property Pages should return FALSE
@@ -109,4 +112,10 @@ void CSchedulerOption::OnClickedCheckFlavor()
 void CSchedulerOption::OnClickedCheckInf()
 {
   *infinity_working = perform_until_finish.GetCheck();
+}
+
+
+void CSchedulerOption::OnClickedStarvationPrevention()
+{
+  *starvation_prevention = starvation_prevention_opt.GetCheck();
 }

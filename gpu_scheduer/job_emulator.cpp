@@ -30,6 +30,8 @@ void job_emulator::initialize_wait_queue() {
   for (int i = 0; i < global_const::accelator_category_count + 1; ++i) {
     queue<job_entry*>* new_element = new queue<job_entry*>();
     wait_queue_group.push_back(new_element);
+    vector<job_age_struct> new_age_queue;
+    wait_queue_age.push_back(new_age_queue);
   }
 }
 
@@ -112,6 +114,7 @@ void job_emulator::build_server_list(string filename) {
     int accelerator_count = stoi(tokens[1]);
     server_entry new_element(tokens[0], server_entry::get_accelerator_type(tokens[2]), accelerator_count);
     server_list.push_back(new_element);
+    max_age_count = server_list.size() * max_age_count_constant;
   }
 
   scheduler_obj->set_server(&server_list);
@@ -119,7 +122,9 @@ void job_emulator::build_server_list(string filename) {
   file.close();
 }
 
-void job_emulator::build_job_list(string filename, scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end) {
+void job_emulator::build_job_list(string filename, scheduler_type scheduler_index, 
+                                  bool using_preemetion, bool scheduleing_with_flavor_option, 
+                                  bool working_till_end, bool prevent_starvation) {
   ifstream file(filename);
 
   if (!file.is_open()) {
@@ -128,7 +133,7 @@ void job_emulator::build_job_list(string filename, scheduler_type scheduler_inde
   }
 
   job_file_name = filename;
-  set_option(scheduler_index, using_preemetion, scheduleing_with_flavor_option, working_till_end);
+  set_option(scheduler_index, using_preemetion, scheduleing_with_flavor_option, working_till_end, prevent_starvation);
 
   string line;
   while (getline(file, line)) {
@@ -233,11 +238,12 @@ void job_emulator::get_wait_job_request_acclerator(vector<int>& request) {
   scheduler_obj->get_wait_job_request_acclerator(request);
 }
 
-void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end) {
+void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end, bool prevent_starvation) {
   preemtion_enabling = using_preemetion;
   scheduling_with_flavor = scheduleing_with_flavor_option;
   selected_scheduler = scheduler_index;
   perform_until_finish = working_till_end;
+  starvation_prevention = prevent_starvation;
   if (nullptr != scheduler_obj) {
     delete scheduler_obj;
   }
@@ -288,6 +294,7 @@ void job_emulator::step_foward() {
       computing_forward();
       update_wait_queue();
       scheduled_job_count += scheduler_obj->scheduling_job();
+      adjust_wait_queue();
       log_rate_info();
       step_forward_callback(call_back_object);
     }
@@ -344,18 +351,34 @@ void job_emulator::log_rate_info() {
   }
 
   allocation_rate[rate_index] = (double)total_reserved_count / (double)total_GPU_count * 100;
+  latest_allocation = allocation_rate[rate_index];
   utilization_rate[rate_index] = reserved_utilization / (double)server_size;
   rate_index++;
 }
 
 void job_emulator::scheduling_job() {
-  for (auto&& wait_queue : wait_queue_group) {
-    while (false == wait_queue->empty()) {
-      auto job = wait_queue->front();
+  //for (auto&& wait_queue : wait_queue_group) {
+  for (int i = 0; i < wait_queue_group.size(); ++i) {
+    bool scheduled_server = false;
+    while (false == wait_queue_group[i]->empty()) {
+      auto job = wait_queue_group[i]->front();
       if (-1 == scheduler_obj->arrange_server(*job)) {
         break;
       }
-      wait_queue->pop();
+      scheduled_server = true;
+      wait_queue_group[i]->pop();
+      wait_queue_age[i].erase(wait_queue_age[i].begin());
+    }
+
+    if (scheduled_server) {
+      for (auto&& age_queue : wait_queue_age[i]) {
+        age_queue.age = 0;
+      }
+      continue;
+    }
+
+    for (auto&& age_queue : wait_queue_age[i]) {
+      age_queue.age++;
     }
   }
 }
@@ -365,6 +388,49 @@ void job_emulator::computing_forward() {
     server.ticktok(ticktok_duration);
     finished_job_count += server.flush();
   }
+}
+
+void job_emulator::adjust_wait_queue() {
+  if (!starvation_prevention) { return; }
+  if (latest_allocation > starvation_prevention_criteria) { return; }
+  const int age_weight_constant = 0.13889;
+  const int accelerator_count = 8;
+  double resource_suitability_index[accelerator_count] = {0,};
+
+  for (auto&& server : server_list) {
+    int avaliable_accelator_count = server.get_avaliable_accelator_count();
+    for (int i = 0; i < accelerator_count; ++i) {
+      if ((avaliable_accelator_count - i) < 0) { continue; }
+      double suitablitiy_index = 1 - (avaliable_accelator_count - i)* 0.1;
+      if (suitablitiy_index > resource_suitability_index[i]) {
+        resource_suitability_index[i] = suitablitiy_index;
+      }
+    }
+  }
+
+  for (auto&& wait_queue : wait_queue_age) {
+    int max_repriority_score_index = 0;
+    double max_repriority_score = 0.;
+    for (int j = 0; j < wait_queue.size(); ++j) {
+      double priority = 1 * ( 1 / pow(2, j));
+      double starvation_score = wait_queue[j].age 
+                                * age_weight_constant 
+                                * resource_suitability_index[wait_queue[j].job->get_accelerator_count()-1];
+      wait_queue[j].repriority_score = priority + starvation_score;
+      if (wait_queue[j].repriority_score > max_repriority_score) {
+        max_repriority_score = wait_queue[j].repriority_score;
+        max_repriority_score_index = j;
+      }
+    }
+
+    if (0 != max_repriority_score_index) {
+      job_age job_high_prioirty = wait_queue[max_repriority_score_index];
+      wait_queue.erase(wait_queue.begin() + max_repriority_score_index);
+      wait_queue.insert(wait_queue.begin(), job_high_prioirty);
+    }
+
+  }
+
 }
 
 void job_emulator::update_wait_queue() {
@@ -378,6 +444,9 @@ void job_emulator::update_wait_queue() {
         queue_index = static_cast<int>(job->get_flavor());
       }
       wait_queue_group[queue_index]->push(job);
+      if (wait_queue_age[queue_index].size() < max_age_count) {
+        wait_queue_age[queue_index].push_back(job_age_struct(job));
+      }
     }
   }
 }

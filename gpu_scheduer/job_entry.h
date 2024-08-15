@@ -12,6 +12,7 @@ using namespace std::chrono;
 class job_entry
 {
 public:
+
   enum class job_type {
     task, instance
   };
