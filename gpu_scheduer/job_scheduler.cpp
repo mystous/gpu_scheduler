@@ -7,9 +7,12 @@ int job_scheduler::scheduling_job() {
     return scheduled;
   }
 
+  vector<job_age_struct>* age_queue = wait_queue_age->data();// &(wait_queue_age[i]);
+
   for (int i = 0; i < wait_queue_group->size(); ++i) {
     queue<job_entry*>* wait_queue = wait_queue_group->at(i);
-    
+    vector<job_age_struct>* age_queue_element = &age_queue[i];
+    bool scheduled_server = false;
     while (false == wait_queue->empty()) {
       auto job = wait_queue->front();
       if (-1 == arrange_server(*job, i, static_cast<accelator_type>(i))) {
@@ -18,6 +21,19 @@ int job_scheduler::scheduling_job() {
 
       wait_queue->pop();
       scheduled++;
+      age_queue_element->erase(age_queue_element->begin());
+      scheduled_server = true;
+    }
+
+    if (scheduled_server) {
+      for (auto&& age_queue : *age_queue_element) {
+        age_queue.age = 0;
+      }
+      continue;
+    }
+
+    for (auto&& age_queue : *age_queue_element) {
+      age_queue.age++;
     }
 
     if (!scheduling_with_flavor) { break; }

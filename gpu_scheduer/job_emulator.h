@@ -32,15 +32,7 @@ public:
   struct job_entry_element {
     vector<job_entry*> job_list_in_slot;
   };
-
-  struct job_age {
-    job_age(job_entry* job_element) : job{ job_element }, age{ 0 }, repriority_score{0} {};
-    int         age = 0;
-    job_entry*  job = nullptr;
-    int         repriority_score = 0;
-  };
-
-  using job_age_struct = struct job_age;
+    
   using job_entry_struct = struct job_entry_element;
 
   virtual ~job_emulator();
@@ -137,11 +129,11 @@ private:
   system_clock::time_point progress_tp;
   int max_age_count = 0;
   const int max_age_count_constant = 3;
-  const double starvation_prevention_criteria = 70.0;
+  const double starvation_prevention_criteria = 80.0;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();
-  void scheduling_job();
+  //void scheduling_job();
   void computing_forward();
   void initialize_server_state();
   void initialize_job_state();

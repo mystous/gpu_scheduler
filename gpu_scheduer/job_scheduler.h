@@ -19,6 +19,7 @@ public:
   virtual void get_wait_job_request_acclerator(vector<int>& request);
   //void set_wait_queue(queue<job_entry*>* queue) { wait_queue = queue; };
   void set_wait_queue(vector<queue<job_entry*>*>* queue) { wait_queue_group = queue; };
+  void set_wait_age_queue(vector<vector<job_age_struct>>* queue) { wait_queue_age = queue; };
 protected:
   vector<server_entry>* target_server = nullptr;
   bool preemtion_enabling = false;
@@ -27,5 +28,6 @@ protected:
   virtual void postproessing_set_server() = 0;
   //queue<job_entry*>* wait_queue = nullptr;
   vector<queue<job_entry*>*>* wait_queue_group = nullptr;
+  vector<vector<job_age_struct>>* wait_queue_age = nullptr;
 };
 

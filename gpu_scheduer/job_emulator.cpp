@@ -272,6 +272,7 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
     break;
   }
   scheduler_obj->set_wait_queue(&wait_queue_group);
+  scheduler_obj->set_wait_age_queue(&wait_queue_age);
   scheduler_obj->set_server(&server_list);
   scheduler_obj->set_scheduling_condition(preemtion_enabling, scheduling_with_flavor, perform_until_finish);
 }
@@ -356,32 +357,32 @@ void job_emulator::log_rate_info() {
   rate_index++;
 }
 
-void job_emulator::scheduling_job() {
-  //for (auto&& wait_queue : wait_queue_group) {
-  for (int i = 0; i < wait_queue_group.size(); ++i) {
-    bool scheduled_server = false;
-    while (false == wait_queue_group[i]->empty()) {
-      auto job = wait_queue_group[i]->front();
-      if (-1 == scheduler_obj->arrange_server(*job)) {
-        break;
-      }
-      scheduled_server = true;
-      wait_queue_group[i]->pop();
-      wait_queue_age[i].erase(wait_queue_age[i].begin());
-    }
-
-    if (scheduled_server) {
-      for (auto&& age_queue : wait_queue_age[i]) {
-        age_queue.age = 0;
-      }
-      continue;
-    }
-
-    for (auto&& age_queue : wait_queue_age[i]) {
-      age_queue.age++;
-    }
-  }
-}
+//void job_emulator::scheduling_job() {
+//  //for (auto&& wait_queue : wait_queue_group) {
+//  for (int i = 0; i < wait_queue_group.size(); ++i) {
+//    bool scheduled_server = false;
+//    while (false == wait_queue_group[i]->empty()) {
+//      auto job = wait_queue_group[i]->front();
+//      if (-1 == scheduler_obj->arrange_server(*job)) {
+//        break;
+//      }
+//      scheduled_server = true;
+//      wait_queue_group[i]->pop();
+//      wait_queue_age[i].erase(wait_queue_age[i].begin());
+//    }
+//
+//    if (scheduled_server) {
+//      for (auto&& age_queue : wait_queue_age[i]) {
+//        age_queue.age = 0;
+//      }
+//      continue;
+//    }
+//
+//    for (auto&& age_queue : wait_queue_age[i]) {
+//      age_queue.age++;
+//    }
+//  }
+//}
 
 void job_emulator::computing_forward() {
   for (auto&& server : server_list) {
@@ -393,7 +394,7 @@ void job_emulator::computing_forward() {
 void job_emulator::adjust_wait_queue() {
   if (!starvation_prevention) { return; }
   if (latest_allocation > starvation_prevention_criteria) { return; }
-  const int age_weight_constant = 0.13889;
+  const double age_weight_constant = 0.13889;
   const int accelerator_count = 8;
   double resource_suitability_index[accelerator_count] = {0,};
 
@@ -427,6 +428,8 @@ void job_emulator::adjust_wait_queue() {
       job_age job_high_prioirty = wait_queue[max_repriority_score_index];
       wait_queue.erase(wait_queue.begin() + max_repriority_score_index);
       wait_queue.insert(wait_queue.begin(), job_high_prioirty);
+
+      // Meta뿐 아니라 실제 wait queue도 업데이트 해주어야 함
     }
 
   }
