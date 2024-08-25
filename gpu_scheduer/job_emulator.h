@@ -82,6 +82,7 @@ public:
   int get_finished_job_count(){ return finished_job_count; };
   int get_scheduled_job_count() { return scheduled_job_count; };
   int get_done_emulation_step() { return last_emulation_step; };
+  bool get_starvation_prevention_option() { return starvation_prevention; };
   chrono::duration<double> get_job_elapsed_time() { return progress_tp - job_start_tp; };
   string get_job_elapsed_time_string();
 
@@ -129,7 +130,7 @@ private:
   system_clock::time_point progress_tp;
   int max_age_count = 0;
   const int max_age_count_constant = 3;
-  const double starvation_prevention_criteria = 80.0;
+  const double starvation_prevention_criteria = 90.0;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();

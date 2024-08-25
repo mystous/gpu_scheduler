@@ -445,7 +445,7 @@ void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint sta
 
 void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint &start_position)
 {
-  CString message, total_job, total_time_slot, temp, scheduler_name, with_flavor, working_duration;
+  CString message, total_job, total_time_slot, temp, scheduler_name, with_flavor, working_duration, starvation_prevention;
 
   total_job = FormatWithCommas(static_cast<int>(job_emul.get_job_list_ptr()->size()));
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
@@ -475,14 +475,16 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
   scheduler_name = A2CT(job_emul.get_setting_scheduling_name().c_str());
   with_flavor = job_emul.get_scheduling_with_flavor_option() ? _T("with flavor") : _T("one queue");
   working_duration = job_emul.get_finishing_condition() ? _T("working till the end") : _T("within timeslot");
-  message.Format(_T("Server - #%s, Scheduler: %s, %s, %s"), 
-    temp.GetBuffer(), scheduler_name.GetBuffer(), with_flavor.GetBuffer(), working_duration.GetBuffer());
+  starvation_prevention = job_emul.get_starvation_prevention_option() ? _T("starvation prevention") : _T("wait until scheduling");
+  message.Format(_T("Server - #%s, Scheduler: %s, %s, %s, %s"), 
+    temp.GetBuffer(), scheduler_name.GetBuffer(), with_flavor.GetBuffer(), working_duration.GetBuffer(), starvation_prevention.GetBuffer());
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, message);
   DrawColorText(dc, message, temp, highlightColor, start_position);
   DrawColorText(dc, message, scheduler_name, highlightColor, start_position);
   DrawColorText(dc, message, with_flavor, highlightColor, start_position);
   DrawColorText(dc, message, working_duration, highlightColor, start_position);
+  DrawColorText(dc, message, starvation_prevention, highlightColor, start_position);
 
   start_position.y += 2* (font_size + margin);
 }

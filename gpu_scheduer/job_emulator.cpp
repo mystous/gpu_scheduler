@@ -294,8 +294,9 @@ void job_emulator::step_foward() {
 #endif
       computing_forward();
       update_wait_queue();
-      scheduled_job_count += scheduler_obj->scheduling_job();
       adjust_wait_queue();
+
+      scheduled_job_count += scheduler_obj->scheduling_job();
       log_rate_info();
       step_forward_callback(call_back_object);
     }
@@ -357,33 +358,6 @@ void job_emulator::log_rate_info() {
   rate_index++;
 }
 
-//void job_emulator::scheduling_job() {
-//  //for (auto&& wait_queue : wait_queue_group) {
-//  for (int i = 0; i < wait_queue_group.size(); ++i) {
-//    bool scheduled_server = false;
-//    while (false == wait_queue_group[i]->empty()) {
-//      auto job = wait_queue_group[i]->front();
-//      if (-1 == scheduler_obj->arrange_server(*job)) {
-//        break;
-//      }
-//      scheduled_server = true;
-//      wait_queue_group[i]->pop();
-//      wait_queue_age[i].erase(wait_queue_age[i].begin());
-//    }
-//
-//    if (scheduled_server) {
-//      for (auto&& age_queue : wait_queue_age[i]) {
-//        age_queue.age = 0;
-//      }
-//      continue;
-//    }
-//
-//    for (auto&& age_queue : wait_queue_age[i]) {
-//      age_queue.age++;
-//    }
-//  }
-//}
-
 void job_emulator::computing_forward() {
   for (auto&& server : server_list) {
     server.ticktok(ticktok_duration);
@@ -401,15 +375,17 @@ void job_emulator::adjust_wait_queue() {
   for (auto&& server : server_list) {
     int avaliable_accelator_count = server.get_avaliable_accelator_count();
     for (int i = 0; i < accelerator_count; ++i) {
-      if ((avaliable_accelator_count - i) < 0) { continue; }
-      double suitablitiy_index = 1 - (avaliable_accelator_count - i)* 0.1;
+      if ((avaliable_accelator_count - i) <= 0) { continue; }
+      double suitablitiy_index = 1 - (avaliable_accelator_count - i - 1)* 0.1;
       if (suitablitiy_index > resource_suitability_index[i]) {
         resource_suitability_index[i] = suitablitiy_index;
       }
     }
   }
 
-  for (auto&& wait_queue : wait_queue_age) {
+  //for (auto&& wait_queue : wait_queue_age) {
+  for( int i = 0 ; i < wait_queue_age.size() ; ++i){
+    auto wait_queue = wait_queue_age[i];
     int max_repriority_score_index = 0;
     double max_repriority_score = 0.;
     for (int j = 0; j < wait_queue.size(); ++j) {
@@ -428,9 +404,38 @@ void job_emulator::adjust_wait_queue() {
       job_age job_high_prioirty = wait_queue[max_repriority_score_index];
       wait_queue.erase(wait_queue.begin() + max_repriority_score_index);
       wait_queue.insert(wait_queue.begin(), job_high_prioirty);
+      OutputDebugStringA("Wait queue age reordering\n");
 
-      // Meta뿐 아니라 실제 wait queue도 업데이트 해주어야 함
+      queue<job_entry*> shadow_queue = *wait_queue_group[i];
+      job_entry* adjust_top_priorty = nullptr;
+      queue<job_entry*> temp_queue;
+
+      int repeat_count = shadow_queue.size();
+      for (int j = 0; j < repeat_count; ++j) {
+        job_entry* job = shadow_queue.front();
+        if (max_repriority_score_index == j) {
+          adjust_top_priorty = job;
+        }
+        shadow_queue.pop();
+      }
+
+      shadow_queue = *wait_queue_group[i];
+      temp_queue.push(adjust_top_priorty);
+      repeat_count = shadow_queue.size();
+      for (int j = 0; j < repeat_count; ++j) {
+        job_entry* job = shadow_queue.front();
+        if (max_repriority_score_index != j) {
+          temp_queue.push(job);
+        }
+        shadow_queue.pop();
+      }
+
+      wait_queue_age[i] = wait_queue;
+      *wait_queue_group[i] = temp_queue;
+      OutputDebugStringA("Priority Chaged\n");
     }
+
+    if (false == scheduling_with_flavor) { break; }
 
   }
 
@@ -447,9 +452,18 @@ void job_emulator::update_wait_queue() {
         queue_index = static_cast<int>(job->get_flavor());
       }
       wait_queue_group[queue_index]->push(job);
-      if (wait_queue_age[queue_index].size() < max_age_count) {
-        wait_queue_age[queue_index].push_back(job_age_struct(job));
+      queue<job_entry*> shadow_queue = *wait_queue_group[queue_index];
+      int copy_size = shadow_queue.size() > max_age_count ? max_age_count : shadow_queue.size();
+      wait_queue_age[queue_index].clear();
+      for (int i = 0; i < copy_size; ++i) {
+        wait_queue_age[queue_index].push_back(job_age_struct(shadow_queue.front()));
+        shadow_queue.pop();
       }
+      string count = "Age queue: " + to_string(copy_size) + "\n";
+      OutputDebugStringA(count.c_str());
+      //if (wait_queue_age[queue_index].size() < max_age_count) {
+      //  wait_queue_age[queue_index].push_back(job_age_struct(job));
+      //}
     }
   }
 }
@@ -642,9 +656,9 @@ string job_emulator::get_savefile_candidate_name() {
   ss << std::put_time(&localTime, "%Y%m%d_%H%M%S");
   string formattedTime = ss.str();
 
-  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({}).result", 
+  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({}).result", 
     get_setting_scheduling_name(), formattedTime, get_total_job_count(), server_number, accelerator_number,
-    get_done_emulation_step(), scheduling_with_flavor ? "true" : "false");
+    get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false");
   return filename;
 }
 
