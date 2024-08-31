@@ -19,18 +19,6 @@ int job_scheduler::scheduling_job() {
         break;
       }
 
-      if (age_queue_element->size() > 0) {
-        static int no = 0;
-        string wait_queue_id = job->get_job_id();
-        string wait_age_queue_id = age_queue_element->at(0).job->get_job_id();
-        string job_compare = "[" + to_string(no++) + "] Queue[0] " + wait_queue_id + ", Wait Queue[0] "
-          + wait_age_queue_id + "\n";
-        OutputDebugStringA(job_compare.c_str());
-        if (wait_queue_id != wait_age_queue_id) {
-          OutputDebugStringA("Woops\n");
-        }
-      }
-      
       wait_queue->pop();
       scheduled++;
       age_queue_element->erase(age_queue_element->begin());

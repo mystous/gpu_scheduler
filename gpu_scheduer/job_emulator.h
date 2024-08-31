@@ -130,7 +130,7 @@ private:
   system_clock::time_point progress_tp;
   int max_age_count = 0;
   const int max_age_count_constant = 3;
-  const double starvation_prevention_criteria = 90.0;
+  const double starvation_prevention_criteria = 75.0;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();

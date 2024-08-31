@@ -9,6 +9,7 @@
 #pragma comment(lib, "winmm.lib")
 #else
 #include <unistd.h>
+#include <cstring>
 #endif
 
 using namespace std;
@@ -229,7 +230,7 @@ void job_emulator::build_job_queue() {
 #ifdef _WIN32
     //TRACE("Queue Idx: %d - %d\n", startDiff.count(), stoi(job->get_job_id()));
 #else
-    printf("Job queue Index(% s) : % d\n", job->get_job_type() == job_entry::job_type::task ? _T("task") : _T("instance"), startDiff.count());
+    printf("Job queue Index(% s) : % d\n", job->get_job_type() == job_entry::job_type::task ? "task" : "instance", startDiff.count());
 #endif
   }
 }
@@ -383,7 +384,6 @@ void job_emulator::adjust_wait_queue() {
     }
   }
 
-  //for (auto&& wait_queue : wait_queue_age) {
   for( int i = 0 ; i < wait_queue_age.size() ; ++i){
     auto wait_queue = wait_queue_age[i];
     int max_repriority_score_index = 0;
@@ -404,7 +404,6 @@ void job_emulator::adjust_wait_queue() {
       job_age job_high_prioirty = wait_queue[max_repriority_score_index];
       wait_queue.erase(wait_queue.begin() + max_repriority_score_index);
       wait_queue.insert(wait_queue.begin(), job_high_prioirty);
-      OutputDebugStringA("Wait queue age reordering\n");
 
       queue<job_entry*> shadow_queue = *wait_queue_group[i];
       job_entry* adjust_top_priorty = nullptr;
@@ -432,13 +431,10 @@ void job_emulator::adjust_wait_queue() {
 
       wait_queue_age[i] = wait_queue;
       *wait_queue_group[i] = temp_queue;
-      OutputDebugStringA("Priority Chaged\n");
     }
 
     if (false == scheduling_with_flavor) { break; }
-
   }
-
 }
 
 void job_emulator::update_wait_queue() {
@@ -446,7 +442,6 @@ void job_emulator::update_wait_queue() {
  
   if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
     for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
-      //wait_queue.push(job);
       int queue_index = 0;
       if (scheduling_with_flavor) {
         queue_index = static_cast<int>(job->get_flavor());
@@ -459,11 +454,6 @@ void job_emulator::update_wait_queue() {
         wait_queue_age[queue_index].push_back(job_age_struct(shadow_queue.front()));
         shadow_queue.pop();
       }
-      string count = "Age queue: " + to_string(copy_size) + "\n";
-      OutputDebugStringA(count.c_str());
-      //if (wait_queue_age[queue_index].size() < max_age_count) {
-      //  wait_queue_age[queue_index].push_back(job_age_struct(job));
-      //}
     }
   }
 }
@@ -651,14 +641,29 @@ string job_emulator::get_savefile_candidate_name() {
   std::time_t currentTime = system_clock::to_time_t(now);
 
   tm localTime;
+#ifdef _WIN32
   localtime_s(&localTime, &currentTime);
+#else
+  localtime_r(&currentTime, &localTime);
+#endif //_WIN32
   stringstream ss;
   ss << std::put_time(&localTime, "%Y%m%d_%H%M%S");
   string formattedTime = ss.str();
 
+#ifdef _WIN32
   filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({}).result", 
     get_setting_scheduling_name(), formattedTime, get_total_job_count(), server_number, accelerator_number,
     get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false");
+#else
+  filename = get_setting_scheduling_name() + "_" +
+    formattedTime + "_job(" + std::to_string(get_total_job_count()) +
+    ")_server(" + std::to_string(server_number) +
+    ")_accelerator(" + std::to_string(accelerator_number) +
+    ")_elapsed(" + std::to_string(get_done_emulation_step()) +
+    ")_flavor(" + (scheduling_with_flavor ? "true" : "false") +
+    ")_starvation(" + (starvation_prevention ? "true" : "false") +
+    ").result";
+#endif //_WIN32
   return filename;
 }
 
