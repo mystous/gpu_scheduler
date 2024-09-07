@@ -22,6 +22,7 @@
 #include "scheduler_round_robin.h"
 #include "scheduler_mcts.h"
 #include "enum_definition.h"
+#include "adjusting_server.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -146,6 +147,6 @@ private:
   bool check_finishing();
   void initialize_progress_variables();
   void reallocation_log_memory();
-
+  adjusting_server* server_control = nullptr;
 };
 

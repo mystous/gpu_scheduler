@@ -45,6 +45,10 @@ job_emulator::~job_emulator() {
     delete scheduler_obj;
   }
 
+  if (nullptr != server_control) {
+    delete server_control;
+  }
+
   delete_wait_queue();
   delete_rate_array();
   delete_server_info_log();
@@ -119,6 +123,10 @@ void job_emulator::build_server_list(string filename) {
   }
 
   scheduler_obj->set_server(&server_list);
+  if (nullptr == server_control) {
+    server_control = new adjusting_server(&server_list);
+  }
+  server_control->reconstruct_server_status();
   
   file.close();
 }
@@ -296,6 +304,7 @@ void job_emulator::step_foward() {
       computing_forward();
       update_wait_queue();
       adjust_wait_queue();
+      server_control->defragemetation();
 
       scheduled_job_count += scheduler_obj->scheduling_job();
       log_rate_info();

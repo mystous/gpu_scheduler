@@ -185,6 +185,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="adjusting_server.h" />
     <ClInclude Include="call_back_object.h" />
     <ClInclude Include="CGPUStatus.h" />
     <ClInclude Include="ChildFrm.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="utility_class.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="adjusting_server.cpp" />
     <ClCompile Include="call_back_object.cpp" />
     <ClCompile Include="CGPUStatus.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
