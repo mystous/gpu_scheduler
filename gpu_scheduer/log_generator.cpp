@@ -354,9 +354,9 @@ void log_generator::generate_discrete_distribution(datatype* array, datatype* se
           array[i] = seed[seed_index];
         }
         else if constexpr (std::is_same_v<datatype, accelator_type>) {
-          int seed_index = static_cast<int>(beta_random * accelerator_counts);
-          if (seed_index >= accelerator_counts) {
-            seed_index = accelerator_counts - 1;  // 최대 인덱스는 accelerator_counts - 1
+          int seed_index = static_cast<int>(beta_random * global_const::accelerator_counts);
+          if (seed_index >= global_const::accelerator_counts) {
+            seed_index = global_const::accelerator_counts - 1;  // 최대 인덱스는 global_const::accelerator_counts - 1
           }
           array[i] = seed[seed_index];
         }

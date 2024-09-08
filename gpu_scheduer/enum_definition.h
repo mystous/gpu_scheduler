@@ -2,13 +2,14 @@
 
 namespace global_const {
   const int accelator_category_count = 8;
+  const int accelator_per_server_max = 8;
+  const int accelerator_counts = 7;
 };
 
 enum class accelator_type : int {
   any = -2, cpu = -1, v100, a30, a100, h100, h200, l4, l40, b200
 };
 
-const int accelerator_counts = 7;
 
 enum class scheduler_type : int {
   mostallocated = 0, compact, round_robin, mcts, fare_share
@@ -23,7 +24,7 @@ enum class distribution_type : int {
 };
 
 enum class gpu_allocation_type : int {
-  none, empty, fixed, floating
+  none, empty, fixed, floating, adjusted
 };
 
 enum class gpu_defragmentation_method : int {

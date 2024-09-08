@@ -126,7 +126,7 @@ void job_emulator::build_server_list(string filename) {
   if (nullptr == server_control) {
     server_control = new adjusting_server(&server_list);
   }
-  server_control->reconstruct_server_status();
+  //server_control->reconstruct_server_status();
   
   file.close();
 }
