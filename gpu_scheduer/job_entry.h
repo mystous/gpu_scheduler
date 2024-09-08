@@ -64,8 +64,10 @@ private:
 };
 
 struct job_age {
-  job_age(job_entry* job_element) : job{ job_element }, age{ 0 }, repriority_score{ 0 } {};
+  job_age(job_entry* job_element) : job{ job_element }, age{ 0 }, 
+                                    repriority_score{ 0 }, accumulated_age{ 0 } {};
   int         age = 0;
+  int         accumulated_age = 0;
   job_entry*  job = nullptr;
   double      repriority_score = 0;
 };

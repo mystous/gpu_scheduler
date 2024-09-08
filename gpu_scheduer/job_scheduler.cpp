@@ -46,6 +46,7 @@ int job_scheduler::scheduling_job() {
 
     for (auto&& age_queue : *age_queue_element) {
       age_queue.age++;
+      age_queue.accumulated_age++;
     }
 
     if (!scheduling_with_flavor) { break; }

@@ -27,5 +27,5 @@ enum class gpu_allocation_type : int {
 };
 
 enum class gpu_defragmentation_method : int {
-  max_space, 
+  max_space
 };

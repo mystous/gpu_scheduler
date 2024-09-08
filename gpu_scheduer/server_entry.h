@@ -32,5 +32,8 @@ private:
   vector<double> utilization_list;
   vector<job_entry*> job_list;
 
+
+  friend class adjusting_server;
+
 };
 
