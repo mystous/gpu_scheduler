@@ -243,15 +243,17 @@ void CgpuscheduerView::OnEmulationShowjoblist()
 }
 
 void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count) {
-  CString message, total_job, total_time_slot, temp, progress, walltime;
+  CString message, total_job, total_time_slot, temp, progress, walltime, overhead, overheadtime;
 
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
   total_job = FormatWithCommas(job_emul.get_emulation_step() + 1);
   progress.Format(_T("%-2.2f %%"), (double)(job_emul.get_emulation_step() + 1) / (double)job_emul.get_total_time_slot() * 100);
   USES_CONVERSION;
   walltime = CA2T(job_emul.get_job_elapsed_time_string().c_str());
+  overhead.Format(_T("%d times"), job_emul.get_job_adjust_count());
+  overheadtime.Format(_T("%d mins"), job_emul.get_job_adjust_overhead_time());
 
-  message.Format(_T("Progress : %s / %s (%s), Elapsed time - %s, Emulation walltime - %s"), 
+  message.Format(_T("Progress : %s / %s (%s), Elapsed time - %s, Emulation walltime - %s, Pool Adjusting Overhead - %s (%s)"), 
     total_job.GetBuffer(), total_time_slot.GetBuffer(), progress.GetBuffer(),
     [](int minutes) {
       std::wstringstream ss;
@@ -260,7 +262,7 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
         << std::setw(2) << std::setfill(L'0') << minutes % 60;
       return CString(ss.str().c_str());
     }(job_emul.get_emulation_step() + 1).GetBuffer(), 
-    walltime.GetBuffer());
+    walltime.GetBuffer(), overhead.GetBuffer(), overheadtime.GetBuffer());
 
   start_position.y -= 60;
   dc.SetTextColor(defaultColor);
@@ -433,7 +435,7 @@ void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint sta
   digit.Format(_T("%-2.2f %%"), (double)reserved / (double)total_count * 100);
   allocation_rate.Format(_T("Total allocation: %s"), digit.GetBuffer());
 
-  CPoint new_position(start_position.x + 900, start_position.y + 10);
+  CPoint new_position(start_position.x + 1200, start_position.y + 10);
 
   dc.SetTextColor(defaultColor);
   dc.TextOut(new_position.x, new_position.y, allocation_rate);
@@ -445,7 +447,7 @@ void CgpuscheduerView::DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint sta
 
 void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint &start_position)
 {
-  CString message, total_job, total_time_slot, temp, scheduler_name, with_flavor, working_duration, starvation_prevention;
+  CString message, total_job, total_time_slot, temp, scheduler_name, with_flavor, working_duration, preemption_enabling, starvation_prevention;
 
   total_job = FormatWithCommas(static_cast<int>(job_emul.get_job_list_ptr()->size()));
   total_time_slot = FormatWithCommas(job_emul.get_total_time_slot());
@@ -476,8 +478,9 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
   with_flavor = job_emul.get_scheduling_with_flavor_option() ? _T("with flavor") : _T("one queue");
   working_duration = job_emul.get_finishing_condition() ? _T("working till the end") : _T("within timeslot");
   starvation_prevention = job_emul.get_starvation_prevention_option() ? _T("starvation prevention") : _T("wait until scheduling");
-  message.Format(_T("Server - #%s, Scheduler: %s, %s, %s, %s"), 
-    temp.GetBuffer(), scheduler_name.GetBuffer(), with_flavor.GetBuffer(), working_duration.GetBuffer(), starvation_prevention.GetBuffer());
+  preemption_enabling = job_emul.get_preemtion_enabling() ? _T("preemption enabling") : _T("without pool adjusting");
+  message.Format(_T("Server - #%s, Scheduler: %s, %s, %s, %s, %s"), 
+    temp.GetBuffer(), scheduler_name.GetBuffer(), with_flavor.GetBuffer(), working_duration.GetBuffer(), starvation_prevention.GetBuffer(), preemption_enabling.GetBuffer());
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, message);
   DrawColorText(dc, message, temp, highlightColor, start_position);
@@ -485,6 +488,8 @@ void CgpuscheduerView::DrawTotalInfo(CDC& dc, CRect& rect, job_emulator& job_emu
   DrawColorText(dc, message, with_flavor, highlightColor, start_position);
   DrawColorText(dc, message, working_duration, highlightColor, start_position);
   DrawColorText(dc, message, starvation_prevention, highlightColor, start_position);
+  DrawColorText(dc, message, preemption_enabling, highlightColor, start_position);
+  
 
   start_position.y += 2* (font_size + margin);
 }
@@ -574,6 +579,12 @@ std::pair<int, int> CgpuscheduerView::DrawGPUSingleInfo(CDC& dc, CRect& rect, se
       break;
     case accelator_type::a30:
       return _T("A30");
+      break;
+    case accelator_type::h100:
+      return _T("H100");
+      break;
+    case accelator_type::h200:
+      return _T("H200");
       break;
     case accelator_type::cpu:
       return _T("CPU");

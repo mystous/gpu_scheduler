@@ -287,6 +287,7 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
 }
 
 void job_emulator::step_foward() {
+  static bool do_defragmentation = false;
   for (int i = 0; i < ticktok_duration; ++i) {
     if (check_finishing()) {
       last_emulation_step = emulation_step;
@@ -304,15 +305,44 @@ void job_emulator::step_foward() {
       computing_forward();
       update_wait_queue();
       adjust_wait_queue();
-      server_control->defragemetation();
-
+      defragmentation_excute(do_defragmentation);
       scheduled_job_count += scheduler_obj->scheduling_job();
+      check_defragmentation_condition(do_defragmentation);
       log_rate_info();
       step_forward_callback(call_back_object);
     }
   }
 
   progress_tp = system_clock::now();
+}
+
+void job_emulator::defragmentation_excute(bool& do_defragmentation) {
+  if (!preemtion_enabling) { return; }
+  if (defragmentaion_criteria < [=]()->int {
+    int wait_job_count = 0;
+
+    for (auto&& queue : wait_queue_group) {
+      wait_job_count += queue->size();
+    }
+    return wait_job_count;
+    }() && true == do_defragmentation) {
+    if (server_control->defragementation()) {
+      job_adjust_overhead_times++;
+    }
+    do_defragmentation = false;
+  }
+}
+
+void job_emulator::check_defragmentation_condition(bool& do_defragmentation) {
+  if (!preemtion_enabling) { return; }
+
+  if (last_scheduled_job_count != scheduled_job_count) {
+    last_scheduled_job_count = scheduled_job_count;
+    do_defragmentation = true;
+  }
+  else {
+    do_defragmentation = false;
+  }
 }
 
 bool job_emulator::check_finishing() {
@@ -531,7 +561,9 @@ void job_emulator::initialize_progress_variables() {
   rate_index = 0;
   finished_job_count = 0;
   scheduled_job_count = 0;
+  last_scheduled_job_count = 0;
   memory_alloc_size = get_total_time_slot();
+  job_adjust_overhead_times = 0;
 
   allocation_rate = new double[memory_alloc_size];
   utilization_rate = new double[memory_alloc_size];
@@ -660,9 +692,9 @@ string job_emulator::get_savefile_candidate_name() {
   string formattedTime = ss.str();
 
 #ifdef _WIN32
-  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({}).result", 
+  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({})_preemtion({}).result", 
     get_setting_scheduling_name(), formattedTime, get_total_job_count(), server_number, accelerator_number,
-    get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false");
+    get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false", preemtion_enabling ? "true" : "false");
 #else
   filename = get_setting_scheduling_name() + "_" +
     formattedTime + "_job(" + std::to_string(get_total_job_count()) +
@@ -671,6 +703,7 @@ string job_emulator::get_savefile_candidate_name() {
     ")_elapsed(" + std::to_string(get_done_emulation_step()) +
     ")_flavor(" + (scheduling_with_flavor ? "true" : "false") +
     ")_starvation(" + (starvation_prevention ? "true" : "false") +
+    ")_preemtion(" + (preemtion_enabling ? "true" : "false") +
     ").result";
 #endif //_WIN32
   return filename;

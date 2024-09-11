@@ -47,6 +47,26 @@ void server_entry::ticktok(int duration_count) {
   }
 }
 
+int server_entry::remove_job(job_entry* job) {
+  int flushed_job = 0, i;
+  string id = job->get_job_id();
+  //for ( i = 0; i < job->get_accelerator_count(); ++i) {
+  for (i = 0; i < get_accelerator_count(); ++i) {
+    if (reserved[i] && id == job_id_for_reserved[i]) {
+      reserved[i] = false;
+      job_id_for_reserved[i] = "";
+      utilization_list[i] = 0.0;
+      flushed_job++;
+    }
+  }
+
+  job_list.erase(
+    std::remove(job_list.begin(), job_list.end(), job),
+    job_list.end()
+  );
+  return flushed_job;
+}
+
 int server_entry::flush() {
   int flushed_job = 0, i;
   for (auto&& job : job_list) {
@@ -54,6 +74,7 @@ int server_entry::flush() {
       continue;
     }
 
+    //flushed_job = remove_job(job);
     string id = job->get_job_id();
     //for ( i = 0; i < job->get_accelerator_count(); ++i) {
     for (i = 0; i < get_accelerator_count(); ++i) {

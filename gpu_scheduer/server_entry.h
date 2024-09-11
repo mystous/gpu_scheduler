@@ -22,6 +22,7 @@ public:
   double get_server_utilization();
   int get_loaded_job_count();
   static accelator_type get_accelerator_type(string accelerator);
+  int remove_job(job_entry* job);
 
 private:
   int accelator_count = 0;

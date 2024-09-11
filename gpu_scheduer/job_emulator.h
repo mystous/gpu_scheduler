@@ -86,12 +86,17 @@ public:
   bool get_starvation_prevention_option() { return starvation_prevention; };
   chrono::duration<double> get_job_elapsed_time() { return progress_tp - job_start_tp; };
   string get_job_elapsed_time_string();
+  int get_job_adjust_overhead_time() { return job_adjust_overhead_times * job_adjust_overhead_fraction; };;
+  int get_job_adjust_count() { return job_adjust_overhead_times; };
 
 private:
+  int job_adjust_overhead_times = 0;
+  const int job_adjust_overhead_fraction = 5;
   string scheduling_name = "round_robin";
   void* call_back_object = nullptr;
   int finished_job_count = 0;
   int scheduled_job_count = 0;
+  int last_scheduled_job_count = 0;
   vector<job_entry> job_list;
   vector<server_entry> server_list;
   scheduler_type selected_scheduler = scheduler_type::mostallocated;
@@ -131,7 +136,8 @@ private:
   system_clock::time_point progress_tp;
   int max_age_count = 0;
   const int max_age_count_constant = 3;
-  const double starvation_prevention_criteria = 75.0;
+  double starvation_prevention_criteria = 75.0;
+  int defragmentaion_criteria = 4;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();
@@ -147,6 +153,8 @@ private:
   bool check_finishing();
   void initialize_progress_variables();
   void reallocation_log_memory();
+  void defragmentation_excute(bool &do_defragmentation);
+  void check_defragmentation_condition(bool& do_defragmentation);
   adjusting_server* server_control = nullptr;
 };
 
