@@ -140,9 +140,21 @@ bool adjusting_server::compare_server_priority(int op1, int op2) {
 
 int adjusting_server::get_optimal_adjusting_dp(int recursive_count) {
   static int max_full_empty_server = 0;
+  static int max_execute_count = 0;
+  static const int max_execute_number = 1000000;
   vector<job_entry*> rearrange_target;
 
+  if (max_execute_count > max_execute_number) { return max_full_empty_server; }
+  max_execute_count++;
+
+  string state_key = generate_state_key(recursive_count);
+  auto it = memoization_cache.find(state_key);
+  if (it != memoization_cache.end()) {
+    return it->second;
+  }
+
   if (0 == recursive_count) {
+    memoization_cache[state_key] = max_full_empty_server;
     max_full_empty_server = calcu_full_empty_server();
   }
 
@@ -161,6 +173,7 @@ int adjusting_server::get_optimal_adjusting_dp(int recursive_count) {
       int full_empty_server = calcu_full_empty_server();
       if (full_empty_server > max_full_empty_server) {
         max_full_empty_server = full_empty_server;
+        memoization_cache[state_key] = max_full_empty_server;
         dumpy_job_list();
       }
       max_full_empty_server = get_optimal_adjusting_dp(recursive_count + 1);
@@ -244,4 +257,15 @@ bool adjusting_server::rearrange_task(int server_index, job_element &job_obj, in
   switch_accelerator_status(job_obj.server_index, job_obj.job->get_accelerator_count(), gpu_allocation_type::empty, gpu_allocation_type::floating);
   job_obj.target_index = -1;
   return true;
+}
+
+string adjusting_server::generate_state_key(int recursive_count) {
+  std::ostringstream key_stream;
+  key_stream << recursive_count << "-";
+  for (const auto& server_idx : priroried_target_server) {
+    server_entry& server = server_list->at(server_idx);
+    int available_accelerators = get_empty_slot(server_idx);
+    key_stream << server_idx << ":" << available_accelerators << ";";
+  }
+  return key_stream.str();
 }

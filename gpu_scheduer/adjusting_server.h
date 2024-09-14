@@ -51,6 +51,7 @@ private:
   unordered_multimap<int, job_entry*> target_job;
   set<int> target_server;
   vector<int> priroried_target_server;
+  unordered_map<string, int> memoization_cache;
 
   void reconstruct_server_status();
   bool compare_server_priority(int op1, int op2);
@@ -63,5 +64,6 @@ private:
   int get_empty_slot(int server_index);
   void switch_accelerator_status(int server_index, int count, gpu_allocation_type privious, gpu_allocation_type after);
   void adjust_job_allocation();
+  string generate_state_key(int recursive_count);
 };
 
