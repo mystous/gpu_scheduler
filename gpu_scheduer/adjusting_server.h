@@ -22,8 +22,8 @@ namespace std {
 class adjusting_server
 {
 public:
-  adjusting_server(vector<server_entry>* servers) 
-  : server_list(servers){};
+  adjusting_server(vector<server_entry>* servers, vector<int>* target_queue) 
+  : server_list(servers), target_accelerator_count(target_queue){};
   virtual ~adjusting_server();
 
   bool defragementation();
@@ -52,6 +52,7 @@ private:
   set<int> target_server;
   vector<int> priroried_target_server;
   unordered_map<string, int> memoization_cache;
+  vector<int>* target_accelerator_count;
 
   void reconstruct_server_status();
   bool compare_server_priority(int op1, int op2);

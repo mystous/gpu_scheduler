@@ -31,6 +31,9 @@ void CSchedulerOption::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_CHECK_PREEMTION, preemtion_option);
   DDX_Control(pDX, IDC_CHECK_INF, perform_until_finish);
   DDX_Control(pDX, IDC_STARVATION_PREVENTION, starvation_prevention_opt);
+  DDX_Control(pDX, IDC_EDIT_AGE_WEIGHT, age_weight_const);
+  DDX_Control(pDX, IDC_EDIT_REORDER_SIZE, reorder_target_count);
+  DDX_Control(pDX, IDC_EDIT_UPPER_BOUND, starvation_upper_bound);
 }
 
 
@@ -41,6 +44,7 @@ BEGIN_MESSAGE_MAP(CSchedulerOption, CDialog)
   ON_BN_CLICKED(IDC_CHECK_FLAVOR, &CSchedulerOption::OnClickedCheckFlavor)
   ON_BN_CLICKED(IDC_CHECK_INF, &CSchedulerOption::OnClickedCheckInf)
     ON_BN_CLICKED(IDC_STARVATION_PREVENTION, &CSchedulerOption::OnClickedStarvationPrevention)
+  ON_EN_CHANGE(IDC_EDIT_AGE_WEIGHT, &CSchedulerOption::OnEnChangeEditAgeWeight)
 END_MESSAGE_MAP()
 
 
@@ -64,6 +68,14 @@ BOOL CSchedulerOption::OnInitDialog()
   perform_until_finish.SetCheck(*infinity_working);
   starvation_prevention_opt.SetCheck(*starvation_prevention);
 
+  CString strValue;
+  strValue.Format(_T("%.1f"), *starvation_upper_bound_value);
+  starvation_upper_bound.SetWindowText(strValue);
+  strValue.Format(_T("%f"), *age_weight_const_value);
+  age_weight_const.SetWindowText(strValue);
+  strValue.Format(_T("%d"), *reorder_target_value);
+  reorder_target_count.SetWindowText(strValue);
+
   return TRUE;  // return TRUE unless you set the focus to a control
   // EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -80,24 +92,36 @@ void CSchedulerOption::set_scheduler_type(int index) {
 void CSchedulerOption::OnBnClickedOk()
 {
     // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-    CDialog::OnOK();
+
+  CString strValue;
+  starvation_upper_bound.GetWindowText(strValue);
+  *starvation_upper_bound_value = _ttof(strValue);
+  age_weight_const.GetWindowText(strValue);
+  *age_weight_const_value = _ttof(strValue);
+  reorder_target_count.GetWindowText(strValue);
+  *reorder_target_value = _ttoi(strValue);
+  *starvation_prevention = starvation_prevention_opt.GetCheck();
+  *scheduler_with_defined = scheduler_flavor.GetCheck();
+  *infinity_working = perform_until_finish.GetCheck();
+  *preemtion_enabling = preemtion_option.GetCheck();
+  select_scheduler = scheduler_combo.GetCurSel();
+  if (nullptr != scheduler_selection) {
+    *scheduler_selection = select_scheduler;
+  }
+  CDialog::OnOK();
 }
 
 
 void CSchedulerOption::OnSelchangeComboScheduler()
 {
   // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-  select_scheduler = scheduler_combo.GetCurSel();
-  if (nullptr != scheduler_selection) {
-    *scheduler_selection = select_scheduler;
-  }
+  
 }
 
 
 void CSchedulerOption::OnClickedCheckPreemtion()
 {
   // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-  *preemtion_enabling = preemtion_option.GetCheck();
   
 }
 
@@ -105,17 +129,25 @@ void CSchedulerOption::OnClickedCheckPreemtion()
 void CSchedulerOption::OnClickedCheckFlavor()
 {
   // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-  *scheduler_with_defined = scheduler_flavor.GetCheck();
 }
 
 
 void CSchedulerOption::OnClickedCheckInf()
 {
-  *infinity_working = perform_until_finish.GetCheck();
 }
 
 
 void CSchedulerOption::OnClickedStarvationPrevention()
 {
-  *starvation_prevention = starvation_prevention_opt.GetCheck();
+}
+
+
+void CSchedulerOption::OnEnChangeEditAgeWeight()
+{
+  // TODO:  RICHEDIT 컨트롤인 경우, 이 컨트롤은
+  // CDialog::OnInitDialog() 함수를 재지정 
+  //하고 마스크에 OR 연산하여 설정된 ENM_CHANGE 플래그를 지정하여 CRichEditCtrl().SetEventMask()를 호출하지 않으면
+  // 이 알림 메시지를 보내지 않습니다.
+
+  // TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }

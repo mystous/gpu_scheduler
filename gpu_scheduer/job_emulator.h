@@ -41,11 +41,14 @@ public:
 
   void build_job_list(string filename, scheduler_type scheduler_index, 
                       bool using_preemetion, bool scheduleing_with_flavor_option, 
-                      bool working_till_end, bool prevent_starvation);
+                      bool working_till_end, bool prevent_starvation, 
+                      double svp_upper, double age_weight, int reorder_count);
   void build_job_queue();
   void build_server_list(string filename);
   void set_option(scheduler_type scheduler_index, bool using_preemetion, 
-                bool scheduleing_with_flavor_option, bool working_till_end, bool prevent_starvation);
+                bool scheduleing_with_flavor_option, bool working_till_end, 
+                bool prevent_starvation, double svp_upper, double age_weight,
+                int reorder_count);
 
   scheduler_type get_selction_scheduler() { return selected_scheduler; };
   bool get_preemtion_enabling() { return preemtion_enabling; };
@@ -137,6 +140,9 @@ private:
   int max_age_count = 0;
   const int max_age_count_constant = 3;
   double starvation_prevention_criteria = 70.0;
+  double age_weight_constant = 0.13889;
+  int preemption_target_count = 3;
+  vector<int> preemption_object;
   int defragmentaion_criteria = 4;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
