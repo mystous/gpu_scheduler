@@ -48,7 +48,7 @@ public:
   void set_option(scheduler_type scheduler_index, bool using_preemetion, 
                 bool scheduleing_with_flavor_option, bool working_till_end, 
                 bool prevent_starvation, double svp_upper, double age_weight,
-                int reorder_count);
+                int max_dp_execution_count);
 
   scheduler_type get_selction_scheduler() { return selected_scheduler; };
   bool get_preemtion_enabling() { return preemtion_enabling; };
@@ -91,6 +91,10 @@ public:
   string get_job_elapsed_time_string();
   int get_job_adjust_overhead_time() { return job_adjust_overhead_times * job_adjust_overhead_fraction; };;
   int get_job_adjust_count() { return job_adjust_overhead_times; };
+  double get_age_weight_constant() { return age_weight_constant; };
+  int get_dp_execution_maximum() { return dp_execution_maximum; }
+  double get_starvation_prevention_criteria() { return starvation_prevention_criteria; }
+  scheduler_type get_selected_scheduler() { return selected_scheduler; };
 
 private:
   int job_adjust_overhead_times = 0;
@@ -139,11 +143,11 @@ private:
   system_clock::time_point progress_tp;
   int max_age_count = 0;
   const int max_age_count_constant = 3;
-  double starvation_prevention_criteria = 70.0;
-  double age_weight_constant = 0.13889;
-  int preemption_target_count = 3;
+  double starvation_prevention_criteria = global_const::starvation_upper;
+  double age_weight_constant = global_const::age_weight;
+  int dp_execution_maximum = global_const::dp_execution_maximum;
   vector<int> preemption_object;
-  int defragmentaion_criteria = 4;
+  int defragmentaion_criteria = 20;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();

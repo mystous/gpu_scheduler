@@ -22,8 +22,8 @@ namespace std {
 class adjusting_server
 {
 public:
-  adjusting_server(vector<server_entry>* servers, vector<int>* target_queue) 
-  : server_list(servers), target_accelerator_count(target_queue){};
+  adjusting_server(vector<server_entry>* servers, int execute_maximum)
+    : server_list(servers), max_execute_number(execute_maximum){};
   virtual ~adjusting_server();
 
   bool defragementation();
@@ -35,7 +35,7 @@ private:
   struct job_for_dp {
     job_for_dp(job_entry* job_instance, int server_number/*, int accelerator_pos*/) :
       job{ job_instance }, server_index{ server_number }/*, accelerator_index{accelerator_pos}*/ {};
-    job_entry*              job = nullptr;
+    job_entry* job = nullptr;
     int                     server_index = -1;
     int                     target_index = -1;
     //int                     accelerator_index = -1;
@@ -53,12 +53,14 @@ private:
   vector<int> priroried_target_server;
   unordered_map<string, int> memoization_cache;
   vector<int>* target_accelerator_count;
+  int max_execute_number = 1000000;
+
 
   void reconstruct_server_status();
   bool compare_server_priority(int op1, int op2);
   job_entry* get_job_entry(string job_id, vector<job_entry*> job_list);
-  int get_optimal_adjusting_dp(int recursive_count);
-  bool rearrange_task(int server_index, job_element &job_obj, int recursive_count, bool reverse);
+  int get_optimal_adjusting_dp(int recursive_count, int & max_full_empty_server, int &execute_count);
+  bool rearrange_task(int server_index, job_element& job_obj, int recursive_count, bool reverse);
   int calcu_full_empty_server();
   void dumpy_job_list();
   void build_dp_target();

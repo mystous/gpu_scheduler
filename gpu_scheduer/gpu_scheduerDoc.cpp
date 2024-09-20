@@ -70,15 +70,15 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     bool preemtion_enabling = false;
     int scheduler_selection = 0;
     bool scheduler_with_flaver = false;
-    bool working_till_end = false;
+    bool working_till_end = true;
     bool prevent_starvation = false;
-    double svp_upper = 70.;
-    double age_weight = 0.13889;
-    int reorder_count = 3;
+    double svp_upper = global_const::starvation_upper;
+    double age_weight = global_const::age_weight;
+    int dp_execution_maximum = global_const::dp_execution_maximum;
 
     CSchedulerOption dlg_option;
     dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, 
-                                &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &reorder_count);
+                                &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &dp_execution_maximum);
     if (dlg_option.DoModal() != IDOK) {
       AfxMessageBox(L"Select Scheduling method first!");
       return FALSE;
@@ -87,7 +87,7 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     job_emulator_obj.build_job_list([&](CString filaname) -> string {
       CT2A asciiString(filaname);
       return std::string(asciiString);
-      }(filePath), (scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, reorder_count);
+      }(filePath), (scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, dp_execution_maximum);
 
     DWORD size = MAX_PATH;
     std::vector<TCHAR> currentDir(size);

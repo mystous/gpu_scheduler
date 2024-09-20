@@ -124,7 +124,7 @@ void job_emulator::build_server_list(string filename) {
 
   scheduler_obj->set_server(&server_list);
   if (nullptr == server_control) {
-    server_control = new adjusting_server(&server_list, &preemption_object);
+    server_control = new adjusting_server(&server_list, dp_execution_maximum);
   }
   //server_control->reconstruct_server_status();
   
@@ -249,7 +249,7 @@ void job_emulator::get_wait_job_request_acclerator(vector<int>& request) {
 }
 
 void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end,
-                              bool prevent_starvation, double svp_upper, double age_weight, int reorder_count) {
+                              bool prevent_starvation, double svp_upper, double age_weight, int max_dp_execution_count) {
   preemtion_enabling = using_preemetion;
   scheduling_with_flavor = scheduleing_with_flavor_option;
   selected_scheduler = scheduler_index;
@@ -257,7 +257,7 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
   starvation_prevention = prevent_starvation;
   starvation_prevention_criteria = svp_upper;
   age_weight_constant = age_weight;
-  preemption_target_count = reorder_count;
+  dp_execution_maximum = max_dp_execution_count;
   if (nullptr != scheduler_obj) {
     delete scheduler_obj;
   }
@@ -331,18 +331,6 @@ void job_emulator::defragmentation_excute(bool& do_defragmentation) {
     }
     return wait_job_count;
     }() && true == do_defragmentation) {
-
-    for (int i = 0; i < wait_queue_group.size(); ++i) {
-
-      queue<job_entry*> shadow_queue = *wait_queue_group[i];
-
-      int repeat_count = min(shadow_queue.size(), preemption_target_count);
-      for (int j = 0; j < repeat_count; i++) {
-        job_entry* job = shadow_queue.front();
-        preemption_object.push_back(job->get_accelerator_count());
-        shadow_queue.pop();
-      }
-    }
 
     if (server_control->defragementation()) {
       job_adjust_overhead_times++;

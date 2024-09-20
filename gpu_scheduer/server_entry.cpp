@@ -74,17 +74,7 @@ int server_entry::flush() {
       continue;
     }
 
-    //flushed_job = remove_job(job);
-    string id = job->get_job_id();
-    //for ( i = 0; i < job->get_accelerator_count(); ++i) {
-    for (i = 0; i < get_accelerator_count(); ++i) {
-      if (reserved[i] && id == job_id_for_reserved[i]) {
-        reserved[i] = false;
-        job_id_for_reserved[i] = "";
-        utilization_list[i] = 0.0;
-        flushed_job++;
-      }
-    }
+    flushed_job += remove_job(job);
   }
 
   return flushed_job;

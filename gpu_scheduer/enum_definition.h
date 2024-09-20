@@ -4,6 +4,9 @@ namespace global_const {
   const int accelator_category_count = 8;
   const int accelator_per_server_max = 8;
   const int accelerator_counts = 7;
+  const double starvation_upper = 80.;
+  const double age_weight = 0.13889;
+  const int dp_execution_maximum = 100000;
 };
 
 enum class accelator_type : int {

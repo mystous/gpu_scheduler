@@ -205,23 +205,23 @@ void CgpuscheduerView::OnEmulationSetting()
   CSchedulerOption dlg_option;
 
   bool preemtion_enabling = job_emul.get_preemtion_enabling();
-  int scheduler_selection = 0;
+  int scheduler_selection = static_cast<int>(job_emul.get_selction_scheduler());
   bool scheduler_with_flaver = job_emul.get_scheduling_with_flavor_option();
   bool working_till_end = job_emul.get_finishing_condition();
   bool prevent_starvation = job_emul.get_prevent_starvation();
-  double svp_upper = 70.;
-  double age_weight = 0.13889;
-  int reorder_count = 3;
+  double svp_upper = job_emul.get_starvation_prevention_criteria();
+  double age_weight = job_emul.get_age_weight_constant();
+  int dp_execution_maximum = job_emul.get_dp_execution_maximum();
 
   dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, 
-                              &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &reorder_count);
+                              &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &dp_execution_maximum);
 
   dlg_option.set_scheduler_type((int)job_emul.get_selction_scheduler());
   //dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
   //dlg_option.scheduler_with_flavor = job_emul.get_scheduling_with_flavor_option();
 
   if (dlg_option.DoModal() == IDOK) {
-    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, reorder_count);
+    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, dp_execution_maximum);
   }
   Invalidate();
 }
