@@ -7,7 +7,7 @@
 #include "call_back_object.h"
 
 
-class CgpuscheduerView : public CView, public call_back_object
+class CgpuscheduerView : public CScrollView, public call_back_object
 {
 protected: // create from serialization only
 	CgpuscheduerView() noexcept;
@@ -58,9 +58,14 @@ private:
   void DrawTotalAllocationRatio(CDC& dc, CRect& rect, CPoint start_position, int reserved, int total_count);
   void DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position, int reserved, int total_count);
   CString FormatWithCommas(int value);
-  void DrawGPUStatus(CDC& dc, CRect& rect);
+  int DrawGPUStatus(CDC& dc, CRect& rect);
   void DrawResult(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
   void StartEmul();
+  void SetScrollSize();
+  const int draw_width = 4000;
+  const int draw_height = 2000;
+  const int scroll_area_hor = 1762;
+  int scroll_area_ver = 2000;
 
 // Generated message map functions
 protected:
@@ -79,6 +84,8 @@ public:
   afx_msg void OnButtonEmulStop();
 //  afx_msg void OnFileSaveAs();
   afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+  virtual void OnInitialUpdate();
+  afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

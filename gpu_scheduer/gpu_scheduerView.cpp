@@ -38,9 +38,9 @@ constexpr COLORREF greenColor = RGB(91, 194, 75);
 
 // CgpuscheduerView
 
-IMPLEMENT_DYNCREATE(CgpuscheduerView, CView)
+IMPLEMENT_DYNCREATE(CgpuscheduerView, CScrollView)
 
-BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
+BEGIN_MESSAGE_MAP(CgpuscheduerView, CScrollView)
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
@@ -58,6 +58,7 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CView)
   ON_COMMAND(ID_BUTTON_EMUL_STOP, &CgpuscheduerView::OnButtonEmulStop)
 //  ON_COMMAND(ID_FILE_SAVE_AS, &CgpuscheduerView::OnFileSaveAs)
 ON_WM_HSCROLL()
+ON_WM_VSCROLL()
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -92,27 +93,34 @@ void CgpuscheduerView::OnDraw(CDC* pDC)
 	if (!pDoc)
 		return;
 
+  CRect clipRect;
+  pDC->GetClipBox(&clipRect); // 클리핑 영역 가져오기
+  pDC->IntersectClipRect(clipRect); // 클리핑 영역 설정
+
   CRect rect;
   GetClientRect(&rect);
   int width = rect.Width();
   int height = rect.Height();
 
+  rect.SetRect(0, 0, draw_width, draw_height);
+
   CDC memDC;
   CBitmap bitmap;
 
   memDC.CreateCompatibleDC(pDC);
-  bitmap.CreateCompatibleBitmap(pDC, width, height);
+  bitmap.CreateCompatibleBitmap(pDC, draw_width, draw_height);
   CBitmap* pOldBitmap = memDC.SelectObject(&bitmap);
 
   memDC.FillSolidRect(&rect, RGB(255, 255, 255));
 
-  DrawGPUStatus(memDC, rect);
+  scroll_area_ver = DrawGPUStatus(memDC, rect);
 
-  pDC->BitBlt(0, 0, width, height, &memDC, 0, 0, SRCCOPY);
+  pDC->BitBlt(0, 0, draw_width, draw_height, &memDC, 0, 0, SRCCOPY);
 
   memDC.SelectObject(pOldBitmap);
   bitmap.DeleteObject();
   memDC.DeleteDC();
+  SetScrollSize();
 }
 
 
@@ -164,9 +172,10 @@ void CgpuscheduerView::function_call() {
   InvalidateRect(rect);
 }
 
-void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
+int CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
 {
-  constexpr int startx = 10, starty = 10;
+  //CPoint scrollPos = GetScrollPosition();
+  int startx = 10, starty = 10;// +scrollPos.y;
   CPoint start_position(startx, starty);
   job_emulator& job_emul = GetDocument()->get_job_element_obj();
   CFont font;
@@ -184,6 +193,8 @@ void CgpuscheduerView::DrawGPUStatus(CDC& dc, CRect &rect)
   catch (...) {}
 
   dc.SelectObject(pOldFont);
+
+  return start_position.y;
 }
 
 void CgpuscheduerView::OnEmulationStart()
@@ -746,6 +757,31 @@ void CgpuscheduerView::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
   // TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
   __super::OnHScroll(nSBCode, nPos, pScrollBar);
+  InvalidateRect(FALSE);
 }
 
 
+void CgpuscheduerView::SetScrollSize() {
+  CSize sizeTotal;
+  // Set the total size for scrolling
+  sizeTotal.cx = scroll_area_hor; // 가로 스크롤 영역
+  sizeTotal.cy = scroll_area_ver; // 세로 스크롤 영역
+  SetScrollSizes(MM_TEXT, sizeTotal);
+}
+
+void CgpuscheduerView::OnInitialUpdate()
+{
+  __super::OnInitialUpdate();
+
+  // TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+  SetScrollSize();
+}
+
+
+void CgpuscheduerView::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+  // TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+  __super::OnVScroll(nSBCode, nPos, pScrollBar);
+  InvalidateRect(FALSE);
+}
