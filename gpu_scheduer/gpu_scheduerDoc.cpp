@@ -16,6 +16,7 @@
 #include "enum_definition.h"
 #include "log_gen_dialog.h"
 #include "log_generator.h"
+#include "global_definistion.h"
 
 #include <propkey.h>
 
@@ -67,18 +68,10 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     CString filePath = dlg.GetPathName();
     AfxGetApp()->OpenDocumentFile(filePath);
 
-    bool preemtion_enabling = false;
-    int scheduler_selection = 0;
-    bool scheduler_with_flaver = false;
-    bool working_till_end = true;
-    bool prevent_starvation = false;
-    double svp_upper = global_const::starvation_upper;
-    double age_weight = global_const::age_weight;
-    int dp_execution_maximum = global_const::dp_execution_maximum;
+    global_structure::scheduler_options options;
 
     CSchedulerOption dlg_option;
-    dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, 
-                                &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &dp_execution_maximum);
+    dlg_option.set_option_value(&options);
     if (dlg_option.DoModal() != IDOK) {
       AfxMessageBox(L"Select Scheduling method first!");
       return FALSE;
@@ -87,7 +80,7 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     job_emulator_obj.build_job_list([&](CString filaname) -> string {
       CT2A asciiString(filaname);
       return std::string(asciiString);
-      }(filePath), (scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, dp_execution_maximum);
+      }(filePath), options);
 
     DWORD size = MAX_PATH;
     std::vector<TCHAR> currentDir(size);
@@ -96,14 +89,12 @@ BOOL CgpuscheduerDoc::OnNewDocument()
     job_emulator_obj.build_job_queue();
     job_emulator_obj.build_server_list("server.csv");
 
-    
+    SetModifiedFlag();
+
+    return TRUE;
   }
 
-  SetModifiedFlag();
-	// TODO: add reinitialization code here
-	// (SDI documents will reuse this document)
-
-	return TRUE;
+  return FALSE;
 }
 
 #ifdef SHARED_HANDLERS
@@ -253,15 +244,16 @@ void CgpuscheduerDoc::OnFileSave()
 void CgpuscheduerDoc::save_result() {
   bool result = false;
   USES_CONVERSION;
-  CFileDialog dlg(FALSE, _T("result"), A2CT(job_emulator_obj.get_savefile_candidate_name().c_str()),
-    OFN_OVERWRITEPROMPT, _T("Emulation Result Files (*.result)|*.result|All Files (*.*)|*.*||"));
+  string save_file_name = job_emulator_obj.get_savefile_candidate_name();
+  CFileDialog dlg(FALSE, _T(""), A2CT(save_file_name.c_str()),
+    OFN_OVERWRITEPROMPT, _T("Emulation Result Files (*.)|*.|All Files (*.*)|*.*||"));
 
   if (dlg.DoModal() == IDOK)
   {
     CString filePath = dlg.GetPathName();
     string str_file = std::string(CT2CA(filePath));
     CWaitCursor *wait = new CWaitCursor();
-    result = job_emulator_obj.save_result_log(str_file);
+    result = job_emulator_obj.save_result_totaly(str_file);
     delete wait;
   }
 

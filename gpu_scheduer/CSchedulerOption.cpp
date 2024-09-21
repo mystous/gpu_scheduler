@@ -23,17 +23,18 @@ CSchedulerOption::~CSchedulerOption()
 
 void CSchedulerOption::DoDataExchange(CDataExchange* pDX)
 {
-  CDialog::DoDataExchange(pDX);
-  //  DDX_Check(pDX, IDC_CHECK_PREEMTION, using_preemtion);
-  DDX_Control(pDX, IDC_COMBO_SCHEDULER, scheduler_combo);
-  //  DDX_Check(pDX, IDC_CHECK_FLAVOR, scheduler_with_flavor);
-  DDX_Control(pDX, IDC_CHECK_FLAVOR, scheduler_flavor);
-  DDX_Control(pDX, IDC_CHECK_PREEMTION, preemtion_option);
-  DDX_Control(pDX, IDC_CHECK_INF, perform_until_finish);
-  DDX_Control(pDX, IDC_STARVATION_PREVENTION, starvation_prevention_opt);
-  DDX_Control(pDX, IDC_EDIT_AGE_WEIGHT, age_weight_const);
-  DDX_Control(pDX, IDC_EDIT_REORDER_SIZE, reorder_target_count);
-  DDX_Control(pDX, IDC_EDIT_UPPER_BOUND, starvation_upper_bound);
+    CDialog::DoDataExchange(pDX);
+    //  DDX_Check(pDX, IDC_CHECK_PREEMTION, using_preemtion);
+    DDX_Control(pDX, IDC_COMBO_SCHEDULER, scheduler_combo);
+    //  DDX_Check(pDX, IDC_CHECK_FLAVOR, scheduler_with_flavor);
+    DDX_Control(pDX, IDC_CHECK_FLAVOR, scheduler_flavor);
+    DDX_Control(pDX, IDC_CHECK_PREEMTION, preemtion_option);
+    DDX_Control(pDX, IDC_CHECK_INF, perform_until_finish);
+    DDX_Control(pDX, IDC_STARVATION_PREVENTION, starvation_prevention_opt);
+    DDX_Control(pDX, IDC_EDIT_AGE_WEIGHT, age_weight_const);
+    DDX_Control(pDX, IDC_EDIT_REORDER_SIZE, reorder_target_count);
+    DDX_Control(pDX, IDC_EDIT_UPPER_BOUND, starvation_upper_bound);
+    DDX_Control(pDX, IDC_EDIT_WAIT_WINDOW, preemption_wait_window);
 }
 
 
@@ -62,7 +63,7 @@ BOOL CSchedulerOption::OnInitDialog()
   scheduler_combo.AddString(_T("Fare Share"));
 
   //select_scheduler = 0;
-  scheduler_combo.SetCurSel(select_scheduler);
+  scheduler_combo.SetCurSel(get_scheduler_type());
   scheduler_flavor.SetCheck(*scheduler_with_defined);
   preemtion_option.SetCheck(*preemtion_enabling);
   perform_until_finish.SetCheck(*infinity_working);
@@ -75,13 +76,16 @@ BOOL CSchedulerOption::OnInitDialog()
   age_weight_const.SetWindowText(strValue);
   strValue.Format(_T("%d"), *reorder_target_value);
   reorder_target_count.SetWindowText(strValue);
+  strValue.Format(_T("%d"), *preemption_task_window_value);
+  preemption_wait_window.SetWindowText(strValue);
+
 
   return TRUE;  // return TRUE unless you set the focus to a control
   // EXCEPTION: OCX Property Pages should return FALSE
 }
 
 int CSchedulerOption::get_scheduler_type() {
-  return select_scheduler;
+  return static_cast<int>(*scheduler_selection);
 }
 
 void CSchedulerOption::set_scheduler_type(int index) {
@@ -100,13 +104,15 @@ void CSchedulerOption::OnBnClickedOk()
   *age_weight_const_value = _ttof(strValue);
   reorder_target_count.GetWindowText(strValue);
   *reorder_target_value = _ttoi(strValue);
+  preemption_wait_window.GetWindowText(strValue);
+  *preemption_task_window_value = _ttoi(strValue);
   *starvation_prevention = starvation_prevention_opt.GetCheck();
   *scheduler_with_defined = scheduler_flavor.GetCheck();
   *infinity_working = perform_until_finish.GetCheck();
   *preemtion_enabling = preemtion_option.GetCheck();
   select_scheduler = scheduler_combo.GetCurSel();
   if (nullptr != scheduler_selection) {
-    *scheduler_selection = select_scheduler;
+    *scheduler_selection = static_cast<scheduler_type>(select_scheduler);
   }
   CDialog::OnOK();
 }

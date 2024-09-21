@@ -62,6 +62,7 @@ private:
   void DrawResult(CDC& dc, CRect& rect, job_emulator& job_emul, CPoint& start_position);
   void StartEmul();
   void SetScrollSize();
+  CString BuildMetaInfo(job_emulator& job_emul);
   const int draw_width = 4000;
   const int draw_height = 2000;
   const int scroll_area_hor = 1762;

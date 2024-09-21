@@ -193,6 +193,7 @@
     <ClInclude Include="CSchedulerOption.h" />
     <ClInclude Include="enum_definition.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="global_definistion.h" />
     <ClInclude Include="gpu_log_dialog.h" />
     <ClInclude Include="gpu_scheduer.h" />
     <ClInclude Include="gpu_scheduerDoc.h" />

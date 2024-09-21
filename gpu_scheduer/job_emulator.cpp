@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "job_emulator.h"
 #include <ctime>
+#include "utility_class.h"
 
 
 #ifdef _WIN32
@@ -131,10 +132,7 @@ void job_emulator::build_server_list(string filename) {
   file.close();
 }
 
-void job_emulator::build_job_list(string filename, scheduler_type scheduler_index, 
-                                  bool using_preemetion, bool scheduleing_with_flavor_option, 
-                                  bool working_till_end, bool prevent_starvation,
-                                  double svp_upper, double age_weight, int reorder_count) {
+void job_emulator::build_job_list(string filename, global_structure::scheduler_options options) {
   ifstream file(filename);
 
   if (!file.is_open()) {
@@ -143,7 +141,7 @@ void job_emulator::build_job_list(string filename, scheduler_type scheduler_inde
   }
 
   job_file_name = filename;
-  set_option(scheduler_index, using_preemetion, scheduleing_with_flavor_option, working_till_end, prevent_starvation, svp_upper, age_weight, reorder_count);
+  set_option(options);
 
   string line;
   while (getline(file, line)) {
@@ -206,8 +204,8 @@ string job_emulator::get_job_elapsed_time_string() {
     << setw(2) << setfill('0') << minutes.count() << ":"
     << setw(2) << setfill('0') << seconds.count() << ":"
     << std::setw(3) << std::setfill('0') << milliseconds.count();
-
-  return oss.str();
+  string rtn = oss.str();
+  return rtn;
 }
 
 void job_emulator::build_job_queue() {
@@ -248,16 +246,16 @@ void job_emulator::get_wait_job_request_acclerator(vector<int>& request) {
   scheduler_obj->get_wait_job_request_acclerator(request);
 }
 
-void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemetion, bool scheduleing_with_flavor_option, bool working_till_end,
-                              bool prevent_starvation, double svp_upper, double age_weight, int max_dp_execution_count) {
-  preemtion_enabling = using_preemetion;
-  scheduling_with_flavor = scheduleing_with_flavor_option;
-  selected_scheduler = scheduler_index;
-  perform_until_finish = working_till_end;
-  starvation_prevention = prevent_starvation;
-  starvation_prevention_criteria = svp_upper;
-  age_weight_constant = age_weight;
-  dp_execution_maximum = max_dp_execution_count;
+void job_emulator::set_option(global_structure::scheduler_options options) {
+  preemtion_enabling = options.using_preemetion;
+  scheduling_with_flavor = options.scheduleing_with_flavor_option;
+  selected_scheduler = options.scheduler_index;
+  perform_until_finish = options.working_till_end;
+  starvation_prevention = options.prevent_starvation;
+  starvation_prevention_criteria = options.svp_upper;
+  age_weight_constant = options.age_weight;
+  dp_execution_maximum = options.reorder_count;
+  defragmentaion_criteria = options.preemption_task_window;
   if (nullptr != scheduler_obj) {
     delete scheduler_obj;
   }
@@ -287,6 +285,7 @@ void job_emulator::set_option(scheduler_type scheduler_index, bool using_preemet
   }
   scheduler_obj->set_wait_queue(&wait_queue_group);
   scheduler_obj->set_wait_age_queue(&wait_queue_age);
+  scheduler_obj->set_scheduled_queue(&scheduled_history);
   scheduler_obj->set_server(&server_list);
   scheduler_obj->set_scheduling_condition(preemtion_enabling, scheduling_with_flavor, perform_until_finish);
 }
@@ -314,7 +313,9 @@ void job_emulator::step_foward() {
       scheduled_job_count += scheduler_obj->scheduling_job();
       check_defragmentation_condition(do_defragmentation);
       log_rate_info();
-      step_forward_callback(call_back_object);
+      //if (!step_forward_callback) {
+        step_forward_callback(call_back_object);
+      //}
     }
   }
 
@@ -570,9 +571,10 @@ void job_emulator::initialize_progress_variables() {
   memory_alloc_size = get_total_time_slot();
   job_adjust_overhead_times = 0;
 
+  scheduled_history.clear();
+
   allocation_rate = new double[memory_alloc_size];
   utilization_rate = new double[memory_alloc_size];
-
 
   int server_count = server_list.size();
 
@@ -637,6 +639,117 @@ void job_emulator::start_progress() {
   emulation_player.detach();
 }
 
+bool job_emulator::save_result_totaly() {
+  return save_result_totaly(get_savefile_candidate_name());
+}
+
+bool job_emulator::save_result_totaly(string file_body_name) {
+  bool rtn_result = true;
+  const int result_size = 3;
+  bool result[result_size] = {false,};
+  
+  result[1] = save_result_meta(file_body_name);
+  result[2] = save_waiting_time(file_body_name);
+  result[0] = save_result_log(file_body_name);
+
+  for (int i = 0; i < result_size; ++i) {
+    rtn_result &= result[i];
+  }
+
+  return rtn_result;
+}
+
+bool job_emulator::save_waiting_time() {
+  return save_waiting_time(get_savefile_candidate_name());
+}
+bool job_emulator::save_waiting_time(string file_body_name) {
+  ofstream file(file_body_name + ".tasklog");
+  int index = 0;
+  string message;
+  if (!saving_possiblity) { return false; }
+  if (!file.is_open()) { return false; }
+
+  file << "Index,job id,Accumulated Age,Required Accelerator Count,Utilization,Preemption,Flaver Index,Flaver,User Tem,Pod Name,Name Space,Project" << "\n";
+  for (auto&& job_meta : scheduled_history) {
+    file << index++ << ","
+      << job_meta.job->get_job_id() << ","
+      << job_meta.accumulated_age << ","
+      << job_meta.job->get_accelerator_count() << ","
+      << job_meta.job->get_utilization() << ",";
+      message = job_meta.job->is_preemtion_possible() ? "true" : "false";
+      file << message << ","
+        << static_cast<int>(job_meta.job->get_flavor()) << ","
+        << utility_class::get_accelerator_name(job_meta.job->get_flavor()) << ","
+        << job_meta.job->get_user_team() << ","
+        << job_meta.job->get_pod_name() << ","
+        << job_meta.job->get_name_sapce() << ","
+        << job_meta.job->get_project_name() << "\n";
+  }
+
+  file.close();
+  return true;
+}
+
+bool job_emulator::save_result_meta() {
+  return save_result_meta(get_savefile_candidate_name());
+}
+
+bool job_emulator::save_result_meta(string file_body_name)
+{
+  ofstream file(file_body_name + ".meta");
+
+  if (!saving_possiblity) { return false; }
+  if (!file.is_open()) { return false; }
+  string message;
+  double value;
+  int value_;
+
+  file << "Item,Contents" << "\n";
+  file << "start time," << utility_class::conver_tp_str(job_start_tp) << "\n";
+  file << "scheduler index," << static_cast<int>(selected_scheduler) << "\n";
+  file << "scheduler name," << get_setting_scheduling_name() << "\n";
+  value_ = static_cast<int>(get_job_list_ptr()->size());
+  file << "Total Job," << value_ << "\n";
+  file << "Total Duration(Expected)," << total_time_slot << "\n";
+  value_ = get_done_emulation_step() + 1;
+  std::stringstream ss;
+  ss << std::setw(2) << std::setfill('0') << value_ / 1440 << " Day(s) "
+    << std::setw(2) << std::setfill('0') << (value_ % 1440) / 60 << ":"
+    << std::setw(2) << std::setfill('0') << value_ % 60;
+  message = ss.str();
+  file << "Total Emulation minutes," << value_ << "\n";
+  file << "Total Emulation Time," << message << "\n";
+  auto minutes = chrono::duration_cast<chrono::milliseconds>(get_job_elapsed_time());
+  value_ = static_cast<int>(minutes.count());
+  file << "Expriment taken(msec)," << value_ << "\n";
+  file << "Expriment taken," << get_job_elapsed_time_string() << "\n";
+  message = preemtion_enabling ? "true" : "false";
+  file << "preemption enabling," << message << "\n";
+  message = scheduling_with_flavor ? "true" : "false";
+  file << "scheduling with flavor," << message << "\n";
+  message = perform_until_finish ? "true" : "false";
+  file << "perform until finish," << message << "\n";
+  message = starvation_prevention ? "true" : "false";
+  file << "starvation prevention," << message << "\n";
+  value = get_starvation_prevention_option() ? get_age_weight_constant() : 0.;
+  file << "alpha," << value << "\n";
+  value = get_starvation_prevention_option() ? get_starvation_prevention_criteria() : 0.;
+  file << "beta," << value << "\n";
+  value_ = get_preemtion_enabling() ? get_defragmentaion_criteria() : 0;
+  file << "w," << value_ << "\n";
+  value_ = get_preemtion_enabling() ? get_dp_execution_maximum() : 0;
+  file << "d," << value_ << "\n";
+  value_ = get_job_adjust_count();
+  file << "Adjust task counts," << value_ << "\n";
+  value_ = get_job_adjust_overhead_time();
+  file << "Ajust task taken time(min)," << value_ << "\n";
+  file << "job file," << job_file_name << "\n";
+  file << "save prefix," << file_body_name;
+
+  file.close();
+  return true;
+}
+
 bool job_emulator::save_result_log() {
   return save_result_log(get_savefile_candidate_name());
 }
@@ -646,7 +759,7 @@ int job_emulator::get_progress_time_slot() {
 }
 
 bool job_emulator::save_result_log(string file_name) {
-  ofstream file(file_name);
+  ofstream file(file_name + ".result");
 
   if (!saving_possiblity) { return false; }
   if (!file.is_open()) { return false; }
@@ -697,7 +810,7 @@ string job_emulator::get_savefile_candidate_name() {
   string formattedTime = ss.str();
 
 #ifdef _WIN32
-  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({})_preemtion({}).result", 
+  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({})_preemtion({}).", 
     get_setting_scheduling_name(), formattedTime, get_total_job_count(), server_number, accelerator_number,
     get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false", preemtion_enabling ? "true" : "false");
 #else
@@ -709,7 +822,7 @@ string job_emulator::get_savefile_candidate_name() {
     ")_flavor(" + (scheduling_with_flavor ? "true" : "false") +
     ")_starvation(" + (starvation_prevention ? "true" : "false") +
     ")_preemtion(" + (preemtion_enabling ? "true" : "false") +
-    ").result";
+    ").";
 #endif //_WIN32
   return filename;
 }

@@ -7,6 +7,7 @@ namespace global_const {
   const double starvation_upper = 80.;
   const double age_weight = 0.13889;
   const int dp_execution_maximum = 100000;
+  const int defragmentation_criteria = 20;
 };
 
 enum class accelator_type : int {

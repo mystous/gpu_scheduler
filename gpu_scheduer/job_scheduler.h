@@ -20,6 +20,7 @@ public:
   //void set_wait_queue(queue<job_entry*>* queue) { wait_queue = queue; };
   void set_wait_queue(vector<queue<job_entry*>*>* queue) { wait_queue_group = queue; };
   void set_wait_age_queue(vector<vector<job_age_struct>>* queue) { wait_queue_age = queue; };
+  void set_scheduled_queue(vector<job_age_struct>* queue) { scheduled_history = queue; };
 protected:
   vector<server_entry>* target_server = nullptr;
   bool preemtion_enabling = false;
@@ -29,5 +30,6 @@ protected:
   //queue<job_entry*>* wait_queue = nullptr;
   vector<queue<job_entry*>*>* wait_queue_group = nullptr;
   vector<vector<job_age_struct>>* wait_queue_age = nullptr;
+  vector<job_age_struct>* scheduled_history = nullptr;
 };
 

@@ -21,6 +21,10 @@ int job_scheduler::scheduling_job() {
 
       wait_queue->pop();
       scheduled++;
+      /*job_age_struct entry = age_queue_element->at(0);
+      scheduled_history->push_back(entry);
+      */
+      scheduled_history->push_back(age_queue_element->at(0));
       age_queue_element->erase(age_queue_element->begin());
       scheduled_server = true;
 

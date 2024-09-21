@@ -23,6 +23,7 @@
 #include "scheduler_mcts.h"
 #include "enum_definition.h"
 #include "adjusting_server.h"
+#include "global_definistion.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -33,22 +34,16 @@ public:
   struct job_entry_element {
     vector<job_entry*> job_list_in_slot;
   };
-    
+
   using job_entry_struct = struct job_entry_element;
 
   virtual ~job_emulator();
 
 
-  void build_job_list(string filename, scheduler_type scheduler_index, 
-                      bool using_preemetion, bool scheduleing_with_flavor_option, 
-                      bool working_till_end, bool prevent_starvation, 
-                      double svp_upper, double age_weight, int reorder_count);
+  void build_job_list(string filename, global_structure::scheduler_options options);
   void build_job_queue();
   void build_server_list(string filename);
-  void set_option(scheduler_type scheduler_index, bool using_preemetion, 
-                bool scheduleing_with_flavor_option, bool working_till_end, 
-                bool prevent_starvation, double svp_upper, double age_weight,
-                int max_dp_execution_count);
+  void set_option(global_structure::scheduler_options options);
 
   scheduler_type get_selction_scheduler() { return selected_scheduler; };
   bool get_preemtion_enabling() { return preemtion_enabling; };
@@ -75,6 +70,12 @@ public:
   double* get_allocation_rate() { return allocation_rate; };
   double* get_utilization_rate() { return utilization_rate; };
   int get_rate_index() { return rate_index; };
+  bool save_result_totaly(string file_body_name);
+  bool save_result_totaly();
+  bool save_waiting_time();
+  bool save_waiting_time(string file_body_name);
+  bool save_result_meta();
+  bool save_result_meta(string file_body_name);
   bool save_result_log(string file_name);
   string get_savefile_candidate_name();
   bool save_result_log();
@@ -95,6 +96,7 @@ public:
   int get_dp_execution_maximum() { return dp_execution_maximum; }
   double get_starvation_prevention_criteria() { return starvation_prevention_criteria; }
   scheduler_type get_selected_scheduler() { return selected_scheduler; };
+  int get_defragmentaion_criteria() { return defragmentaion_criteria; };
 
 private:
   int job_adjust_overhead_times = 0;
@@ -124,6 +126,7 @@ private:
   thread emulation_player;
   vector<queue<job_entry*>*> wait_queue_group;
   vector<vector<job_age_struct>> wait_queue_age;
+  vector<job_age_struct> scheduled_history;
   int ticktok_duration = 1;
   const int sleep_for_drawing = 1;
   double* allocation_rate = nullptr;
@@ -147,7 +150,7 @@ private:
   double age_weight_constant = global_const::age_weight;
   int dp_execution_maximum = global_const::dp_execution_maximum;
   vector<int> preemption_object;
-  int defragmentaion_criteria = 20;
+  int defragmentaion_criteria = global_const::defragmentation_criteria;
   function<void(void*)> step_forward_callback;
   void update_wait_queue();
   void adjust_wait_queue();

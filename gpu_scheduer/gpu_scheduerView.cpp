@@ -213,26 +213,27 @@ void CgpuscheduerView::OnEmulationSetting()
   CgpuscheduerDoc* pDoc = (CgpuscheduerDoc*)m_pDocument;
   job_emulator& job_emul = pDoc->get_job_element_obj();
 
+  global_structure::scheduler_options options;
   CSchedulerOption dlg_option;
 
-  bool preemtion_enabling = job_emul.get_preemtion_enabling();
-  int scheduler_selection = static_cast<int>(job_emul.get_selction_scheduler());
-  bool scheduler_with_flaver = job_emul.get_scheduling_with_flavor_option();
-  bool working_till_end = job_emul.get_finishing_condition();
-  bool prevent_starvation = job_emul.get_prevent_starvation();
-  double svp_upper = job_emul.get_starvation_prevention_criteria();
-  double age_weight = job_emul.get_age_weight_constant();
-  int dp_execution_maximum = job_emul.get_dp_execution_maximum();
+  options.using_preemetion = job_emul.get_preemtion_enabling();
+  options.scheduler_index = job_emul.get_selction_scheduler();
+  options.scheduleing_with_flavor_option = job_emul.get_scheduling_with_flavor_option();
+  options.working_till_end = job_emul.get_finishing_condition();
+  options.prevent_starvation = job_emul.get_prevent_starvation();
+  options.svp_upper = job_emul.get_starvation_prevention_criteria();
+  options.age_weight = job_emul.get_age_weight_constant();
+  options.reorder_count = job_emul.get_dp_execution_maximum();
+  options.preemption_task_window = job_emul.get_defragmentaion_criteria();
 
-  dlg_option.set_option_value(&preemtion_enabling, &scheduler_selection, &scheduler_with_flaver, 
-                              &working_till_end, &prevent_starvation, &svp_upper, &age_weight, &dp_execution_maximum);
+  dlg_option.set_option_value(&options);
 
   dlg_option.set_scheduler_type((int)job_emul.get_selction_scheduler());
   //dlg_option.using_preemtion = job_emul.get_preemtion_enabling();
   //dlg_option.scheduler_with_flavor = job_emul.get_scheduling_with_flavor_option();
 
   if (dlg_option.DoModal() == IDOK) {
-    job_emul.set_option((scheduler_type)scheduler_selection, preemtion_enabling, scheduler_with_flaver, working_till_end, prevent_starvation, svp_upper, age_weight, dp_execution_maximum);
+    job_emul.set_option(options);
   }
   Invalidate();
 }
@@ -324,6 +325,12 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   start_position.y += plot_height;
   start_position.y += margin;
 
+  CString meta_info = BuildMetaInfo(job_emul); 
+  dc.SetTextColor(highlightColor);
+  dc.TextOut(start_position.x, start_position.y, meta_info);
+  dc.SetTextColor(defaultColor);
+  start_position.y += (font_size + margin * 2);
+
   vector<int> request;
   job_emul.get_wait_job_request_acclerator(request);
   int queue_stack_size = request.size();
@@ -346,6 +353,21 @@ void CgpuscheduerView::DrawProgress(CDC& dc, CRect& rect, job_emulator& job_emul
   dc.SetTextColor(defaultColor);
   dc.TextOut(start_position.x, start_position.y, wait_queue_title);
   start_position.y += (font_size + margin);
+}
+
+CString CgpuscheduerView::BuildMetaInfo(job_emulator& job_emul) {
+  CString message;
+  USES_CONVERSION;
+  CString scheduler_name = A2CT(job_emul.get_setting_scheduling_name().c_str());
+  double alpha = job_emul.get_starvation_prevention_option() ? job_emul.get_age_weight_constant() : 0.;
+  double beta = job_emul.get_starvation_prevention_option() ? job_emul.get_starvation_prevention_criteria() : 0.;
+  int defragment_window = job_emul.get_preemtion_enabling() ? job_emul.get_defragmentaion_criteria() : 0;
+  int execution_max = job_emul.get_preemtion_enabling() ? job_emul.get_dp_execution_maximum() : 0;
+
+  message.Format(_T("%s, alpha(%f), beta(%.1f), Preemetion Window(%d), DP execution max(%d)"), 
+                    scheduler_name.GetBuffer(), alpha, beta, defragment_window, execution_max);
+
+  return message;
 }
 
 void CgpuscheduerView::draw_buffer(CDC& dc, const CPoint& start_position, double* allocation_rate, double* utilization_rate, 

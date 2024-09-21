@@ -36,6 +36,8 @@
 #define IDC_EDIT_REORDER_SIZE           1018
 #define IDC_EDIT_UPPER_BOUND            1019
 #define IDC_EDIT_AGE_WEIGHT             1020
+#define IDC_EDIT1                       1021
+#define IDC_EDIT_WAIT_WINDOW            1021
 #define ID_GPUSERVERSETTING_SHOWGPULIST 32771
 #define ID_GPUSERVERSETTING_ADDGPU      32772
 #define ID_EMULATION_START              32773
@@ -64,7 +66,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        316
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1021
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           314
 #endif
 #endif
