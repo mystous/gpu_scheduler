@@ -59,6 +59,7 @@ BEGIN_MESSAGE_MAP(CgpuscheduerView, CScrollView)
 //  ON_COMMAND(ID_FILE_SAVE_AS, &CgpuscheduerView::OnFileSaveAs)
 ON_WM_HSCROLL()
 ON_WM_VSCROLL()
+//ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 // CgpuscheduerView construction/destruction
@@ -90,8 +91,8 @@ void CgpuscheduerView::OnDraw(CDC* pDC)
 {
 	CgpuscheduerDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
-	if (!pDoc)
-		return;
+  if (!pDoc)
+    return;
 
   CRect clipRect;
   pDC->GetClipBox(&clipRect); // 클리핑 영역 가져오기
@@ -806,4 +807,16 @@ void CgpuscheduerView::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 
   __super::OnVScroll(nSBCode, nPos, pScrollBar);
   InvalidateRect(FALSE);
+}
+
+
+BOOL CgpuscheduerView::PreTranslateMessage(MSG* pMsg)
+{
+  if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_F5)
+  {
+    StartEmul();
+    return TRUE;
+  }
+  return __super::PreTranslateMessage(pMsg);
+
 }

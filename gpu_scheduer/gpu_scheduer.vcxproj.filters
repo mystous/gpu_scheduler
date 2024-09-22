@@ -102,6 +102,12 @@
     <ClInclude Include="global_definistion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="experiment_dialog.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="experiment_perform.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gpu_scheduer.cpp">
@@ -174,6 +180,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="adjusting_server.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="experiment_dialog.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="experiment_perform.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

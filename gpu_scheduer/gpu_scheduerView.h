@@ -87,6 +87,8 @@ public:
   afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
   virtual void OnInitialUpdate();
   afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+//  afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+  virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 #ifndef _DEBUG  // debug version in gpu_scheduerView.cpp

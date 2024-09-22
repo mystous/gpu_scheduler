@@ -152,6 +152,8 @@ private:
   vector<int> preemption_object;
   int defragmentaion_criteria = global_const::defragmentation_criteria;
   function<void(void*)> step_forward_callback;
+  bool do_defragmentation = false;
+
   void update_wait_queue();
   void adjust_wait_queue();
   //void scheduling_job();

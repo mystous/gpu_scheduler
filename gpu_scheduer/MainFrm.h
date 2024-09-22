@@ -18,6 +18,7 @@ public:
 
 private:
   void generate_log();
+  void experiment_perform();
 
 // Overrides
 public:
@@ -49,6 +50,8 @@ public:
     afx_msg void OnClose();
     afx_msg void OnTaskgenerationGenerationEmpty();
     afx_msg void OnTaskgenerationGeneration();
+    afx_msg void OnButtonExperiment();
+    afx_msg void OnExperimentPerform();
 };
 
 

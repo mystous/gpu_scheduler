@@ -10,6 +10,7 @@
 #include "MainFrm.h"
 #include "CSchedulerOption.h"
 #include "log_gen_dialog.h"
+#include "experiment_dialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -29,6 +30,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
     ON_WM_CLOSE()
   ON_COMMAND(ID_TASKGENERATION_GENERATION_EMPTY, &CMainFrame::OnTaskgenerationGenerationEmpty)
   ON_COMMAND(ID_TASKGENERATION_GENERATION, &CMainFrame::OnTaskgenerationGeneration)
+  ON_COMMAND(ID_BUTTON_EXPERIMENT, &CMainFrame::OnButtonExperiment)
+  ON_COMMAND(ID_EXPERIMENT_PERFORM, &CMainFrame::OnExperimentPerform)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -235,4 +238,22 @@ void CMainFrame::OnTaskgenerationGenerationEmpty()
 void CMainFrame::OnTaskgenerationGeneration()
 {
   generate_log();
+}
+
+
+void CMainFrame::OnButtonExperiment()
+{
+  experiment_perform();
+}
+
+
+void CMainFrame::OnExperimentPerform()
+{
+  experiment_perform();
+}
+
+void CMainFrame::experiment_perform() {
+  experiment_dialog dlg;
+
+  dlg.DoModal();
 }

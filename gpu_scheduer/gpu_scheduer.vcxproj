@@ -192,6 +192,8 @@
     <ClInclude Include="coprocessor_server.h" />
     <ClInclude Include="CSchedulerOption.h" />
     <ClInclude Include="enum_definition.h" />
+    <ClInclude Include="experiment_dialog.h" />
+    <ClInclude Include="experiment_perform.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="global_definistion.h" />
     <ClInclude Include="gpu_log_dialog.h" />
@@ -222,6 +224,8 @@
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="coprocessor_server.cpp" />
     <ClCompile Include="CSchedulerOption.cpp" />
+    <ClCompile Include="experiment_dialog.cpp" />
+    <ClCompile Include="experiment_perform.cpp" />
     <ClCompile Include="gpu_log_dialog.cpp" />
     <ClCompile Include="gpu_scheduer.cpp" />
     <ClCompile Include="gpu_scheduerDoc.cpp" />

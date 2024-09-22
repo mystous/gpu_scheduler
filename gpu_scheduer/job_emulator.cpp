@@ -291,7 +291,6 @@ void job_emulator::set_option(global_structure::scheduler_options options) {
 }
 
 void job_emulator::step_foward() {
-  static bool do_defragmentation = false;
   for (int i = 0; i < ticktok_duration; ++i) {
     if (check_finishing()) {
       last_emulation_step = emulation_step;
@@ -570,6 +569,7 @@ void job_emulator::initialize_progress_variables() {
   last_scheduled_job_count = 0;
   memory_alloc_size = get_total_time_slot();
   job_adjust_overhead_times = 0;
+  do_defragmentation = false;
 
   scheduled_history.clear();
 
