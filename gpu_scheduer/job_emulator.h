@@ -60,9 +60,9 @@ public:
   void step_foward();
   void pause_progress();
   void stop_progress();
-  void start_progress();
+  thread::id start_progress();
   void exit_thread();
-  void set_callback(std::function<void(void*)> callback, void *object);
+  void set_callback(std::function<void(void*, thread::id)> callback, void *object);
   int get_ticktok_duration() const { return ticktok_duration; };
   void set_ticktok_duration(int duration) { ticktok_duration = duration; };
   int get_emulation_step() { return emulation_step; };
@@ -151,7 +151,7 @@ private:
   int dp_execution_maximum = global_const::dp_execution_maximum;
   vector<int> preemption_object;
   int defragmentaion_criteria = global_const::defragmentation_criteria;
-  function<void(void*)> step_forward_callback;
+  function<void(void*, thread::id)> step_forward_callback;
   bool do_defragmentation = false;
 
   void update_wait_queue();

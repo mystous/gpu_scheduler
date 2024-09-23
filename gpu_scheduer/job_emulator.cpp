@@ -183,7 +183,7 @@ void job_emulator::build_job_list(string filename, global_structure::scheduler_o
   file.close();
 }
 
-void job_emulator::set_callback(std::function<void(void*)> callback, void* object) {
+void job_emulator::set_callback(std::function<void(void*, thread::id)> callback, void* object) {
   step_forward_callback = callback; 
   call_back_object = object;
 };
@@ -294,6 +294,7 @@ void job_emulator::step_foward() {
   for (int i = 0; i < ticktok_duration; ++i) {
     if (check_finishing()) {
       last_emulation_step = emulation_step;
+      //thread::id test = this_thread::get_id();
       emulation_step = -1;
       progress_status = emulation_status::stop;
       initialize_server_state();
@@ -313,7 +314,7 @@ void job_emulator::step_foward() {
       check_defragmentation_condition(do_defragmentation);
       log_rate_info();
       //if (!step_forward_callback) {
-        step_forward_callback(call_back_object);
+        step_forward_callback(call_back_object, this_thread::get_id());
       //}
     }
   }
@@ -600,7 +601,7 @@ int job_emulator::get_wait_job_count() {
 
 //#define USE_TIME_BEGIN
 
-void job_emulator::start_progress() {
+thread::id job_emulator::start_progress() {
   set_emulation_play_priod(0.1);
 
   delete_rate_array();
@@ -634,9 +635,11 @@ void job_emulator::start_progress() {
     if (progress_status == emulation_status::stop) {
       emulation_step = -1;
     }
+    step_forward_callback(call_back_object, this_thread::get_id());
     });
-
+  thread::id id = emulation_player.get_id();
   emulation_player.detach();
+  return id;
 }
 
 bool job_emulator::save_result_totaly() {
@@ -810,7 +813,7 @@ string job_emulator::get_savefile_candidate_name() {
   string formattedTime = ss.str();
 
 #ifdef _WIN32
-  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({})_preemtion({}).", 
+  filename = std::format("{}_{}_job({})_server({})_accelerator({})_elapsed({})_flavor({})_starvation({})_preemtion({})", 
     get_setting_scheduling_name(), formattedTime, get_total_job_count(), server_number, accelerator_number,
     get_done_emulation_step(), scheduling_with_flavor ? "true" : "false", starvation_prevention ? "true" : "false", preemtion_enabling ? "true" : "false");
 #else
@@ -822,7 +825,7 @@ string job_emulator::get_savefile_candidate_name() {
     ")_flavor(" + (scheduling_with_flavor ? "true" : "false") +
     ")_starvation(" + (starvation_prevention ? "true" : "false") +
     ")_preemtion(" + (preemtion_enabling ? "true" : "false") +
-    ").";
+    ")";
 #endif //_WIN32
   return filename;
 }

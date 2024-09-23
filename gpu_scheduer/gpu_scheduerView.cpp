@@ -167,7 +167,7 @@ CgpuscheduerDoc* CgpuscheduerView::GetDocument() const // non-debug version is i
 
 // CgpuscheduerView message handlers
 
-void CgpuscheduerView::function_call() {
+void CgpuscheduerView::function_call(thread::id) {
   CRect rect;
   GetClientRect(&rect);
   InvalidateRect(rect);
@@ -741,18 +741,18 @@ void CgpuscheduerView::OnButtonEmulStart()
 }
 
 
-void global_callback(void *object) {
+void global_callback(void *object, thread::id id) {
   if (nullptr == object) { return; }
   CgpuscheduerView* view = (CgpuscheduerView*)object;
 
-  view->function_call();
+  view->function_call(id);
 }
 
 void CgpuscheduerView::StartEmul()
 {
   job_emulator &emul = GetDocument()->get_job_element_obj() ;
 
-  std::function<void(void*)> callback_func = global_callback;
+  function<void(void*, thread::id)> callback_func = global_callback;
   emul.set_callback(callback_func, (void*)this);
   GetDocument()->SetModifiedFlag(TRUE);
   is_buffer_created = false;

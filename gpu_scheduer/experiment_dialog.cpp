@@ -101,35 +101,61 @@ void experiment_dialog::OnClickedButtonPause()
   // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }
 
-void experiment_dialog::function_call() {
+void experiment_dialog::function_call(thread::id id) {
+  string message[2] = {"", ""};
+  if (experiment_obj.call_back_from_thread(id, message[0], message[1])) {
+    experiment_done = experiment_obj.get_complated_experiment();
+    UpdateStaticInfo();
+    add_string_to_status(message[0]);
+    if (!message[1].empty()) {
+      add_string_to_status(message[1]);
+    }
+    if (hyperparameter_searchspace.size() == experiment_done) {
+      add_string_to_status("Experiment is finished!");
+    }
+  }
 }
 
-void global_experiment_callback(void* object) {
+void global_experiment_callback(void* object, thread::id id) {
   if (nullptr == object) { return; }
   experiment_dialog* view = (experiment_dialog*)object;
 
-  view->function_call();
+  view->function_call(id);
 }
 
 
 void experiment_dialog::OnClickedButtonPerform()
 {
-  function<void(void*)> callback_func = global_experiment_callback;
+  function<void(void*, thread::id)> callback_func = global_experiment_callback;
 
+  experiment_done = 0;
   UpdateHyperparameters();
   UpdateStaticInfo();
-
+  perform_status.ResetContent();
+  add_string_to_status("Experiment starting...");
   experiment_obj.set_hyperparameter(&hyperparameter_searchspace);
   if (experiment_obj.set_thread_count(thread_total)) {
     experiment_obj.set_call_back(callback_func);
     experiment_obj.set_call_back_obj((void*)this);
     experiment_obj.set_file_name(task_file_name, server_file_name);
+    auto && strings = experiment_obj.start_experiment();
+    add_string_to_status(strings);
     return;
   }
 
   AfxMessageBox(L"Experiment has been failed!", MB_ICONSTOP);
 }
 
+void experiment_dialog::add_string_to_status(vector<string> list) {
+  for (auto&& message : list) {
+    add_string_to_status(message);
+  }
+}
+
+void experiment_dialog::add_string_to_status(string message) {
+  int index = perform_status.InsertString(-1, CA2T(message.c_str()));
+  perform_status.SetCurSel(index);
+}
 
 BOOL experiment_dialog::OnInitDialog()
 {
@@ -154,6 +180,9 @@ BOOL experiment_dialog::OnInitDialog()
   scheduler_ctrl[2] = &round_robin_sch;
   scheduler_ctrl[3] = &mcts_sch;
 
+  SetString(task_file_name, &file_name_ctrl);
+  SetString(server_file_name, &server_name_ctrl);
+
   for (int i = 0; i < 4; ++i) {
     scheduler_ctrl[i]->SetCheck(sch[i]);
   }
@@ -161,6 +190,11 @@ BOOL experiment_dialog::OnInitDialog()
   UpdateStaticInfo();
   return TRUE;  // return TRUE unless you set the focus to a control
   // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+}
+
+void experiment_dialog::SetString(string text, CEdit* control) {
+  CString message(CA2T(text.c_str()));
+  control->SetWindowText(message);
 }
 
 void experiment_dialog::SetIntValue(int value, CEdit* control) {

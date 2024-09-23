@@ -26,13 +26,19 @@ protected:
   int thread_total = 4;
   int hyperpara_total = 0;
   int experiment_done = 0;
-  double alpha_para[3] = {0.13889, 0.83889, 0.1};
-  double beta_para[3] = { 70., 95., 5. };
-  int d_para[3] = { 100000, 1000000, 100000 };
-  int w_para[3] = { 20, 100, 10 };
+  //double alpha_para[3] = {0.13889, 0.83889, 0.1};
+  //double beta_para[3] = { 70., 95., 5. };
+  //int d_para[3] = { 100000, 1000000, 100000 };
+  //int w_para[3] = { 20, 100, 10 };
+  double alpha_para[3] = { 0.13889, 0.13889, 0.1 };
+  double beta_para[3] = { 80., 80., 5. };
+  int d_para[3] = { 100000, 100000, 100000 };
+  int w_para[3] = { 20, 20, 10 };
+
   bool sch[4] = {true, false, false, false };
   CButton* scheduler_ctrl[4] = {nullptr, };
-  string task_file_name, server_file_name;
+  string task_file_name = "D:\\projects\\gpu_scheduler\\job_flow_total(task,flavor,single).csv";
+  string server_file_name = "D:\\projects\\gpu_scheduler\\gpu_scheduer\\server.csv";
 
   experiment_perform experiment_obj;
 
@@ -60,17 +66,21 @@ public:
   CStatic thread_status;
   CStatic hyper_status;
   virtual BOOL OnInitDialog();
-  void function_call();
+  void function_call(thread::id id);
 private:
   void SetIntValue(int value, CEdit* control);
   void SetDoubleValue(double value, CEdit* control);
   void GetIntValue(int *value, CEdit* control);
   void GetDoubleValue(double *value, CEdit* control);
+  void SetString(string text, CEdit* control);
   void UpdateStaticInfo();
   void UpdateHyperparameters();
   vector<double> generate_double_values(double start, double end, double step);
   vector<int> generate_int_values(int start, int end, int step);
   vector<global_structure::scheduler_option> hyperparameter_searchspace;
+  vector<string> message_buffer;
+  void add_string_to_status(vector<string> list);
+  void add_string_to_status(string message);
 public:
   CButton compact_sch;
   CButton mcts_sch;

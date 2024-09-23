@@ -43,7 +43,7 @@ public:
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 #endif
-  virtual void function_call() override;
+  virtual void function_call(thread::id) override;
 
 
 protected:
