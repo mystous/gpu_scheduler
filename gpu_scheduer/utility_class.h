@@ -15,5 +15,6 @@ public:
   static string conver_tp_str(const system_clock::time_point tp);
   static string double_to_string(double value);
   static string get_accelerator_name(accelator_type type);
+  static string format_duration(chrono::seconds duration);
 };
 

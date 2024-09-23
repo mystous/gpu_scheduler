@@ -67,6 +67,7 @@ public:
   CStatic hyper_status;
   virtual BOOL OnInitDialog();
   void function_call(thread::id id);
+  void message_callback(string message);
 private:
   void SetIntValue(int value, CEdit* control);
   void SetDoubleValue(double value, CEdit* control);
@@ -81,6 +82,7 @@ private:
   vector<string> message_buffer;
   void add_string_to_status(vector<string> list);
   void add_string_to_status(string message);
+  system_clock::time_point job_start_tp;
 public:
   CButton compact_sch;
   CButton mcts_sch;

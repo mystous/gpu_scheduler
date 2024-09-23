@@ -34,6 +34,18 @@ string utility_class::get_accelerator_name(accelator_type type) {
   }
 }
 
+string utility_class::format_duration(chrono::seconds duration) {
+  int hours = chrono::duration_cast<chrono::hours>(duration).count();
+  int minutes = chrono::duration_cast<chrono::minutes>(duration).count() % 60;
+  int seconds = duration.count() % 60;
+
+  stringstream ss;
+  ss << setw(2) << setfill('0') << hours << ":"
+    << setw(2) << setfill('0') << minutes << ":"
+    << setw(2) << setfill('0') << seconds;
+  return ss.str();
+}
+
 string utility_class::conver_tp_str(const system_clock::time_point tp){
 
  /* string time_string = format("{:%Y-%m-%d %H:%M:%S}", tp);

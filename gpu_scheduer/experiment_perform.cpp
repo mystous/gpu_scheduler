@@ -35,6 +35,7 @@ bool experiment_perform::set_thread_count(int thread_num) {
   thread_count = thread_num;
   for (int i = 0; i < thread_num; ++i) {
     job_emulator* emul = new job_emulator();
+    //emul->set_result_file_save_flag(false);
     if (nullptr == emul) {
       initialize_emul_vector();
       return false;
@@ -66,6 +67,12 @@ void experiment_perform::set_file_name(string task_file, string server_file) {
   fs::create_directory(dir);
 }
 
+void experiment_perform::stop_experiment() {
+  for (auto&& emulator : emulator_vector) {
+    emulator->stop_progress();
+  }
+}
+
 vector<string> experiment_perform::start_experiment() { 
   vector<string> message_list;
   complated_experiment = 0;
@@ -81,6 +88,12 @@ vector<string> experiment_perform::start_experiment() {
     if (i == (emulator_vector.size() - 1)) {
       meta->handling_opt_count += last_one_standing;
     }
+
+    meta->emulator->build_job_list(task_file_name, hyperparameter->at(meta->start_index));
+    meta->emulator->build_job_queue();
+    meta->emulator->build_server_list(server_file_name);
+    meta->emulator->set_callback(callback_func, object);
+
     start_emulator_with_meta(meta);
     message_list.push_back(build_new_thread_start_string(meta->id));
   }
@@ -106,10 +119,10 @@ string experiment_perform::build_new_thread_start_string(thread::id id) {
 }
 
 void experiment_perform::start_emulator_with_meta(thread_meta* meta) {
-  meta->emulator->build_job_list(task_file_name, hyperparameter->at(meta->start_index));
+  /*meta->emulator->build_job_list(task_file_name, hyperparameter->at(meta->start_index));
   meta->emulator->build_job_queue();
   meta->emulator->build_server_list(server_file_name);
-  meta->emulator->set_callback(callback_func, object);
+  meta->emulator->set_callback(callback_func, object);*/
   thread::id id = meta->emulator->start_progress();
   meta->id = id;
   thread_map[id] = meta;
@@ -120,15 +133,20 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
   if (emulation_status::stop == it->second->emulator->get_emulation_status()) {
     stringstream ss;
     string short_message;
+    ss << id;
 #ifdef WIN32
     string save_file_name = result_dir + "\\" + it->second->emulator->get_savefile_candidate_name();
 #elif
     string save_file_name = result_dir + "/" + it->second->emulator->get_savefile_candidate_name();
 #endif
+    short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+                    "] The Result files of Thread ID(" + ss.str() + ") will be written.";
+    message_callback_func(object, short_message);
     it->second->emulator->save_result_totaly(save_file_name);
     complated_experiment++;
-    ss << id;
-    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written.";
+    
+    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+                "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written.";
  
     it->second->start_index++;
     it->second->experiment_done++;
@@ -136,8 +154,6 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
       start_emulator_with_meta(it->second);
       start = build_new_thread_start_string(it->second->id);
     }
-
-    
     return true;
   }
   return false;

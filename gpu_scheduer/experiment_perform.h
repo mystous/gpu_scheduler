@@ -15,11 +15,13 @@ public:
   void set_hyperparameter(vector<global_structure::scheduler_options>* func) { hyperparameter = func; };
   bool set_thread_count(int thread_num);
   void set_call_back(function<void(void*, thread::id)> callback) { callback_func = callback; };
+  void set_message_call_back(function<void(void*, string)> callback) { message_callback_func = callback;  };
   void set_call_back_obj(void* ptr) { object = ptr; };
   void set_file_name(string task_file, string server_file);
   vector<string> start_experiment();
   bool call_back_from_thread(thread::id id, string &complate, string &start);
   int get_complated_experiment() { return complated_experiment; };
+  void stop_experiment();
 private:
   struct thread_data {
     thread::id              id;
@@ -41,6 +43,7 @@ private:
   int complated_experiment;
 
   function<void(void*, thread::id)> callback_func;
+  function<void(void*, string)> message_callback_func;
   void* object = nullptr;
   unordered_map<thread::id, thread_meta*> thread_map;
   vector<thread_meta*> thread_meta_list;

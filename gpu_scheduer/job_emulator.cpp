@@ -142,6 +142,7 @@ void job_emulator::build_job_list(string filename, global_structure::scheduler_o
 
   job_file_name = filename;
   set_option(options);
+  job_list.clear();
 
   string line;
   while (getline(file, line)) {
@@ -653,7 +654,10 @@ bool job_emulator::save_result_totaly(string file_body_name) {
   
   result[1] = save_result_meta(file_body_name);
   result[2] = save_waiting_time(file_body_name);
-  result[0] = save_result_log(file_body_name);
+  result[0] = true;
+  if (result_file_save_flag) {
+    result[0] = save_result_log(file_body_name);
+  }
 
   for (int i = 0; i < result_size; ++i) {
     rtn_result &= result[i];
@@ -774,6 +778,16 @@ bool job_emulator::save_result_log(string file_name) {
       << " Utilization Rate," << server_list[i].get_server_name() << " Allocation";
   }
   file << "\n";
+
+  /*stringstream buffer;
+  for (int i = 0; i < get_progress_time_slot(); i++) {
+    buffer << allocation_rate[i] << "," << utilization_rate[i];
+    for (int j = 0; j < server_list.size(); j++) {
+      buffer << "," << server_utilization_rate[j][i] << "," << server_allocation_count[j][i];
+    }
+    buffer << "\n";
+  }
+  file << buffer.str();*/
 
   for (int i = 0; i < get_progress_time_slot(); i++)
   {

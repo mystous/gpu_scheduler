@@ -6,6 +6,7 @@
 #include "afxdialogex.h"
 #include "experiment_dialog.h"
 #include <functional>
+#include "utility_class.h"
 
 
 // experiment_dialog 대화 상자
@@ -92,7 +93,8 @@ void experiment_dialog::OnClickedButtonPickFile()
 
 void experiment_dialog::OnClickedButtonStop()
 {
-  // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+  experiment_obj.stop_experiment();
+  add_string_to_status("Experiment has been stoped.");
 }
 
 
@@ -111,7 +113,10 @@ void experiment_dialog::function_call(thread::id id) {
       add_string_to_status(message[1]);
     }
     if (hyperparameter_searchspace.size() == experiment_done) {
-      add_string_to_status("Experiment is finished!");
+      chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
+      auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
+      string wall_time = "Experiment is finished!(Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+      add_string_to_status(wall_time);
     }
   }
 }
@@ -123,10 +128,21 @@ void global_experiment_callback(void* object, thread::id id) {
   view->function_call(id);
 }
 
+void global_message_callback(void* object, string message) {
+  if (nullptr == object) { return; }
+  experiment_dialog* view = (experiment_dialog*)object;
+
+  view->message_callback(message);
+}
+
+void experiment_dialog::message_callback(string message) {
+  add_string_to_status(message);
+}
 
 void experiment_dialog::OnClickedButtonPerform()
 {
   function<void(void*, thread::id)> callback_func = global_experiment_callback;
+  function<void(void*, string)> message_callback_func = global_message_callback;
 
   experiment_done = 0;
   UpdateHyperparameters();
@@ -137,9 +153,11 @@ void experiment_dialog::OnClickedButtonPerform()
   if (experiment_obj.set_thread_count(thread_total)) {
     experiment_obj.set_call_back(callback_func);
     experiment_obj.set_call_back_obj((void*)this);
+    experiment_obj.set_message_call_back(message_callback_func);
     experiment_obj.set_file_name(task_file_name, server_file_name);
     auto && strings = experiment_obj.start_experiment();
     add_string_to_status(strings);
+    job_start_tp = system_clock::now();
     return;
   }
 
@@ -293,8 +311,8 @@ void experiment_dialog::UpdateHyperparameters() {
         option.scheduleing_with_flavor_option = false;
 
         option.prevent_starvation = true;
-        option.svp_upper = alpha;
-        option.age_weight = beta;
+        option.svp_upper = beta;
+        option.age_weight = alpha;
         option.using_preemetion = false;
         option.reorder_count = 0;
         option.preemption_task_window = 0;
@@ -340,8 +358,8 @@ void experiment_dialog::UpdateHyperparameters() {
             option.scheduleing_with_flavor_option = false;
 
             option.prevent_starvation = true;
-            option.svp_upper = alpha;
-            option.age_weight = beta;
+            option.svp_upper = beta;
+            option.age_weight = alpha;
             option.using_preemetion = true;
             option.reorder_count = d;
             option.preemption_task_window = w;

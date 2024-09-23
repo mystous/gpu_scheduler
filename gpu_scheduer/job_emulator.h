@@ -97,6 +97,7 @@ public:
   double get_starvation_prevention_criteria() { return starvation_prevention_criteria; }
   scheduler_type get_selected_scheduler() { return selected_scheduler; };
   int get_defragmentaion_criteria() { return defragmentaion_criteria; };
+  void set_result_file_save_flag(bool flag) { result_file_save_flag = flag; };
 
 private:
   int job_adjust_overhead_times = 0;
@@ -106,6 +107,7 @@ private:
   int finished_job_count = 0;
   int scheduled_job_count = 0;
   int last_scheduled_job_count = 0;
+  bool result_file_save_flag = true;
   vector<job_entry> job_list;
   vector<server_entry> server_list;
   scheduler_type selected_scheduler = scheduler_type::mostallocated;
