@@ -5,6 +5,7 @@ CXXFLAGS = -Wall -Wextra -std=c++20
 # 헤더 파일 목록
 HEADERS = \
     gpu_scheduer/enum_definition.h \
+    gpu_scheduer/global_definistion.h \
     gpu_scheduer/job_emulator.h \
     gpu_scheduer/scheduler_fare_share.h \
     gpu_scheduer/server_entry.h \
@@ -14,6 +15,12 @@ HEADERS = \
     gpu_scheduer/coprocessor_server.h \
     gpu_scheduer/job_scheduler.h \
     gpu_scheduer/scheduler_compact.h \
+    gpu_scheduer/utility_class.h \
+    gpu_scheduer/call_back_object.h \
+    gpu_scheduer/scheduler_mcts.h \
+    gpu_scheduer/utility_class.h \
+    gpu_scheduer/experiment_perform.h \
+    gpu_scheduer/adjusting_server.h \
     gpu_scheduer/scheduler_round_robin.h
 
 # 소스 파일 목록
@@ -27,14 +34,19 @@ SOURCES = \
     gpu_scheduer/coprocessor_server.cpp \
     gpu_scheduer/job_entry.cpp \
     gpu_scheduer/scheduler_compact.cpp \
-    scheduler_rogpu_scheduer/und_robin.cpp \
-    linux_main.cpp
+    gpu_scheduer/scheduler_mcts.cpp \
+    gpu_scheduer/utility_class.cpp \
+    gpu_scheduer/utility_class.cpp \
+    gpu_scheduer/experiment_perform.cpp \
+    gpu_scheduer/adjusting_server.cpp \
+    gpu_scheduer/scheduler_round_robin.cpp \
+    gpu_scheduer/linux_main.cpp
 
 # 오브젝트 파일 목록
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # 실행 파일 이름
-TARGET = fit_scheduler
+TARGET = gpu_scheduler
 
 # 기본 목표
 all: $(TARGET)

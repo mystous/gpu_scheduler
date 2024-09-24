@@ -136,7 +136,7 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
     ss << id;
 #ifdef WIN32
     string save_file_name = result_dir + "\\" + it->second->emulator->get_savefile_candidate_name();
-#elif
+#else
     string save_file_name = result_dir + "/" + it->second->emulator->get_savefile_candidate_name();
 #endif
     short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 

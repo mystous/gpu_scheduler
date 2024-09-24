@@ -234,12 +234,6 @@ void job_emulator::build_job_queue() {
     job_entry* job = &job_list[i];
     auto startDiff = duration_cast<std::chrono::minutes>(job->get_start_tp() - min_start_time);
     job_queue[startDiff.count()].job_list_in_slot.push_back(job);
-
-#ifdef _WIN32
-    //TRACE("Queue Idx: %d - %d\n", startDiff.count(), stoi(job->get_job_id()));
-#else
-    printf("Job queue Index(% s) : % d\n", job->get_job_type() == job_entry::job_type::task ? "task" : "instance", startDiff.count());
-#endif
   }
 }
 
@@ -305,7 +299,7 @@ void job_emulator::step_foward() {
     else {
       emulation_step++;
 #ifndef _WIN32
-      printf("Step foward %d/%d", emulation_step, total_time_slot);
+      printf("Step foward %d/%d\n", emulation_step, total_time_slot);
 #endif
       computing_forward();
       update_wait_queue();
@@ -313,6 +307,7 @@ void job_emulator::step_foward() {
       defragmentation_excute(do_defragmentation);
       scheduled_job_count += scheduler_obj->scheduling_job();
       check_defragmentation_condition(do_defragmentation);
+
       log_rate_info();
       //if (!step_forward_callback) {
         step_forward_callback(call_back_object, this_thread::get_id());
@@ -484,8 +479,9 @@ void job_emulator::adjust_wait_queue() {
 }
 
 void job_emulator::update_wait_queue() {
+
   if (emulation_step >= get_total_time_slot()) { return; }
- 
+
   if (job_queue[emulation_step].job_list_in_slot.size() > 0) {
     for (auto&& job : job_queue[emulation_step].job_list_in_slot) {
       int queue_index = 0;

@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "utility_class.h"
+#include <sstream>
+#include <iomanip>
 
 system_clock::time_point utility_class::parse_time_string(const string& time_str) {
   std::tm tm = {};
