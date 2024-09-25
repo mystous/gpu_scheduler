@@ -73,13 +73,13 @@ void experiment_perform::stop_experiment() {
   }
 }
 
-vector<string> experiment_perform::start_experiment() { 
+vector<string> experiment_perform::start_experiment(bool using_thread) {
   vector<string> message_list;
   complated_experiment = 0;
   initialize_thread_map();
   for (int i = 0; i < emulator_vector.size(); ++i) {
-  //for (int i = 0; i < 1; ++i) {
-    thread_meta *meta = new thread_meta();
+    //for (int i = 0; i < 1; ++i) {
+    thread_meta* meta = new thread_meta();
     thread_meta_list.push_back(meta);
     meta->emulator = emulator_vector[i];
     meta->start_index = i * num_per_thread;
@@ -94,8 +94,30 @@ vector<string> experiment_perform::start_experiment() {
     meta->emulator->build_server_list(server_file_name);
     meta->emulator->set_callback(callback_func, object);
 
-    start_emulator_with_meta(meta);
-    message_list.push_back(build_new_thread_start_string(meta->id));
+    if (using_thread) {
+      start_emulator_with_meta(meta);
+      message_list.push_back(build_new_thread_start_string(meta->id));
+      continue;
+    }
+
+
+    for (int j = meta->start_index; j < meta->handling_opt_count; ++j) {
+      string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] ";
+      message_callback_func(object, message + "New Experiment has been started!");
+
+      meta->emulator->set_option(hyperparameter->at(meta->start_index));
+      meta->emulator->start_progress_wo_thread();
+      message_callback_func(object, message + "Result file will be written");
+#ifdef WIN32
+      string save_file_name = result_dir + "\\" + meta->emulator->get_savefile_candidate_name();
+#else
+      string save_file_name = result_dir + "/" + meta->emulator->get_savefile_candidate_name();
+#endif
+      meta->emulator->save_result_totaly(save_file_name);
+      message_callback_func(object, message + "Experiment has been finished. Result file had be written.");
+      meta->start_index++;
+      complated_experiment++;
+    }
   }
 
   return message_list;
@@ -118,11 +140,14 @@ string experiment_perform::build_new_thread_start_string(thread::id id) {
   return message;
 }
 
-void experiment_perform::start_emulator_with_meta(thread_meta* meta) {
+void experiment_perform::start_emulator_with_meta(thread_meta* meta, bool first_call) {
   /*meta->emulator->build_job_list(task_file_name, hyperparameter->at(meta->start_index));
   meta->emulator->build_job_queue();
   meta->emulator->build_server_list(server_file_name);
   meta->emulator->set_callback(callback_func, object);*/
+  if (false == first_call) {
+    meta->emulator->set_option(hyperparameter->at(meta->start_index));
+  }
   thread::id id = meta->emulator->start_progress();
   meta->id = id;
   thread_map[id] = meta;
@@ -130,6 +155,8 @@ void experiment_perform::start_emulator_with_meta(thread_meta* meta) {
 
 bool experiment_perform::call_back_from_thread(thread::id id, string& complate, string& start) {
   auto it = thread_map.find(id);
+
+  if (it == thread_map.end()) { return false; }
   if (emulation_status::stop == it->second->emulator->get_emulation_status()) {
     stringstream ss;
     string short_message;
@@ -151,7 +178,7 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
     it->second->start_index++;
     it->second->experiment_done++;
     if (it->second->experiment_done != it->second->handling_opt_count) {
-      start_emulator_with_meta(it->second);
+      start_emulator_with_meta(it->second, false);
       start = build_new_thread_start_string(it->second->id);
     }
     return true;

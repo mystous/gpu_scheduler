@@ -2,6 +2,7 @@
 #include "job_emulator.h"
 #include <ctime>
 #include "utility_class.h"
+#include <mutex>
 
 
 #ifdef _WIN32
@@ -298,16 +299,12 @@ void job_emulator::step_foward() {
     }
     else {
       emulation_step++;
-#ifndef _WIN32
-      printf("Step foward %d/%d\n", emulation_step, total_time_slot);
-#endif
       computing_forward();
       update_wait_queue();
       adjust_wait_queue();
       defragmentation_excute(do_defragmentation);
       scheduled_job_count += scheduler_obj->scheduling_job();
       check_defragmentation_condition(do_defragmentation);
-
       log_rate_info();
       //if (!step_forward_callback) {
         step_forward_callback(call_back_object, this_thread::get_id());
@@ -596,8 +593,6 @@ int job_emulator::get_wait_job_count() {
   return wait_job_count;
 }
 
-//#define USE_TIME_BEGIN
-
 thread::id job_emulator::start_progress() {
   set_emulation_play_priod(0.1);
 
@@ -613,21 +608,13 @@ thread::id job_emulator::start_progress() {
   
   emulation_player = thread([this]() {
     this->progress_status = emulation_status::start;
+    job_emulator* object = this;
 
     while (emulation_status::start == this->progress_status) {
-#ifdef USE_TIME_BEGIN
-      double sleep_period = 1;
-      this->step_foward();
-      timeBeginPeriod(sleep_period);
-      Sleep(sleep_period);
-      timeEndPeriod(sleep_period);
-#else // USE_TIME_BEGIN
       saving_possiblity = true;
       this->step_foward();
       auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
       std::this_thread::sleep_until(next_call);
-#endif //USE_TIME_BEGIN
-
     }
     if (progress_status == emulation_status::stop) {
       emulation_step = -1;
@@ -637,6 +624,32 @@ thread::id job_emulator::start_progress() {
   thread::id id = emulation_player.get_id();
   emulation_player.detach();
   return id;
+}
+
+void job_emulator::start_progress_wo_thread() {
+  set_emulation_play_priod(0.1);
+
+  delete_rate_array();
+  delete_server_info_log();
+  delete_wait_queue();
+  initialize_progress_variables();
+  initialize_wait_queue();
+
+  if (emulation_status::pause != progress_status) {
+    job_start_tp = system_clock::now();
+  }
+
+    progress_status = emulation_status::start;
+    job_emulator* object = this;
+
+    while (emulation_status::start == progress_status) {
+      saving_possiblity = true;
+      step_foward();
+    }
+    
+    if (progress_status == emulation_status::stop) {
+      emulation_step = -1;
+    }
 }
 
 bool job_emulator::save_result_totaly() {

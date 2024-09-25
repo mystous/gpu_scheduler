@@ -61,6 +61,7 @@ public:
   void pause_progress();
   void stop_progress();
   thread::id start_progress();
+  void start_progress_wo_thread();
   void exit_thread();
   void set_callback(std::function<void(void*, thread::id)> callback, void *object);
   int get_ticktok_duration() const { return ticktok_duration; };

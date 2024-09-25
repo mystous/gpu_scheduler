@@ -1,17 +1,17 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <thread>
 #include <functional>
-#include "call_back_object.h"
-#include "experiment_perform.h"
-#include "utility_class.h"
+#include "../gpu_scheduer/call_back_object.h"
+#include "../gpu_scheduer/experiment_perform.h"
+#include "../gpu_scheduer/utility_class.h"
 
 using namespace std;
 
-// ±âÁ¸ º¯¼ö ¼±¾ð
+// ê¸°ì¡´ ë³€ìˆ˜ ì„ ì–¸
 int thread_total = 4;
 double alpha_para[3] = { 0.13889, 0.83889, 0.1 };
 double beta_para[3] = { 70.0, 95.0, 5.0 };
@@ -38,34 +38,6 @@ void add_string_to_status(vector<string> list) {
   }
 }
 
-template <typename T>
-void parse_array(stringstream& ss, T* array, int size) {
-  string token;
-
-  for (int i = 0; i < size; ++i) {
-    getline(ss, token, ',');
-
-    if constexpr (is_same_v<T, double>) {
-      try {
-        array[i] = stod(token);
-      }
-      catch (const std::invalid_argument& e) {
-        cerr << "Invalid argument for double: " << token << endl;
-      }
-    }
-    else if constexpr (is_same_v<T, int>) {
-      try {
-        array[i] = stoi(token);
-      }
-      catch (const std::invalid_argument& e) {
-        cerr << "Invalid argument for int: " << token << endl;
-      }
-    }
-    else if constexpr (is_same_v<T, bool>) {
-      array[i] = (token == "true");
-    }
-  }
-}
 
 void parse_config_file(const string& config_filename) {
   ifstream config_file(config_filename);
@@ -73,6 +45,22 @@ void parse_config_file(const string& config_filename) {
     cerr << "Error opening config file: " << config_filename << endl;
     exit(1);
   }
+
+  auto parse_array = [](stringstream& ss, auto* array, int size) {
+    string token;
+    for (int i = 0; i < size; ++i) {
+      getline(ss, token, ',');
+      if constexpr (is_same_v<decltype(array[0]), double>) {
+        array[i] = stod(token);
+      }
+      else if constexpr (is_same_v<decltype(array[0]), int>) {
+        array[i] = stoi(token);
+      }
+      else if constexpr (is_same_v<decltype(array[0]), bool>) {
+        array[i] = (token == "true");
+      }
+    }
+    };
 
   string line;
   int line_num = 0;
@@ -131,16 +119,16 @@ void build_hyperparameter() {
   for (int i = 0; i < 4; ++i) {
     if (!sch[i]) continue;
 
-    for (double a = alpha_para[0]; a <= alpha_para[1]; a+=alpha_para[2]) {
-      for (double b = beta_para[0]; b <= beta_para[1]; b += beta_para[2]) {
+    for (double alpha : alpha_para) {
+      for (double beta : beta_para) {
         global_structure::scheduler_option option;
         option.scheduler_index = static_cast<scheduler_type>(i);
         option.working_till_end = true;
         option.scheduleing_with_flavor_option = false;
 
         option.prevent_starvation = true;
-        option.svp_upper = b;
-        option.age_weight = a;
+        option.svp_upper = beta;
+        option.age_weight = alpha;
         option.using_preemetion = false;
         option.reorder_count = 0;
         option.preemption_task_window = 0;
@@ -153,8 +141,8 @@ void build_hyperparameter() {
   for (int i = 0; i < 4; ++i) {
     if (!sch[i]) continue;
 
-    for (int d = d_para[0]; d <= d_para[1]; d += d_para[2]) {
-      for (int w = w_para[0]; w <= w_para[1]; w += w_para[2]) {
+    for (int d : d_para) {
+      for (int w : w_para) {
         global_structure::scheduler_option option;
         option.scheduler_index = static_cast<scheduler_type>(i);
         option.working_till_end = true;
@@ -176,18 +164,18 @@ void build_hyperparameter() {
   for (int i = 0; i < 4; ++i) {
     if (!sch[i]) continue;
 
-    for (double a = alpha_para[0]; a <= alpha_para[1]; a += alpha_para[2]) {
-      for (double b = beta_para[0]; b <= beta_para[1]; b += beta_para[2]) {
-        for (int d = d_para[0]; d <= d_para[1]; d += d_para[2]) {
-          for (int w = w_para[0]; w <= w_para[1]; w += w_para[2]) {
+    for (double alpha : alpha_para) {
+      for (double beta : beta_para) {
+        for (int d : d_para) {
+          for (int w : w_para) {
             global_structure::scheduler_option option;
             option.scheduler_index = static_cast<scheduler_type>(i);
             option.working_till_end = true;
             option.scheduleing_with_flavor_option = false;
 
             option.prevent_starvation = true;
-            option.svp_upper = b;
-            option.age_weight = a;
+            option.svp_upper = beta;
+            option.age_weight = alpha;
             option.using_preemetion = true;
             option.reorder_count = d;
             option.preemption_task_window = w;
@@ -242,27 +230,20 @@ int main(int argc, char* argv[]) {
   function<void(void*, thread::id)> callback_func = global_experiment_callback;
   function<void(void*, string)> message_callback_func = global_message_callback;
 
-  add_string_to_status(to_string(hyperparameter_searchspace.size()) + " count of experiments starting...");
+  add_string_to_status("Experiment starting...");
   experiment_obj.set_hyperparameter(&hyperparameter_searchspace);
   if (experiment_obj.set_thread_count(thread_total)) {
     experiment_obj.set_call_back(callback_func);
     experiment_obj.set_call_back_obj(nullptr);
     experiment_obj.set_message_call_back(message_callback_func);
     experiment_obj.set_file_name(task_file_name, server_file_name);
-    job_start_tp = system_clock::now();
-
-    auto&& strings = experiment_obj.start_experiment(false);
+    auto&& strings = experiment_obj.start_experiment();
     add_string_to_status(strings);
-
-    chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
-    auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-    string wall_time = " (Takes - " + utility_class::format_duration(elapsed_duration) + ")";
-    string message = to_string(hyperparameter_searchspace.size()) + " experiments has been finished" + wall_time;
-    add_string_to_status(message);
+    job_start_tp = system_clock::now();
     return 0;
   }
 
-  add_string_to_status("All Experiment has been failed!");
-  
+  add_string_to_status("Experiment has been failed!");
+
   return 0;
 }
