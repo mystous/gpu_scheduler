@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "experiment_perform.h"
 #include <filesystem>
+#include "utility_class.h"
 
 namespace fs = std::filesystem;
 
@@ -100,10 +101,10 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
       continue;
     }
 
-
     for (int j = meta->start_index; j < meta->handling_opt_count; ++j) {
       string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] ";
       message_callback_func(object, message + "New Experiment has been started!");
+      system_clock::time_point sub_job_start_tp = system_clock::now();
 
       meta->emulator->set_option(hyperparameter->at(meta->start_index));
       meta->emulator->start_progress_wo_thread();
@@ -114,7 +115,12 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
       string save_file_name = result_dir + "/" + meta->emulator->get_savefile_candidate_name();
 #endif
       meta->emulator->save_result_totaly(save_file_name);
-      message_callback_func(object, message + "Experiment has been finished. Result file had be written.");
+
+      chrono::duration<double> elapsed_seconds = system_clock::now() - sub_job_start_tp;
+      auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
+      string wall_time = " (Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+
+      message_callback_func(object, message + "Experiment has been finished. Result file had be written." + wall_time);
       meta->start_index++;
       complated_experiment++;
     }
