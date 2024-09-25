@@ -110,45 +110,46 @@ void parse_config_file(const string& config_filename) {
 }
 
 void build_hyperparameter() {
-  for (int i = 0; i < 4; ++i) {
-    if (!sch[i]) continue;
 
-    global_structure::scheduler_option option;
-    option.scheduler_index = static_cast<scheduler_type>(i);
-    option.working_till_end = true;
-    option.scheduleing_with_flavor_option = false;
+  //for (int i = 0; i < 4; ++i) {
+  //  if (!sch[i]) continue;
 
-    option.prevent_starvation = false;
-    option.svp_upper = 0.;
-    option.age_weight = 0.;
-    option.using_preemetion = false;
-    option.reorder_count = 0;
-    option.preemption_task_window = 0;
+  //  global_structure::scheduler_option option;
+  //  option.scheduler_index = static_cast<scheduler_type>(i);
+  //  option.working_till_end = true;
+  //  option.scheduleing_with_flavor_option = false;
 
-    hyperparameter_searchspace.push_back(option);
-  }
+  //  option.prevent_starvation = false;
+  //  option.svp_upper = 0.;
+  //  option.age_weight = 0.;
+  //  option.using_preemetion = false;
+  //  option.reorder_count = 0;
+  //  option.preemption_task_window = 0;
 
-  for (int i = 0; i < 4; ++i) {
-    if (!sch[i]) continue;
+  //  hyperparameter_searchspace.push_back(option);
+  //}
 
-    for (double a = alpha_para[0]; a <= alpha_para[1]; a+=alpha_para[2]) {
-      for (double b = beta_para[0]; b <= beta_para[1]; b += beta_para[2]) {
-        global_structure::scheduler_option option;
-        option.scheduler_index = static_cast<scheduler_type>(i);
-        option.working_till_end = true;
-        option.scheduleing_with_flavor_option = false;
+  //for (int i = 0; i < 4; ++i) {
+  //  if (!sch[i]) continue;
 
-        option.prevent_starvation = true;
-        option.svp_upper = b;
-        option.age_weight = a;
-        option.using_preemetion = false;
-        option.reorder_count = 0;
-        option.preemption_task_window = 0;
+  //  for (double a = alpha_para[0]; a <= alpha_para[1]; a+=alpha_para[2]) {
+  //    for (double b = beta_para[0]; b <= beta_para[1]; b += beta_para[2]) {
+  //      global_structure::scheduler_option option;
+  //      option.scheduler_index = static_cast<scheduler_type>(i);
+  //      option.working_till_end = true;
+  //      option.scheduleing_with_flavor_option = false;
 
-        hyperparameter_searchspace.push_back(option);
-      }
-    }
-  }
+  //      option.prevent_starvation = true;
+  //      option.svp_upper = b;
+  //      option.age_weight = a;
+  //      option.using_preemetion = false;
+  //      option.reorder_count = 0;
+  //      option.preemption_task_window = 0;
+
+  //      hyperparameter_searchspace.push_back(option);
+  //    }
+  //  }
+  //}
 
   for (int i = 0; i < 4; ++i) {
     if (!sch[i]) continue;

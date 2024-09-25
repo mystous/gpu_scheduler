@@ -133,6 +133,12 @@ void job_emulator::build_server_list(string filename) {
   file.close();
 }
 
+void job_emulator::set_max_execute_number(int number) {
+  if (nullptr == server_control) { return; }
+
+  server_control->set_max_execute_number(number);
+}
+
 void job_emulator::build_job_list(string filename, global_structure::scheduler_options options) {
   ifstream file(filename);
 
@@ -326,7 +332,7 @@ void job_emulator::defragmentation_excute(bool& do_defragmentation) {
     return wait_job_count;
     }() && true == do_defragmentation) {
 
-    if (server_control->defragementation()) {
+    if (server_control->defragementation(emulation_step)) {
       job_adjust_overhead_times++;
     }
     do_defragmentation = false;

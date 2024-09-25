@@ -26,7 +26,8 @@ public:
     : server_list(servers), max_execute_number(execute_maximum){};
   virtual ~adjusting_server();
 
-  bool defragementation();
+  bool defragementation(int step);
+  void set_max_execute_number(int number) { max_execute_number = number; };
 private:
   struct server_status_for_dp {
     gpu_allocation_type     status;

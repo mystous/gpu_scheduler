@@ -99,6 +99,7 @@ public:
   scheduler_type get_selected_scheduler() { return selected_scheduler; };
   int get_defragmentaion_criteria() { return defragmentaion_criteria; };
   void set_result_file_save_flag(bool flag) { result_file_save_flag = flag; };
+  void set_max_execute_number(int number);
 
 private:
   int job_adjust_overhead_times = 0;

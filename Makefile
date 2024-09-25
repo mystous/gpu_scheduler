@@ -46,7 +46,7 @@ SOURCES = \
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # 실행 파일 이름
-TARGET = gpu_scheduler
+TARGET = experiment_gpu
 
 # 기본 목표
 all: $(TARGET)

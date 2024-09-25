@@ -102,10 +102,11 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
     }
 
     for (int j = meta->start_index; j < meta->handling_opt_count; ++j) {
-      string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] ";
+      string message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + "] ";
       message_callback_func(object, message + "New Experiment has been started!");
       system_clock::time_point sub_job_start_tp = system_clock::now();
 
+      meta->emulator->set_max_execute_number(hyperparameter->at(meta->start_index).reorder_count);
       meta->emulator->set_option(hyperparameter->at(meta->start_index));
       meta->emulator->start_progress_wo_thread();
       message_callback_func(object, message + "Result file will be written");
@@ -141,7 +142,7 @@ void experiment_perform::initialize_thread_map() {
 string experiment_perform::build_new_thread_start_string(thread::id id) {
   stringstream ss;
   ss << id;
-  string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] Thread ID(" + ss.str() + ") had been started.";
+  string message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + "] Thread ID(" + ss.str() + ") had been started.";
 
   return message;
 }
@@ -172,15 +173,14 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
 #else
     string save_file_name = result_dir + "/" + it->second->emulator->get_savefile_candidate_name();
 #endif
-    short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+    short_message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + 
                     "] The Result files of Thread ID(" + ss.str() + ") will be written.";
     message_callback_func(object, short_message);
     it->second->emulator->save_result_totaly(save_file_name);
-    complated_experiment++;
     
-    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+    complate = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + 
                 "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written.";
- 
+    complated_experiment++;
     it->second->start_index++;
     it->second->experiment_done++;
     if (it->second->experiment_done != it->second->handling_opt_count) {

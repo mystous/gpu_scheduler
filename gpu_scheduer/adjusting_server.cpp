@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "adjusting_server.h"
 
-bool adjusting_server::defragementation() {
+bool adjusting_server::defragementation(int step) {
   int max_full_empty_server = 0;
   int execute_count = 0;
 
@@ -10,7 +10,9 @@ bool adjusting_server::defragementation() {
   int empty_server = calcu_full_empty_server();
   optimal_position.clear();
   int expected_empty_server = get_optimal_adjusting_dp(0, max_full_empty_server, execute_count);
+  printf("%d - %d, %d\n", step, empty_server, expected_empty_server);
   if (empty_server < expected_empty_server) {
+    printf("%d - %d, %d\n", step, empty_server, expected_empty_server);
     adjust_job_allocation();
     return true;
   }
@@ -159,7 +161,7 @@ int adjusting_server::get_optimal_adjusting_dp(int recursive_count, int &max_ful
     max_full_empty_server = calcu_full_empty_server();
   }
 
-  if (recursive_count == job_list.size()) {
+  if (recursive_count == static_cast<int>(job_list.size())) {
     return max_full_empty_server;
   }
 
