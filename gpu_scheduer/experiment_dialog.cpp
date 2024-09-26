@@ -100,7 +100,10 @@ void experiment_dialog::OnClickedButtonStop()
 
 void experiment_dialog::OnClickedButtonPause()
 {
-  // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+  UpdateHyperparameters();
+  CString message;
+  message.Format(_T("%d numbers of Experiments will be performed."), hyperparameter_searchspace.size());
+  MessageBox(message, _T("Experiments"), MB_OK | MB_ICONINFORMATION);
 }
 
 void experiment_dialog::function_call(thread::id id) {
@@ -155,9 +158,10 @@ void experiment_dialog::OnClickedButtonPerform()
     experiment_obj.set_call_back_obj((void*)this);
     experiment_obj.set_message_call_back(message_callback_func);
     experiment_obj.set_file_name(task_file_name, server_file_name);
+    job_start_tp = system_clock::now();
+
     auto && strings = experiment_obj.start_experiment();
     add_string_to_status(strings);
-    job_start_tp = system_clock::now();
     return;
   }
 

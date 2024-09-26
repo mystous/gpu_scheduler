@@ -97,12 +97,12 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
 
     if (using_thread) {
       start_emulator_with_meta(meta);
-      message_list.push_back(build_new_thread_start_string(meta->id));
+      message_list.push_back(build_new_thread_start_string(meta));
       continue;
     }
 
     for (int j = meta->start_index; j < meta->handling_opt_count; ++j) {
-      string message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + "] ";
+      string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] ";
       message_callback_func(object, message + "New Experiment has been started!");
       system_clock::time_point sub_job_start_tp = system_clock::now();
 
@@ -139,10 +139,14 @@ void experiment_perform::initialize_thread_map() {
   thread_map.clear();
 }
 
-string experiment_perform::build_new_thread_start_string(thread::id id) {
+string experiment_perform::build_new_thread_start_string(thread_meta *meta) {
   stringstream ss;
-  ss << id;
-  string message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + "] Thread ID(" + ss.str() + ") had been started.";
+  ss << meta->id;
+  global_structure::scheduler_option options = hyperparameter->at(meta->start_index);
+  string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) 
+    + "] Thread ID(" + ss.str() + ") had been started. Using parameters: alpah(" +
+    to_string(options.age_weight) + "), beta(" + to_string(options.svp_upper) + "), d(" +
+    to_string(options.reorder_count) + "), w(" + to_string(options.preemption_task_window) + ").";
 
   return message;
 }
@@ -155,6 +159,7 @@ void experiment_perform::start_emulator_with_meta(thread_meta* meta, bool first_
   if (false == first_call) {
     meta->emulator->set_option(hyperparameter->at(meta->start_index));
   }
+  meta->job_start_tp = system_clock::now();
   thread::id id = meta->emulator->start_progress();
   meta->id = id;
   thread_map[id] = meta;
@@ -173,19 +178,24 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
 #else
     string save_file_name = result_dir + "/" + it->second->emulator->get_savefile_candidate_name();
 #endif
-    short_message = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + 
+    short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
                     "] The Result files of Thread ID(" + ss.str() + ") will be written.";
     message_callback_func(object, short_message);
     it->second->emulator->save_result_totaly(save_file_name);
-    
-    complate = "[" + to_string(complated_experiment + 1) + "/" + to_string(hyperparameter->size()) + 
-                "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written.";
+
+    chrono::duration<double> elapsed_seconds = system_clock::now() - it->second->job_start_tp;
+    auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
+    string wall_time = "(Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+
     complated_experiment++;
+
+    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+                "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written. " + wall_time;
     it->second->start_index++;
     it->second->experiment_done++;
     if (it->second->experiment_done != it->second->handling_opt_count) {
       start_emulator_with_meta(it->second, false);
-      start = build_new_thread_start_string(it->second->id);
+      start = build_new_thread_start_string(it->second);
     }
     return true;
   }

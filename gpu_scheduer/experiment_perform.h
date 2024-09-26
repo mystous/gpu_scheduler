@@ -30,6 +30,7 @@ private:
     int                     handling_opt_count = 0;
     int                     experiment_done = 0;
     int                     start_index = -1;
+    system_clock::time_point job_start_tp;
   };
 
   using thread_meta = struct thread_data;
@@ -52,6 +53,6 @@ private:
 
   void initialize_emul_vector();
   void initialize_thread_map();
-  string build_new_thread_start_string(thread::id id);
+  string build_new_thread_start_string(thread_meta* meta);
 };
 
