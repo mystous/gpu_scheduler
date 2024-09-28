@@ -16,7 +16,7 @@ public:
   vector<bool>* get_reserved_status() { return &reserved; };
   int get_avaliable_accelator_count();
   bool assign_accelator(job_entry* job, int required_accelator_count);
-  void ticktok(int duration_count);
+  void ticktok();
   int flush();
   void build_accelator_status();
   double get_server_utilization();

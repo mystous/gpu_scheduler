@@ -39,11 +39,9 @@ double server_entry::get_server_utilization() {
   return utilization / (double)get_accelerator_count();
 }
 
-void server_entry::ticktok(int duration_count) {
+void server_entry::ticktok() {
   for (auto&& job : job_list) {
-    for (int i = 0; i < duration_count; ++i) {
       job->ticktok();
-    }
   }
 }
 

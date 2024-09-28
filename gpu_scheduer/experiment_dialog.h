@@ -21,7 +21,7 @@ public:
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
-  const CString thread_notice = _T("Number of %d Threads Working on it...");
+  const CString thread_notice = _T("Number of %d Threads Working on it...(Last Update: %s)");
   const CString task_notice = _T("Totaly %d of hyperparmeter will be perfomred. %d of experiment has be done. %d of experiment are lefted");
   int thread_total = 4;
   int hyperpara_total = 0;
@@ -74,8 +74,10 @@ private:
   void GetIntValue(int *value, CEdit* control);
   void GetDoubleValue(double *value, CEdit* control);
   void SetString(string text, CEdit* control);
-  void UpdateStaticInfo();
+  void UpdateStaticInfo(bool show_elapsed_time = false);
   void UpdateHyperparameters();
+  void SaveHyperparameterRange();
+  string get_elapsed_time();
   vector<double> generate_double_values(double start, double end, double step);
   vector<int> generate_int_values(int start, int end, int step);
   vector<global_structure::scheduler_option> hyperparameter_searchspace;

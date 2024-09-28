@@ -22,6 +22,7 @@ public:
   bool call_back_from_thread(thread::id id, string &complate, string &start);
   int get_complated_experiment() { return complated_experiment; };
   void stop_experiment();
+  string get_result_dir() { return result_dir; };
 private:
   struct thread_data {
     thread::id              id;
@@ -42,6 +43,7 @@ private:
   string task_file_name;
   string server_file_name;
   int complated_experiment;
+  string get_progress();
 
   function<void(void*, thread::id)> callback_func;
   function<void(void*, string)> message_callback_func;

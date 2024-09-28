@@ -36,7 +36,7 @@ bool experiment_perform::set_thread_count(int thread_num) {
   thread_count = thread_num;
   for (int i = 0; i < thread_num; ++i) {
     job_emulator* emul = new job_emulator();
-    //emul->set_result_file_save_flag(false);
+    emul->set_result_file_save_flag(false);
     if (nullptr == emul) {
       initialize_emul_vector();
       return false;
@@ -102,7 +102,7 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
     }
 
     for (int j = meta->start_index; j < meta->handling_opt_count; ++j) {
-      string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + "] ";
+      string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + get_progress() + "] ";
       message_callback_func(object, message + "New Experiment has been started!");
       system_clock::time_point sub_job_start_tp = system_clock::now();
 
@@ -116,11 +116,7 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
       string save_file_name = result_dir + "/" + meta->emulator->get_savefile_candidate_name();
 #endif
       meta->emulator->save_result_totaly(save_file_name);
-
-      chrono::duration<double> elapsed_seconds = system_clock::now() - sub_job_start_tp;
-      auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-      string wall_time = " (Takes - " + utility_class::format_duration(elapsed_duration) + ")";
-
+      string wall_time = " (Takes - " + utility_class::get_elapsed_time(sub_job_start_tp) + ")";
       message_callback_func(object, message + "Experiment has been finished. Result file had be written." + wall_time);
       meta->start_index++;
       complated_experiment++;
@@ -143,7 +139,7 @@ string experiment_perform::build_new_thread_start_string(thread_meta *meta) {
   stringstream ss;
   ss << meta->id;
   global_structure::scheduler_option options = hyperparameter->at(meta->start_index);
-  string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) 
+  string message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + get_progress() +
     + "] Thread ID(" + ss.str() + ") had been started. Using parameters: alpah(" +
     to_string(options.age_weight) + "), beta(" + to_string(options.svp_upper) + "), d(" +
     to_string(options.reorder_count) + "), w(" + to_string(options.preemption_task_window) + ").";
@@ -178,18 +174,16 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
 #else
     string save_file_name = result_dir + "/" + it->second->emulator->get_savefile_candidate_name();
 #endif
-    short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+    short_message = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + get_progress() +
                     "] The Result files of Thread ID(" + ss.str() + ") will be written.";
     message_callback_func(object, short_message);
     it->second->emulator->save_result_totaly(save_file_name);
 
-    chrono::duration<double> elapsed_seconds = system_clock::now() - it->second->job_start_tp;
-    auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-    string wall_time = "(Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+    string wall_time = "(Takes - " + utility_class::get_elapsed_time(it->second->job_start_tp) + ")";
 
     complated_experiment++;
 
-    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + 
+    complate = "[" + to_string(complated_experiment) + "/" + to_string(hyperparameter->size()) + get_progress() +
                 "] Thread ID(" + ss.str() + ") had been complated. The Result files had been written. " + wall_time;
     it->second->start_index++;
     it->second->experiment_done++;
@@ -200,4 +194,14 @@ bool experiment_perform::call_back_from_thread(thread::id id, string& complate, 
     return true;
   }
   return false;
+}
+
+string experiment_perform::get_progress() {
+  ostringstream oss;
+
+  double progress = (static_cast<double>(complated_experiment) / hyperparameter->size()) * 100.0;
+  oss << " - " << fixed << setprecision(2) << progress << "%";
+  string message = oss.str();
+
+  return message;
 }

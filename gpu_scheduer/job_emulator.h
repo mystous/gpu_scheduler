@@ -11,6 +11,8 @@
 #include <functional>
 #include <thread>
 #include <queue>
+#include <cmath>
+#include <numeric>
 
 #include "job_entry.h"
 #include "coprocessor_server.h"
@@ -64,8 +66,6 @@ public:
   void start_progress_wo_thread();
   void exit_thread();
   void set_callback(std::function<void(void*, thread::id)> callback, void *object);
-  int get_ticktok_duration() const { return ticktok_duration; };
-  void set_ticktok_duration(int duration) { ticktok_duration = duration; };
   int get_emulation_step() { return emulation_step; };
   emulation_status get_emulation_status() { return progress_status; };
   double* get_allocation_rate() { return allocation_rate; };
@@ -131,7 +131,6 @@ private:
   vector<queue<job_entry*>*> wait_queue_group;
   vector<vector<job_age_struct>> wait_queue_age;
   vector<job_age_struct> scheduled_history;
-  int ticktok_duration = 1;
   const int sleep_for_drawing = 1;
   double* allocation_rate = nullptr;
   double* utilization_rate = nullptr;
@@ -157,6 +156,8 @@ private:
   int defragmentaion_criteria = global_const::defragmentation_criteria;
   function<void(void*, thread::id)> step_forward_callback;
   bool do_defragmentation = false;
+  double allocation_stats[global_const::statistics_array_size];
+  double utilization_stats[global_const::statistics_array_size];
 
   void update_wait_queue();
   void adjust_wait_queue();
@@ -174,6 +175,7 @@ private:
   void reallocation_log_memory();
   void defragmentation_excute(bool &do_defragmentation);
   void check_defragmentation_condition(bool& do_defragmentation);
+  void calculate_statistics(double* rate_array, int size, double* stats);
   adjusting_server* server_control = nullptr;
 };
 

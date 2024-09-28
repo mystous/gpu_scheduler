@@ -36,6 +36,13 @@ string utility_class::get_accelerator_name(accelator_type type) {
   }
 }
 
+string utility_class::get_elapsed_time(system_clock::time_point tp) {
+  chrono::duration<double> elapsed_seconds = system_clock::now() - tp;
+  auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
+  string elapsed_time = utility_class::format_duration(elapsed_duration);
+  return elapsed_time;
+}
+
 string utility_class::format_duration(chrono::seconds duration) {
   int hours = chrono::duration_cast<chrono::hours>(duration).count();
   int minutes = chrono::duration_cast<chrono::minutes>(duration).count() % 60;

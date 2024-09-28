@@ -110,18 +110,22 @@ void experiment_dialog::function_call(thread::id id) {
   string message[2] = {"", ""};
   if (experiment_obj.call_back_from_thread(id, message[0], message[1])) {
     experiment_done = experiment_obj.get_complated_experiment();
-    UpdateStaticInfo();
+    UpdateStaticInfo(true);
     add_string_to_status(message[0]);
     if (!message[1].empty()) {
       add_string_to_status(message[1]);
     }
     if (hyperparameter_searchspace.size() == experiment_done) {
-      chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
-      auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-      string wall_time = "Experiment is finished!(Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+      string wall_time = "Experiment is finished!(Takes - " + get_elapsed_time() + ")";
       add_string_to_status(wall_time);
     }
   }
+}
+
+string experiment_dialog::get_elapsed_time() {
+  chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
+  auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
+  return utility_class::format_duration(elapsed_duration);
 }
 
 void global_experiment_callback(void* object, thread::id id) {
@@ -149,7 +153,8 @@ void experiment_dialog::OnClickedButtonPerform()
 
   experiment_done = 0;
   UpdateHyperparameters();
-  UpdateStaticInfo();
+  job_start_tp = system_clock::now();
+  UpdateStaticInfo(true);
   perform_status.ResetContent();
   add_string_to_status("Experiment starting...");
   experiment_obj.set_hyperparameter(&hyperparameter_searchspace);
@@ -158,14 +163,57 @@ void experiment_dialog::OnClickedButtonPerform()
     experiment_obj.set_call_back_obj((void*)this);
     experiment_obj.set_message_call_back(message_callback_func);
     experiment_obj.set_file_name(task_file_name, server_file_name);
-    job_start_tp = system_clock::now();
 
     auto && strings = experiment_obj.start_experiment();
     add_string_to_status(strings);
+    SaveHyperparameterRange();
+
     return;
   }
 
   AfxMessageBox(L"Experiment has been failed!", MB_ICONSTOP);
+}
+
+void experiment_dialog::SaveHyperparameterRange() {
+  string file_name = "\\" + utility_class::conver_tp_str(system_clock::now()) + "_confg.set";
+  file_name.erase(remove(file_name.begin(), file_name.end(), ':'), file_name.end());
+  file_name.erase(remove(file_name.begin(), file_name.end(), '+'), file_name.end());
+  CString config_file;
+  config_file = CA2T(experiment_obj.get_result_dir().c_str());
+  config_file += CA2T(file_name.c_str());
+
+  CFile file;
+  if (file.Open(config_file, CFile::modeCreate | CFile::modeWrite))
+  {
+    CString str;
+
+    str.Format(_T("%d\r\n"), thread_total);
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    str.Format(_T("%.5f,%.5f,%.5f\r\n"), alpha_para[0], alpha_para[1], alpha_para[2]);
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    str.Format(_T("%.0f,%.0f,%.0f\r\n"), beta_para[0], beta_para[1], beta_para[2]);
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    str.Format(_T("%d,%d,%d\r\n"), d_para[0], d_para[1], d_para[2]);
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    str.Format(_T("%d,%d,%d\r\n"), w_para[0], w_para[1], w_para[2]);
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    str.Format(_T("%s,%s,%s,%s\r\n"), sch[0] ? _T("true") : _T("false"),
+      sch[1] ? _T("true") : _T("false"),
+      sch[2] ? _T("true") : _T("false"),
+      sch[3] ? _T("true") : _T("false"));
+    file.Write((LPCTSTR)str, str.GetLength() * sizeof(TCHAR));
+
+    file.Close();
+  }
+  else
+  {
+    std::cerr << "파일을 열 수 없습니다." << std::endl;
+  }
 }
 
 void experiment_dialog::add_string_to_status(vector<string> list) {
@@ -175,6 +223,11 @@ void experiment_dialog::add_string_to_status(vector<string> list) {
 }
 
 void experiment_dialog::add_string_to_status(string message) {
+  int count = perform_status.GetCount();
+  if (count > 5000) {
+    perform_status.ResetContent();
+  }
+
   int index = perform_status.InsertString(-1, CA2T(message.c_str()));
   perform_status.SetCurSel(index);
 }
@@ -247,11 +300,21 @@ void experiment_dialog::GetDoubleValue(double* value, CEdit* control) {
   *value = _ttof(value_str);
 }
 
-void experiment_dialog::UpdateStaticInfo() {
+void experiment_dialog::UpdateStaticInfo(bool show_elapsed_time) {
 
   CString message;
+  CString addtional_info = _T("00:00:00 - 0.000%");
 
-  message.Format(thread_notice, thread_total);
+  if (show_elapsed_time) {
+    addtional_info = CA2T(get_elapsed_time().c_str());
+    ostringstream oss;
+
+    double progress = (static_cast<double>(experiment_done) / hyperpara_total) * 100.0;
+    oss << " - " << fixed << setprecision(2) << progress << "%";
+    addtional_info += CA2T(oss.str().c_str());
+  }
+  
+  message.Format(thread_notice, thread_total, addtional_info);
   thread_status.SetWindowText(message);
 
   message.Format(task_notice, hyperpara_total, experiment_done, hyperpara_total - experiment_done);

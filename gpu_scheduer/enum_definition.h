@@ -8,6 +8,7 @@ namespace global_const {
   const double age_weight = 0.13889;
   const int dp_execution_maximum = 100000;
   const int defragmentation_criteria = 20;
+  const int statistics_array_size = 8;
 };
 
 enum class accelator_type : int {
@@ -33,4 +34,8 @@ enum class gpu_allocation_type : int {
 
 enum class gpu_defragmentation_method : int {
   max_space
+};
+
+enum statistics {
+  min = 0, max, avg, sd, p_25, mid, p_75, p_95 
 };

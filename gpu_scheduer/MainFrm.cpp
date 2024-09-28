@@ -257,3 +257,15 @@ void CMainFrame::experiment_perform() {
 
   dlg.DoModal();
 }
+
+
+BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
+{
+  if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_F6)
+  {
+    experiment_perform();
+    return TRUE;
+  }
+
+  return CMDIFrameWnd::PreTranslateMessage(pMsg);
+}

@@ -293,30 +293,26 @@ void job_emulator::set_option(global_structure::scheduler_options options) {
 }
 
 void job_emulator::step_foward() {
-  for (int i = 0; i < ticktok_duration; ++i) {
-    if (check_finishing()) {
-      last_emulation_step = emulation_step;
-      //thread::id test = this_thread::get_id();
-      emulation_step = -1;
-      progress_status = emulation_status::stop;
-      initialize_server_state();
-      initialize_job_state();
-      break;
-    }
-    else {
-      emulation_step++;
-      computing_forward();
-      update_wait_queue();
-      adjust_wait_queue();
-      defragmentation_excute(do_defragmentation);
-      scheduled_job_count += scheduler_obj->scheduling_job();
-      check_defragmentation_condition(do_defragmentation);
-      log_rate_info();
-      //if (!step_forward_callback) {
-        step_forward_callback(call_back_object, this_thread::get_id());
-      //}
-    }
+  if (check_finishing()) {
+    last_emulation_step = emulation_step;
+    emulation_step = -1;
+    progress_status = emulation_status::stop;
+    initialize_server_state();
+    initialize_job_state();
+    calculate_statistics(allocation_rate, rate_index-1, allocation_stats);
+    calculate_statistics(utilization_rate, rate_index-1, utilization_stats);
+    return;
   }
+
+  emulation_step++;
+  computing_forward();
+  update_wait_queue();
+  adjust_wait_queue();
+  defragmentation_excute(do_defragmentation);
+  scheduled_job_count += scheduler_obj->scheduling_job();
+  check_defragmentation_condition(do_defragmentation);
+  log_rate_info();
+  step_forward_callback(call_back_object, this_thread::get_id());
 
   progress_tp = system_clock::now();
 }
@@ -406,7 +402,7 @@ void job_emulator::log_rate_info() {
 
 void job_emulator::computing_forward() {
   for (auto&& server : server_list) {
-    server.ticktok(ticktok_duration);
+    server.ticktok();
     finished_job_count += server.flush();
   }
 }
@@ -547,7 +543,6 @@ void job_emulator::delete_rate_array() {
   }
 }
 
-
 void job_emulator::reallocation_log_memory() {
   int old_memory_size = memory_alloc_size;
   memory_alloc_size *= 2;
@@ -571,6 +566,8 @@ void job_emulator::initialize_progress_variables() {
   memory_alloc_size = get_total_time_slot();
   job_adjust_overhead_times = 0;
   do_defragmentation = false;
+  fill(allocation_stats, allocation_stats + (global_const::statistics_array_size-1), 0.0);
+  fill(utilization_stats, utilization_stats + (global_const::statistics_array_size-1), 0.0);
 
   scheduled_history.clear();
 
@@ -620,7 +617,7 @@ thread::id job_emulator::start_progress() {
       saving_possiblity = true;
       this->step_foward();
       auto next_call = steady_clock::now() + milliseconds(this->get_emulation_play_priod());
-      std::this_thread::sleep_until(next_call);
+      this_thread::sleep_until(next_call);
     }
     if (progress_status == emulation_status::stop) {
       emulation_step = -1;
@@ -645,17 +642,17 @@ void job_emulator::start_progress_wo_thread() {
     job_start_tp = system_clock::now();
   }
 
-    progress_status = emulation_status::start;
-    job_emulator* object = this;
+  progress_status = emulation_status::start;
+  job_emulator* object = this;
 
-    while (emulation_status::start == progress_status) {
-      saving_possiblity = true;
-      step_foward();
-    }
-    
-    if (progress_status == emulation_status::stop) {
-      emulation_step = -1;
-    }
+  while (emulation_status::start == progress_status) {
+    saving_possiblity = true;
+    step_foward();
+  }
+
+  if (progress_status == emulation_status::stop) {
+    emulation_step = -1;
+  }
 }
 
 bool job_emulator::save_result_totaly() {
@@ -765,6 +762,22 @@ bool job_emulator::save_result_meta(string file_body_name)
   file << "Adjust task counts," << value_ << "\n";
   value_ = get_job_adjust_overhead_time();
   file << "Ajust task taken time(min)," << value_ << "\n";
+  file << "Allocation min," << allocation_stats[statistics::min] << "\n";
+  file << "Allocation max," << allocation_stats[statistics::max] << "\n";
+  file << "Allocation avg," << allocation_stats[statistics::avg] << "\n";
+  file << "Allocation mid," << allocation_stats[statistics::mid] << "\n";
+  file << "Allocation std," << allocation_stats[statistics::sd] << "\n";
+  file << "Allocation 25 percentile," << allocation_stats[statistics::p_25] << "\n";
+  file << "Allocation 75 percentile," << allocation_stats[statistics::p_75] << "\n";
+  file << "Allocation 95 percentile," << allocation_stats[statistics::p_95] << "\n";
+  file << "Utilization min," << utilization_stats[statistics::min] << "\n";
+  file << "Utilization max," << utilization_stats[statistics::max] << "\n";
+  file << "Utilization avg," << utilization_stats[statistics::avg] << "\n";
+  file << "Utilization mid," << utilization_stats[statistics::mid] << "\n";
+  file << "Utilization std," << utilization_stats[statistics::sd] << "\n";
+  file << "Utilization 25 percentile," << utilization_stats[statistics::p_25] << "\n";
+  file << "Utilization 75 percentile," << utilization_stats[statistics::p_75] << "\n";
+  file << "Utilization 95 percentile," << utilization_stats[statistics::p_95] << "\n";
   file << "job file," << job_file_name << "\n";
   file << "save prefix," << file_body_name;
 
@@ -793,16 +806,6 @@ bool job_emulator::save_result_log(string file_name) {
       << " Utilization Rate," << server_list[i].get_server_name() << " Allocation";
   }
   file << "\n";
-
-  /*stringstream buffer;
-  for (int i = 0; i < get_progress_time_slot(); i++) {
-    buffer << allocation_rate[i] << "," << utilization_rate[i];
-    for (int j = 0; j < server_list.size(); j++) {
-      buffer << "," << server_utilization_rate[j][i] << "," << server_allocation_count[j][i];
-    }
-    buffer << "\n";
-  }
-  file << buffer.str();*/
 
   for (int i = 0; i < get_progress_time_slot(); i++)
   {
@@ -859,3 +862,34 @@ string job_emulator::get_savefile_candidate_name() {
   return filename;
 }
 
+void job_emulator::calculate_statistics(double* rate_array, int size, double* stats) {
+  if (size == 0) {
+    fill(stats, stats + (global_const::statistics_array_size-1), 0.0);
+    return;
+  }
+
+  vector<double> sorted_array(rate_array, rate_array + size);
+  sort(sorted_array.begin(), sorted_array.end());
+
+  stats[statistics::min] = sorted_array.front();
+  stats[statistics::max] = sorted_array.back();
+
+  double sum = accumulate(sorted_array.begin(), sorted_array.end(), 0.0);
+  stats[statistics::avg] = sum / size;
+
+  double variance_sum = 0.0;
+  for (int i = 0; i < size; ++i) {
+    variance_sum += pow(rate_array[i] - stats[2], 2);
+  }
+  stats[statistics::sd] = sqrt(variance_sum / size);
+
+  int p25_index = static_cast<int>(size * 0.25);
+  int p50_index = static_cast<int>(size * 0.50);
+  int p75_index = static_cast<int>(size * 0.75);
+  int p95_index = static_cast<int>(size * 0.95);
+
+  stats[statistics::p_25] = sorted_array[min(p25_index, size - 1)];
+  stats[statistics::mid] = sorted_array[min(p50_index, size - 1)];
+  stats[statistics::p_75] = sorted_array[min(p75_index, size - 1)];
+  stats[statistics::p_95] = sorted_array[min(p95_index, size - 1)];
+}

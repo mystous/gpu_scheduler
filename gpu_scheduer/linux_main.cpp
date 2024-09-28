@@ -212,9 +212,7 @@ void global_experiment_callback(void* object, thread::id id) {
       add_string_to_status(message[1]);
     }
     if (hyperparameter_searchspace.size() == experiment_done) {
-      chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
-      auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-      string wall_time = "Experiment is finished!(Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+      string wall_time = "Experiment is finished!(Takes - " + utility_class::get_elapsed_time(job_start_tp) + ")";
       add_string_to_status(wall_time);
     }
   }
@@ -255,9 +253,7 @@ int main(int argc, char* argv[]) {
     auto&& strings = experiment_obj.start_experiment(false);
     add_string_to_status(strings);
 
-    chrono::duration<double> elapsed_seconds = system_clock::now() - job_start_tp;
-    auto elapsed_duration = chrono::duration_cast<std::chrono::seconds>(elapsed_seconds);
-    string wall_time = " (Takes - " + utility_class::format_duration(elapsed_duration) + ")";
+    string wall_time = " (Takes - " + utility_class::get_elapsed_time(job_start_tp) + ")";
     string message = to_string(hyperparameter_searchspace.size()) + " experiments has been finished" + wall_time;
     add_string_to_status(message);
     return 0;
