@@ -2,6 +2,7 @@
 #include "afxdialogex.h"
 #include "experiment_perform.h"
 #include "call_back_object.h"
+#include <afxmt.h>
 
 
 // experiment_dialog 대화 상자
@@ -41,6 +42,9 @@ protected:
   string server_file_name = "D:\\projects\\gpu_scheduler\\gpu_scheduer\\server.csv";
 
   experiment_perform experiment_obj;
+  CFile log_file;
+  CString log_file_name;
+  CRITICAL_SECTION critical_section;
 
 	DECLARE_MESSAGE_MAP()
   virtual void OnOK();

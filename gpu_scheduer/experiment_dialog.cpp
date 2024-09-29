@@ -21,6 +21,7 @@ experiment_dialog::experiment_dialog(CWnd* pParent /*=nullptr*/)
 
 experiment_dialog::~experiment_dialog()
 {
+  DeleteCriticalSection(&critical_section);
 }
 
 void experiment_dialog::DoDataExchange(CDataExchange* pDX)
@@ -151,6 +152,23 @@ void experiment_dialog::OnClickedButtonPerform()
   function<void(void*, thread::id)> callback_func = global_experiment_callback;
   function<void(void*, string)> message_callback_func = global_message_callback;
 
+  auto now = system_clock::now();
+
+  // 현재 시간을 time_t 형식으로 변환 (초 단위)
+  auto now_in_time_t = system_clock::to_time_t(now);
+
+  // 현재 시간을 밀리초 단위로 변환
+  auto now_in_ms = duration_cast<milliseconds>(now.time_since_epoch()).count();
+
+  log_file_name.Format(_T("%d_log.txt"), now_in_ms);
+
+  // 로그 파일 열기 (이어쓰기 모드)
+  if (!log_file.Open(log_file_name, CFile::modeCreate)) {
+    AfxMessageBox(L"로그 파일을 열 수 없습니다.", MB_ICONSTOP);
+    return;
+  }
+  log_file.Close();
+
   experiment_done = 0;
   UpdateHyperparameters();
   job_start_tp = system_clock::now();
@@ -223,6 +241,7 @@ void experiment_dialog::add_string_to_status(vector<string> list) {
 }
 
 void experiment_dialog::add_string_to_status(string message) {
+  EnterCriticalSection(&critical_section);
   int count = perform_status.GetCount();
   if (count > 5000) {
     perform_status.ResetContent();
@@ -230,6 +249,21 @@ void experiment_dialog::add_string_to_status(string message) {
 
   int index = perform_status.InsertString(-1, CA2T(message.c_str()));
   perform_status.SetCurSel(index);
+
+  CFile log_file;
+  if (log_file.Open(log_file_name, CFile::modeReadWrite)) {
+    log_file.SeekToEnd(); // 이어쓰기를 위해 파일의 끝으로 이동
+
+    CString log_message(CA2T(message.c_str()));
+    log_message += _T("\r\n"); // 줄바꿈 추가
+    log_file.Write((LPCTSTR)log_message, log_message.GetLength() * sizeof(TCHAR));
+
+    log_file.Close(); // 파일 닫기
+  }
+  else {
+    AfxMessageBox(L"로그 파일을 열 수 없습니다.", MB_ICONSTOP);
+  }
+  LeaveCriticalSection(&critical_section);
 }
 
 BOOL experiment_dialog::OnInitDialog()
@@ -263,6 +297,7 @@ BOOL experiment_dialog::OnInitDialog()
   }
 
   UpdateStaticInfo();
+  InitializeCriticalSection(&critical_section);
   return TRUE;  // return TRUE unless you set the focus to a control
   // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }
