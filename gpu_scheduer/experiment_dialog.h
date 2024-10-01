@@ -24,17 +24,17 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
   const CString thread_notice = _T("Number of %d Threads Working on it...(Last Update: %s)");
   const CString task_notice = _T("Totaly %d of hyperparmeter will be perfomred. %d of experiment has be done. %d of experiment are lefted");
-  int thread_total = 4;
+  int thread_total = 10;
   int hyperpara_total = 0;
   int experiment_done = 0;
   //double alpha_para[3] = {0.13889, 0.83889, 0.1};
   //double beta_para[3] = { 70., 95., 5. };
   //int d_para[3] = { 100000, 1000000, 100000 };
   //int w_para[3] = { 20, 100, 10 };
-  double alpha_para[3] = { 0.13889, 0.13889, 0.1 };
-  double beta_para[3] = { 80., 80., 5. };
-  int d_para[3] = { 100000, 100000, 100000 };
-  int w_para[3] = { 20, 20, 10 };
+  double alpha_para[3] = { 0.01, 2, 0.01 };
+  double beta_para[3] = { 80., 95., 5. };
+  int d_para[3] = { 100000, 500000, 100000 };
+  int w_para[3] = { 20, 200, 20 };
 
   bool sch[4] = {true, false, false, false };
   CButton* scheduler_ctrl[4] = {nullptr, };

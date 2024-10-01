@@ -96,6 +96,7 @@ vector<string> experiment_perform::start_experiment(bool using_thread) {
     meta->emulator->set_callback(callback_func, object);
 
     if (using_thread) {
+
       start_emulator_with_meta(meta);
       message_list.push_back(build_new_thread_start_string(meta));
       continue;
@@ -133,6 +134,7 @@ void experiment_perform::initialize_thread_map() {
   }
 
   thread_map.clear();
+  thread_map.reserve(hyperparameter->size() + 1);
 }
 
 string experiment_perform::build_new_thread_start_string(thread_meta *meta) {

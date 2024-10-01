@@ -6,6 +6,7 @@
 *.o
 *.swp
 .ipynb_checkpoints/
+20240929_003_first_all_try/
 *.exe
 
 # User-specific files
