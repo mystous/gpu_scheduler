@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "job_scheduler.h"
 
-int job_scheduler::scheduling_job() {
+int job_scheduler::scheduling_job(int emulation_step) {
   int scheduled = 0;
   if (nullptr == wait_queue_group) {
     return scheduled;
@@ -14,6 +14,7 @@ int job_scheduler::scheduling_job() {
     vector<job_age_struct>* age_queue_element = &age_queue[i];
     bool scheduled_server = false;
     while (false == wait_queue->empty()) {
+      string server_status = get_server_status_string();
       auto job = wait_queue->front();
       if (-1 == arrange_server(*job, i, static_cast<accelator_type>(i))) {
         break;
@@ -24,7 +25,10 @@ int job_scheduler::scheduling_job() {
       /*job_age_struct entry = age_queue_element->at(0);
       scheduled_history->push_back(entry);
       */
-      scheduled_history->push_back(age_queue_element->at(0));
+      job_age_struct entry = age_queue_element->at(0);
+      entry.server_status = server_status;
+      entry.emulation_step = emulation_step;
+      scheduled_history->push_back(entry);
       age_queue_element->erase(age_queue_element->begin());
       scheduled_server = true;
 
@@ -57,6 +61,21 @@ int job_scheduler::scheduling_job() {
   }
 
   return scheduled;
+}
+
+string job_scheduler::get_server_status_string() {
+  string result;
+  for (size_t i = 0; i < target_server->size(); ++i) {
+    server_entry server = target_server->at(i);
+
+    int reserved_count = count(server.get_reserved_status()->begin(), server.get_reserved_status()->end(), true);
+    result += server.get_server_name() + ", " + to_string(server.get_accelerator_count()) + ", " + to_string(reserved_count);
+
+    if (i != target_server->size() - 1) {
+      result += ", ";
+    }
+  }
+  return result;
 }
 
 void job_scheduler::set_scheduling_condition(bool using_preemetion, bool scheduling_follow_flavor, bool work_till_end) {

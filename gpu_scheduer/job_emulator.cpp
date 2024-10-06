@@ -309,7 +309,7 @@ void job_emulator::step_foward() {
   update_wait_queue();
   adjust_wait_queue();
   defragmentation_excute(do_defragmentation);
-  scheduled_job_count += scheduler_obj->scheduling_job();
+  scheduled_job_count += scheduler_obj->scheduling_job(emulation_step);
   check_defragmentation_condition(do_defragmentation);
   log_rate_info();
   step_forward_callback(call_back_object, this_thread::get_id());
@@ -688,21 +688,38 @@ bool job_emulator::save_waiting_time(string file_body_name) {
   if (!saving_possiblity) { return false; }
   if (!file.is_open()) { return false; }
 
-  file << "Index,job id,Accumulated Age,Required Accelerator Count,Utilization,Preemption,Flaver Index,Flaver,User Tem,Pod Name,Name Space,Project" << "\n";
+  file << "Index,job id,Accumulated Age,Start Step,Following Gap,Required Accelerator Count,Utilization,Preemption,Flaver Index,Flaver,User Tem,Pod Name,Name Space,Project";
+  string result = ",";
+  for (size_t i = 0; i < server_list.size(); ++i) {
+    server_entry server = server_list.at(i);
+    string server_name = server.get_server_name();
+
+    result += "server_name, " + server_name + "_accelerator_count, " + server_name + "_reserved_count";
+
+    if (i != server_list.size() - 1) {
+      result += ", ";
+    }
+  }
+  int last_emulation_step = scheduled_history[0].emulation_step;
+  file << result << "\n";
   for (auto&& job_meta : scheduled_history) {
     file << index++ << ","
       << job_meta.job->get_job_id() << ","
       << job_meta.accumulated_age << ","
+      << job_meta.emulation_step << ","
+      << job_meta.emulation_step - last_emulation_step << ","
       << job_meta.job->get_accelerator_count() << ","
       << job_meta.job->get_utilization() << ",";
-      message = job_meta.job->is_preemtion_possible() ? "true" : "false";
-      file << message << ","
-        << static_cast<int>(job_meta.job->get_flavor()) << ","
-        << utility_class::get_accelerator_name(job_meta.job->get_flavor()) << ","
-        << job_meta.job->get_user_team() << ","
-        << job_meta.job->get_pod_name() << ","
-        << job_meta.job->get_name_sapce() << ","
-        << job_meta.job->get_project_name() << "\n";
+    last_emulation_step = job_meta.emulation_step;
+    message = job_meta.job->is_preemtion_possible() ? "true" : "false";
+    file << message << ","
+      << static_cast<int>(job_meta.job->get_flavor()) << ","
+      << utility_class::get_accelerator_name(job_meta.job->get_flavor()) << ","
+      << job_meta.job->get_user_team() << ","
+      << job_meta.job->get_pod_name() << ","
+      << job_meta.job->get_name_sapce() << ","
+      << job_meta.job->get_project_name() << ","
+      << job_meta.server_status << "\n";
   }
 
   file.close();

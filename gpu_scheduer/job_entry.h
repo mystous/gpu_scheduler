@@ -70,6 +70,8 @@ struct job_age {
   int         accumulated_age = 0;
   job_entry*  job = nullptr;
   double      repriority_score = 0;
+  string      server_status = "";
+  int         emulation_step = 0;
 };
 
 using job_age_struct = struct job_age;

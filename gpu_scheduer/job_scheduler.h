@@ -15,7 +15,7 @@ public:
     postproessing_set_server();
   };
   void set_scheduling_condition(bool using_preemetion, bool scheduling_follow_flavor, bool work_till_end);
-  virtual int scheduling_job();
+  virtual int scheduling_job(int emulation_step);
   virtual void get_wait_job_request_acclerator(vector<int>& request);
   //void set_wait_queue(queue<job_entry*>* queue) { wait_queue = queue; };
   void set_wait_queue(vector<queue<job_entry*>*>* queue) { wait_queue_group = queue; };
@@ -26,6 +26,7 @@ protected:
   bool preemtion_enabling = false;
   bool scheduling_with_flavor = false;
   bool perform_until_finish = false;
+  string get_server_status_string();
   virtual void postproessing_set_server() = 0;
   //queue<job_entry*>* wait_queue = nullptr;
   vector<queue<job_entry*>*>* wait_queue_group = nullptr;
