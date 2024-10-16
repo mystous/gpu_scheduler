@@ -6,12 +6,11 @@
 *.o
 *.swp
 .ipynb_checkpoints/
-20240929_003_first_all_try/
-aggregated_result/
 job_flow_total(task,flavor,single)/
-1st_full_experiment/
-simple_total/
-reports/
+log_data/
+analysis_pictures/
+*_log.txt
+gpu_scheduer/all_exp_gen/
 *.exe
 
 # User-specific files
