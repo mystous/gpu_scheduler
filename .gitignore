@@ -10,7 +10,6 @@ job_flow_total(task,flavor,single)/
 log_data/
 analysis_pictures/
 *_log.txt
-gpu_scheduer/all_exp_gen/
 *.exe
 
 # User-specific files
