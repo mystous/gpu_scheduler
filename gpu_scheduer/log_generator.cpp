@@ -174,18 +174,18 @@ void log_generator::finialize_distribution(distribution_values& dist) {
 
 bool log_generator::initialize_distribution(distribution_values& dist, int task_size) {
   dist.array_size = -1;
-    dist.start_tp = new (nothrow)system_clock::time_point[task_size];
-    dist.finish_tp = new (nothrow)system_clock::time_point[task_size];
-    dist.counts = new (nothrow)int[task_size];
-    dist.utilizations = new (nothrow)float[task_size];
-    dist.preemptions = new (nothrow)bool[task_size];
-    dist.accelerators = new (nothrow)accelator_type[task_size];
+  dist.start_tp = new (nothrow)system_clock::time_point[task_size];
+  dist.finish_tp = new (nothrow)system_clock::time_point[task_size];
+  dist.counts = new (nothrow)int[task_size];
+  dist.utilizations = new (nothrow)float[task_size];
+  dist.preemptions = new (nothrow)bool[task_size];
+  dist.accelerators = new (nothrow)accelator_type[task_size];
 
-    if (!dist.start_tp || !dist.finish_tp || !dist.counts ||
-      !dist.utilizations || !dist.preemptions || !dist.accelerators) {
-      finialize_distribution(dist);
-      return false;
-    }
+  if (!dist.start_tp || !dist.finish_tp || !dist.counts ||
+    !dist.utilizations || !dist.preemptions || !dist.accelerators) {
+    finialize_distribution(dist);
+    return false;
+  }
 
   for (size_t i = 0; i < task_size; ++i) {
     dist.start_tp[i] = system_clock::now();
@@ -209,13 +209,22 @@ template<typename distribution>
 void log_generator::generate_time_point_distribution_inner(system_clock::time_point* tp, system_clock::time_point* start_tp, distribution_type distribution_method, distribution& dist, int task_size) {
   random_device rd;
   mt19937 gen(rd());
+  uniform_int_distribution<> dist_min(10, 60);
+
 
   for (int i = 0; i < task_size; ++i) {
-    auto offset = duration_cast<std::chrono::minutes>(duration<double, ratio<60>>(dist(gen)));
+    double gen_data = abs(dist(gen));
+    auto offset = duration_cast<std::chrono::minutes>(duration<double, ratio<60>>(gen_data));
     if (distribution_type::chi2 == distribution_method) {
       offset *= multi_const;
     }
-    tp[i] = start_tp[i] + abs(offset);
+    if (offset <= chrono::minutes(10)) {
+      chrono::duration<double, ratio<60>> duration_in_minutes(dist_min(gen));
+      chrono::minutes minimum = chrono::duration_cast<chrono::minutes>(duration_in_minutes);
+
+      offset = minimum;
+    }
+    tp[i] = start_tp[i] + offset;
   }
 }
 
@@ -403,8 +412,42 @@ void log_generator::generate_time_point_distribution(system_clock::time_point* t
       break;
     }
     case distribution_type::lognorm: {
-      lognormal_distribution<> dist(0.0, range.count() / 3.0);
+      chrono::minutes range_min(10);
+
+      double range_mid = (range.count() + range_min.count()) / 2.0;
+      double sigma = (range.count() - range_min.count()) / 6.0;
+
+      lognormal_distribution<> dist(log(range_mid), log(sigma));
       generate_time_point_distribution_inner(tp, start_tp, distribution_method, dist, task_size);
+
+      double range_max_minutes = range.count();
+      for (size_t i = 0; i < task_size; ++i) {
+        double duration_in_minutes = duration_cast<minutes>(tp[i] - start_tp[i]).count();
+
+        if (duration_in_minutes > range_max_minutes) {
+          duration_in_minutes = range_max_minutes;
+        }
+
+        tp[i] = start_tp[i] + minutes(static_cast<int>(duration_in_minutes));
+      }
+
+
+      //vector<double> durations(task_size);
+      //for (size_t i = 0; i < task_size; ++i) {
+      //  durations[i] = duration_cast<minutes>(tp[i] - start_tp[i]).count();
+      //}
+
+      //double current_min = *min_element(durations.begin(), durations.end());
+      //double current_max = *max_element(durations.begin(), durations.end());
+
+      //double target_min = range_min.count();
+      //double target_max = range.count();
+
+      //for (size_t i = 0; i < task_size; ++i) {
+      //  double normalized_ratio = (durations[i] - current_min) / (current_max - current_min);
+      //  double new_duration = target_min + normalized_ratio * (target_max - target_min);
+      //  tp[i] = start_tp[i] + minutes(static_cast<int>(new_duration));
+      //}
       break;
     }
     case distribution_type::gamma: {
