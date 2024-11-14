@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" GroupingSetting="Access" MembersFormat="FullSignature">
+  <Class Name="job_emulator" Collapsed="true">
+    <Position X="0.75" Y="7.75" Width="2.75" />
+    <NestedTypes>
+      <Struct Name="job_emulator::job_entry_element" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>job_emulator.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>HoOKKRlA9DoGHE6GovQQEJ41/jJFqdwqIggB65ECwoA=</HashCode>
+      <FileName>job_emulator.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="job_entry" Collapsed="true">
+    <Position X="4.5" Y="5.5" Width="1.5" />
+    <NestedTypes>
+      <Enum Name="job_entry::job_type" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>job_entry.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>IxEQQAYEAAAECAAQCAAAAhQAIIYACABEBCpjCQAQwAA=</HashCode>
+      <FileName>job_entry.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="job_scheduler" Collapsed="true">
+    <Position X="3.75" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAQAAAAAAkAQAAACUAIGBAAKBIIAEAAAAAAAA=</HashCode>
+      <FileName>job_scheduler.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="adjusting_server" Collapsed="true">
+    <Position X="0.75" Y="9" Width="2.75" />
+    <NestedTypes>
+      <Struct Name="adjusting_server::server_status_for_dp" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>adjusting_server.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+      <Struct Name="adjusting_server::job_for_dp" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>adjusting_server.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>KAgAAAoABBCEIAAgAAAgAJAAAAAAAAAACAAQAMhCuAA=</HashCode>
+      <FileName>adjusting_server.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="call_back_object" Collapsed="true">
+    <Position X="5.75" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>call_back_object.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="scheduler_compact" Collapsed="true">
+    <Position X="7.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAACBAAQAAAAAAAAA=</HashCode>
+      <FileName>scheduler_compact.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="scheduler_mcts" Collapsed="true">
+    <Position X="2.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAggYBIuIIAAAQBAACBAAAAgAAAAAQA=</HashCode>
+      <FileName>scheduler_mcts.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="scheduler_mostallocated" Collapsed="true">
+    <Position X="5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAEAAAAAAAAAAkAAAAAACBAAAACAAAAAAA=</HashCode>
+      <FileName>scheduler_mostallocated.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="scheduler_round_robin" Collapsed="true">
+    <Position X="0.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAABAAAABAAIAAAAAAAAAACBAAAAAAAAAAAA=</HashCode>
+      <FileName>scheduler_round_robin.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="server_entry" Collapsed="true">
+    <Position X="6.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAgiAAAAAgAAIAQkAAIQCAAABAAAcAAoAASCAgAA=</HashCode>
+      <FileName>server_entry.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="utility_class" Collapsed="true">
+    <Position X="0.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAEAAAAAAABAAAJCAAAggAA=</HashCode>
+      <FileName>utility_class.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="scheduler_type" Collapsed="true">
+    <Position X="6.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAAAAIAAAAgAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>enum_definition.h</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="맑은 고딕" Size="9" />
+</ClassDiagram>

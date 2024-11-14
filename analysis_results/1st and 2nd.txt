@@ -1,0 +1,35 @@
+1st full
+
+최적의 alpha와 beta 값:
+alpha                           0.03
+beta                            90.0
+Total Emulation minutes    412752.47
+Accumulated avg dist         -1760.1
+Accumulated max dist       -31947.52
+Name: 10, dtype: object
+
+최적의 w와 d 값:
+w                               10.0
+d                           200000.0
+Total Emulation minutes    423458.78
+Peemption gain              68996.75
+Expriment taken(msec)        3984.56
+Name: 1, dtype: object
+
+2nd full(aug)
+
+최적의 alpha와 beta 값:
+alpha                           0.72
+beta                            90.0
+Total Emulation minutes    1792401.8
+Accumulated avg dist         2428.32
+Accumulated max dist         -2971.7
+Name: 286, dtype: object
+
+최적의 w와 d 값:
+w                               200.0
+d                            300000.0
+Total Emulation minutes    1826964.93
+Peemption gain              209111.07
+Expriment taken(msec)        36965.95
+Name: 47, dtype: object
