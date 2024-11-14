@@ -425,7 +425,7 @@ void log_generator::generate_time_point_distribution(system_clock::time_point* t
         double duration_in_minutes = duration_cast<minutes>(tp[i] - start_tp[i]).count();
 
         if (duration_in_minutes > range_max_minutes) {
-          duration_in_minutes = range_max_minutes;
+          duration_in_minutes = fmod(duration_in_minutes, range_max_minutes);
         }
 
         tp[i] = start_tp[i] + minutes(static_cast<int>(duration_in_minutes));
