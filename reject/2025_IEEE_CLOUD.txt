@@ -1,0 +1,144 @@
+Dear Kyunam,
+
+On behalf of the Program Committee, we would like to thank you for your submission to IEEE Cloud 2025. We regret to inform you that your paper has NOT been accepted for publication. There has been a competitive review process and only 28% of submissions have been accepted.
+
+Anonymous reviews of your paper are appended to this email and available on the Easychair website. All papers were reviewed by at least three program committee members, and there was a robust discussion phase among the PC members.
+
+We hope to see you at the conference this year and look forward to discuss with you the future of cloud computing. We also hope to have the opportunity to welcome your contributions in the conference and related symposia and workshops listed at the home page of IEEE Services,
+https://services.conferences.computer.org/2025/
+
+
+Best regards,
+TPC Co-chairs
+
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+
+
+----------------------- REVIEW 1 ---------------------
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Kwon and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -1 (weak reject)
+----- TEXT:
+This paper avoids the NP-hard problem of scheduling jobs with unknown completion times, focusing instead on optimizing queue adjustments and reducing fragmentation in data center GPUs. It introduces two novel algorithms: a starvation-free scheduling algorithm and a preemptive task reallocation algorithm.
+
+Pros:
+1. The authors aim to address a critical issue of GPU scheduling in data centers, a significant topic in this domain.
+2. The paper provides a comprehensive evaluation of various distribution methods, supported by detailed graphical and tabular results.
+
+Cons:
+1. The introduction states that assigning tasks with unknown completion times to queues based on capacity is NP-hard; however, a supporting reference should be provided.
+
+2. The authors should explicitly demonstrate why existing GPU scheduling algorithms, which rely on job characteristics, are inadequate. More quantitative evidence is required to substantiate the need for a scheduler that considers job wait times and GPU fragmentation. Additionally, it should be clarified if hyperparameter tuning for the proposed algorithm is more time-consuming compared to workload-based scheduling methods.
+
+3. The related work section is insufficient. Numerous studies exist on elastic GPU scheduling and GPU cluster schedulers. The authors need to clarify how their work significantly differs beyond just varying optimization objectives to clearly highlight their contributions.
+
+[1] MLaaS in the Wild: Workload Analysis and Scheduling in Large-Scale Heterogeneous GPU Clusters
+[2] ElasticFlow: An Elastic Serverless Training Platform for Distributed Deep Learning
+[3] Optimus: an efficient dynamic resource scheduler for deep learning clusters.
+[4] Themis: Fair and effi- cient GPU cluster scheduling.
+[5] Tiresias: A GPU cluster manager for distributed deep learning.
+
+4. The descriptions of the experimental environment and data sources for Figures 4 and 5 lack detail, weakening the motivation and reliability of the results.
+
+5. Performance comparisons against established baselines, such as Lucid and Sia mentioned in Section II, would strengthen the evaluation. Additionally, testing the algorithm across various GPU workload scenarios would enhance the robustness and credibility of the results.
+
+6. A detailed theoretical analysis of the proposed algorithms, including their time complexity and maximum bound gap from the optimal solution, would substantially improve the paper's rigor.
+
+7. The writing of this paper should be improved to make it more clear and concise.
+
+
+
+----------------------- REVIEW 2 ---------------------
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Kwon and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: 2 (accept)
+----- TEXT:
+Thank you for your submission to IEEE CLOUD 2025. I enjoyed reading the paper
+and found the problem to be interesting and relevant. As I understand, the paper:
+- Presents head-of-line blocking and fragmentation as two main problems in GPU
+ scheduling.
+- Develops a heuristic algorithm to address both problems while avoiding
+ starvation. This algorithm has 4 knobs to tune its behavior.
+- Evaluates the algorithm using a simulator and on real job logs, showing
+ concrete improvements.
+
+I liked the writing and the paper flow. The problem is well-motivated and clear.
+At the same time, the solution is presented in a digestable way and the
+evaluation is thorough. I appreciate the use of real job logs, the use of a
+simulator and the results obtained for different distributions. Knob tuning is
+also discussed and explored thoroughly.
+
+My only concern is that the high amount of knobs in the algorithm, which need
+to be adjusted for different workloads, makes it hard to use in practice.
+Perhaps future work could address that.
+
+
+
+----------------------- REVIEW 3 ---------------------
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Kwon and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -2 (reject)
+----- TEXT:
+This paper addresses the problem of scheduling workloads in GPU clusters, it uses a priority-based queue management to avoid starvation and reallocates preemptive tasks to cope with fragmentation.
+
+Given some fundamental weaknesses, this work is not ready to be published in my view. Please take into account the following comments to further improve your work:
+
+* the motivation is not backed-up by real-world numbers, benchmarks, traces. In order to benefit from reordering queues of tasks to be scheduled, the load has to be high.
+
+* related-work is severely lacking, why are there only three (!) state-of-the-art references discussed in section II? the work on scheduling both at the node level and at the cluster level has been extensively studied. There should be mentions of at least the works that use similar mechanisms.
+
+* memory contention is not mentioned/studied when colocating jobs for the de-fragmentation.  
+
+* in general, the paper could benefit of a better writing, it looks like it was written mostly by generative AI. Precisions and concretizations are missing everywhere (how is the fairness metric defined, the example for the motivation, what exactly are the novel mechanisms based on, more precision of the nature of logs collected, nature and scalability of the infrastructure). Inconsistencies in writting make also the flow hard to follow (tasks vs jobs mixup, data center GPUs = GPU?).
+
+* the paper claims that the mechanisms used operate independently from the scheduling algorithm, however there will be a -non studied- influence of scheduling algorithms that might use the preemptive nature of the tasks, as well as its own reordering and prioritization. These should not be decoupled, especially when evaluating the mechanisms used.
+
+
+
+----------------------- REVIEW 4 ---------------------
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Kwon and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: 0 (borderline paper)
+----- TEXT:
+In this paper, a heuristic algorithm is proposed to avoid blockage of tasks in the waiting queue of GPU based data center. It is very useful to design sheduling algorithms for GPU tasks.
+Following are some suggestions"
+(1)In modern GPU data centers, hardware based virtualization is widely used which can avoid such kind of blockage directly. It is suggested to discuss this in detail.
+(2)The experiments is simulation based which is not convincing. It is suggested to use a real system to evaluate the performance.
+(3)Some figures are too dim to see clearly.
+
+
+
+----------------------- REVIEW 5 ---------------------
+SUBMISSION: 21
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Kwon and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -2 (reject)
+----- TEXT:
+Some parts of the paper are very poorly written.
+- the paper requires some text cleaning. For example, what is a stuck queue? The reader has no clue when reading the abstract. What is a "metric criteria."?
+
+- The paper assumes that current solutions have queues that work as a strict FIFO as explained for Figures 1, 2, and 3. However, most schedulers do not work that way and actually would schedule t3, 4 and 5 since there is a space available. Many solutions in the literature include preemptions, priority, and sharing to solve the blocking problem.
+
+- Some very strange assumptions that are never clarified, e.g., "where n is three times the number of servers" Why would the number of tasks be three times the number of servers? Why not 2 or 100?
+
+- While a simulator can be used to validate the theoretical bounds of a scheduler such as the one deployed, in reality, GPU jobs are extremely hard to preempt without severe degradation in performance. The main issues is that you have very slow PCIe interconnects, lots of buffers that you need to repopulate, and very large models (sometimes) that require transfer. There are many papers that discuss the problems associated with preemption. For example:
+- Shukla, Dharma, Muthian Sivathanu, Srinidhi Viswanatha, Bhargav Gulavani, Rimma Nehme, Amey Agrawal, Chen Chen et al. "Singularity: Planet-scale, preemptive and elastic scheduling of AI workloads." arXiv preprint arXiv:2202.07848 (2022).
+
+-Bai, Zhihao, Zhen Zhang, Yibo Zhu, and Xin Jin. "{PipeSwitch}: Fast pipelined context switching for deep learning applications." In 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20), pp. 499-514. 2020.
+
+Now assuming that this can simply be solved by directly measuring the dynamic programming overhead is an oversimplification. I would highly suggest that the authors run at least some of the experiments on a real GPU cluster, small or big, new or old, since without this, you are trying to solve an extremely applied problem using modeling with no validation.
