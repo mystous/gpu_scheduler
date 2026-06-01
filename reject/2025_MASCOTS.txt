@@ -1,0 +1,84 @@
+Dear Kyunam Cho,
+
+We regret to inform you that your paper
+"QAC: A Novel Algorithm for GPU Scheduling Queue Defragmentation via Queue Adjustment and Fragmentation Curation"
+could not be accepted for the MASCOTS 2025 conference that will be held at the Sorbonne University in Paris (France) on October 21-23, 2025.
+
+The selection process has been very competitive since this year we received a large number of submissions, many of high quality, and the acceptance rate for the main conference is about 24%.
+
+We hope the enclosed reviews will provide some useful feedback on your work and how it may be improved in the future.
+
+We also hope that you will consider attending MASCOTS 2025. We will have a very strong program and look forward to meeting you in Paris.
+
+Best regards,
+Maria Carla Calzarossa and Krzysztof Grochla
+Program Committee Co-Chairs MASCOTS 2025
+
+SUBMISSION: 36
+TITLE: QAC: A Novel Algorithm for GPU Scheduling Queue Defragmentation via Queue Adjustment and Fragmentation Curation
+
+----------------------- REVIEW 1 ---------------------
+
+SUBMISSION: 36
+TITLE: QAC: A Novel Algorithm for GPU Scheduling Queue Defragmentation via Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -3 (strong reject)
+----- TEXT:
+The paper does not conform to the conference standards.
+
+Authors' names are not on the paper, which is odd since MASCOTS does not incorporate a double-blind review process.  It seems that the authors submitted their work to a double-blind venue, their paper was not accepted, and then simply submitted it to MASCOTS without considering the CFP of the conference.
+
+The paper is 10 pages long, which is way over the page-limit of 8 pages.
+Clearly, 2 pages of extra material is 25% longer than it should be.
+This gives the paper an unfair advantage against other papers that abide by the page limit.
+
+
+----------------------- REVIEW 2 ---------------------
+
+SUBMISSION: 36
+TITLE: QAC: A Novel Algorithm for GPU Scheduling Queue Defragmentation via Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -2 (reject)
+----- TEXT:
+This study proposes a queue adjustment and fragmentation curation mechanism to improve GPU server scheduling. It uses two algorithms, i.e., a starvation-free scheduler to prevent blockages and a preemptive task reallocation to reduce fragmentation, achieving wall time reductions across various scheduling methods. The approach relies on several coefficients to balance trade-offs, though finding optimal values currently requires time-consuming tuning.
+
+While addressing GPU scheduling is a timely topic, the work is weak in several aspects:
+
+First is its unclear problem statement.  Fragmentation is a known issue across many scheduling systems. The paper does not sufficiently articulate why fragmentation in GPU server scheduling presents challenges fundamentally different from the classical CPU job scheduling problem and whether existing CPU scheduling techniques are inapplicable.
+
+Second is insufficient related work coverage. The related work section is very limited, citing only three prior studies despite a substantial body of literature on both CPU and GPU scheduling. In particular, the recent work by Fu et al., “Efficient LLM Scheduling by Learning to Rank” (NeurIPS 2024), is highly relevant as it explores scheduling strategies tailored for GPUs.
+
+Third is parameter tuning. The design depends on several coefficients tuned to balance trade-offs between performance and overhead. The paper does not provide a convincing methodology for how these coefficients can be optimally configured in real-world settings with diverse and dynamic workloads.
+
+Finally, the evaluation is weak. The experimental evaluation relies entirely on simulation rather than real deployments on GPU clusters. Real experiments on multi-GPU servers are necessary to demonstrate the robustness and applicability of the approach.
+Overall, while the paper presents interesting ideas, the unclear problem scope, limited engagement with prior work, impractical reliance on manual parameter tuning, and lack of real-world evaluation substantially limit its contribution.
+
+
+----------------------- REVIEW 3 ---------------------
+
+SUBMISSION: 36
+TITLE: QAC: A Novel Algorithm for GPU Scheduling Queue Defragmentation via Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: 0 (borderline paper)
+----- TEXT:
+This paper introduces QAC (Queue Adjustment and fragmentation Curation), a complementary mechanism designed to enhance existing GPU scheduling by addressing job queue blockages and GPU resource fragmentation. The authors propose two main algorithms: a starvation-free algorithm for queue adjustment and a preemptive task reallocation algorithm for defragmentation.
+
+Strengths:
+1. Novel approach to the problem: Pre-processing vs. Core Scheduling: Most current work focuses on designing new, more intelligent core scheduling algorithms (e.g., optimizing for specific metrics like makespan, fairness, or resource utilization using complex algorithms, AI/ML, or heuristics). QAC, in contrast, operates before any core scheduler, cleaning up the queue and the resource state, making the core scheduler's job easier and more effective. It doesn't propose a new scheduling policy but rather enhances existing ones.
+
+2. Addressing Fragmentation as a Pre-computation: While some schedulers might implicitly try to minimize fragmentation during their allocation process, QAC explicitly and proactively addresses GPU server pool fragmentation through its Preemptive Task Reallocation Algorithm. This systematic consolidation of tasks to free up entire servers is a distinct step, calculated via dynamic programming, specifically aimed at defragmentation, rather than being a byproduct of a scheduling decision.
+
+3. Independent Operation: QAC is designed to be largely independent of the specific logic of the core scheduler. This modularity means it can be readily integrated into existing systems without overhauling the primary scheduling logic, offering a flexible and non-intrusive way to improve performance. Current work often involves designing highly specialized schedulers, which may require significant system changes for adoption.
+
+
+Weaknesses:
+1. The dataset which represent the "actual logs" are generated by the authors, which diminishes the generalizability of the solution.
+2. Most of the work is focussed on <1 machine (i.e, <8 GPUs) run, it is unclear how well this resembles real world training jobs, since the deep learning era the training size keeps increasing.
+
+Weaknesses not withholding, I particularly enjoyed reading the paper, and find the contributions to be novel and the evaluations to be sound.
