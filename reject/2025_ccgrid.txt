@@ -1,0 +1,79 @@
+Dear Kyunam Cho,
+
+The CCGrid2025 program committee regrets to inform you that your submission titled "Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation" has not been accepted. The selection process was highly competitive this year. We received 219 complete papers and accepted 55 full papers – a 25% acceptance.
+
+The reviews for the paper can be found at the end of this email. We hope that you find them helpful.
+
+We do hope you will attend and participate in CCGrid 2025.
+
+The conference has reserved a block of rooms in a few hotels at a discounted rate. These are allocated on a first-come-first-serve basis. Information about the rates and booking process is available on the registration page at https://site.uit.no/ccgrid2025/registration/
+
+General travel information about Tromsø can be found here: https://site.uit.no/ccgrid2025/get-to-know-tromso/
+
+We look forward to seeing you in Tromsø soon!
+
+Best regards,
+
+CCGrid 2025 TPC Co-chairs
+
+SUBMISSION: 45
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+
+
+----------------------- REVIEW 1 ---------------------
+SUBMISSION: 45
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: 0 (borderline paper)
+----- TEXT:
+This paper introduces algorithms designed for starvation-free operations and defragmentation. When adjusting the queue and GPU resource pool, any delay for specific jobs or overhead from reallocating resources should not exceed the overall advantages of reducing total waiting and execution times. To facilitate this, we implemented threshold-based monitoring that adheres to defined metric standards. The starvation-free algorithm is centered on the fair-share metric, while the defragmentation algorithm tracks the overhead related to forced job allocations. This approach reduces total wall time and increases the allocation rate of frequently assigned jobs. This contribution proposes a mechanism for queue adjustment and fragmentation management to sustain a high allocation rate within GPU server pools.
+In contrast to more traditional methods, this mechanism significantly minimizes the incidence of bottlenecks that can hinder scheduling efficiency while also eliminating fragmentation within GPU server pools, ultimately enhancing the effectiveness of various schedulers. The findings are intriguing, and the results are clearly articulated, contributing to a certain level of reproducibility without needing direct implementation. Understanding and tackling both memory and data starvation is vital to optimizing GPU performance, particularly in demanding applications like gaming and machine learning; however, the results do not adequately clarify how a data-starved GPU may squander processing power waiting for data with this proposed mechanism, especially as the scale increases. Conversely, if implemented correctly, the proposed balancing technique is intriguing yet requires a level of optimization. It is crucial to consider schedulers that utilize cumulative metrics or contexts f
+or a more effective solution. The proposal is technically well-articulated and enjoyable to read, and the future directions suggested by the authors are highly pertinent.
+
+
+
+----------------------- REVIEW 2 ---------------------
+SUBMISSION: 45
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: -1 (weak reject)
+----- TEXT:
+The paper addresses the problem of improving the exploitation of GPU-based data center for job scheduling.
+
+I see some important limitations in current state of the work that make me to recommend not accept this work:
+
+- Lack of novelty. It is not clear what is the novelty of this work. Although the authors report accelerations of up 14%, it is not clear if this is "good" enough. Actually, the authors do not make any comparison against other existing tools, as the ones that they mention in the Related Work section. So, it is difficult to really understand the impact of that 14% improvement.
+
+- The authors present simulated results only, so the use of GPU is more or less trivial and anecdotic. Actually, it is not clear what is the particular impact of using GPUs in the analysis presented. I do not see any particularly "GPU-only" effort in the work.
+
+
+
+----------------------- REVIEW 3 ---------------------
+SUBMISSION: 45
+TITLE: Improving GPU Scheduling Performance Based on Queue Adjustment and Fragmentation Curation
+AUTHORS: Kyunam Cho, Younghwan Jin and Heonchang Yu
+
+----------- Overall evaluation -----------
+SCORE: 1 (weak accept)
+----- TEXT:
+This paper aims to improve GPU cluster fairness and starvation for a variety of applications. These are characterized thanks to internal logs collected for over three months. Rather than creating new scheduling mechanisms, the authors propose a two-fold improvement: reordering the waiting queue by adjusting dynamically priorities, and a preeemptive defragmentation algorithm.
+
+Strengths:
++ Characterization of GPU scheduling needs for motivating the work
++ Adaptive algorithm for estimating the priorities
++ The evaluation seems mostly appropriate, and show clear gains of applying the proposed methods.
+
+Weaknesses:
+- Missing references Varuna, Piper, Metis, others. How does the Linux completely fair scheduler  (or other similar algorithms) compare to the proposed algorithm? what are the differences/similarities? other related work exists as well related to queue management and preemption in the systems community, these should also be properly studied in the related work
+- There is no discussion regarding the feasibility and impact of preempting GPU jobs
+
+Other comments/questions:
+- Please do some proof-reading, some sentences do not have sense.
+- Thorough the paper the logs are used to analyze jobs needs, however the authors do not specify what kind of logs these are: platform like k8s/SLURM, system, OS, other?
+- It would be nice to add more details or a concrete example of a blockage
+- Are the initial priorities determined also by SLAs or other? or are they purely determined by the proposed system?
+- Some graphs are too small to read, e.g. figure 9, figure 10
