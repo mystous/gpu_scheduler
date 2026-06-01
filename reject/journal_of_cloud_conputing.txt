@@ -1,0 +1,33 @@
+Ref: Submission ID 9e4043f7-7935-4890-aa52-fbc40221e45f
+
+Dear Dr Yu,
+
+Your manuscript "SQUAD:  Scheduling Queue Unblocking and Allocation Defragmentation for Gang Scheduling" has now been assessed. If there are any reviewer comments on your manuscript, you can find them at the end of this email.
+
+Regrettably, your manuscript has been rejected for publication in Journal of Cloud Computing.
+
+Thank you for the opportunity to review your work. I'm sorry that we cannot be more positive on this occasion and hope you will not be deterred from submitting future work to Journal of Cloud Computing.
+
+Kind regards,
+
+Chunming Rong
+Editor
+Journal of Cloud Computing
+
+Reviewer Comments:
+
+Reviewer 1
+This paper introduces SQUAD, a scheduler-agnostic mechanism for enhancing GPU cluster efficiency. SQUAD employs two algorithms: Starvation-Free Queue Adjustment, which reorders the job queue to mitigate head-of-line blocking, and Preemptive Task Reallocation, which defragments the server pool via job migration. Evaluating the mechanism using a custom simulator on real and augmented job logs, the authors report wall-clock time reductions of 7.8–14% and improved GPU allocation rates across several baseline schedulers.
+
+The paper has a clear motivation and a well-structured approach. However, it lacks a realistic evaluation and comparison to state-of-the-art, significantly limiting the confidence in the claimed improvements:
+1. The evaluation is based solely on a C++ simulator on a Windows machine. To strengthen the claims, consider integrating SQUAD into a real-world orchestration framework (e.g., Kubernetes with a GPU plugin) and measuring its impact on an actual cluster, or at least adopt a widely-used simulator (e.g., Kairos) that models network and I/O overhead.
+2. Several constants appear arbitrary. For example, age increases every 10 minutes; suitability penalty 0.1; priority sequence halving; “three times the number of servers” queue prefix. It is recommended to provide motivation or sensitivity analysis to demonstrate robustness.
+3. The starvation-free priority update (Eq. 1) is relatively understandable, but the DP-based defragmentation (Eq. 2–6, Algorithm 2) is difficult to follow and seems incomplete. The authors could provide: (i) a clear definition of the search space, (ii) what constitutes an action, and (iii) the objective. It is better to provide a concrete example on a small cluster (e.g., 4 servers, a few jobs).
+4. The grid search over α, β, ω, δ appears expensive and offline. If this is part of the contribution, please quantify the tuning cost and discuss operational feasibility. Consider adding a simple online adaptation heuristic as a baseline (even if RL is future work), or show that coefficients transfer across similar workloads.
+
+Reviewer 2
+The paper is not understandable. The algorithms 1 and 2 which are the main contributions are not explained. Thus, in the current shape, it is very difficult to comment on the correctness and novelty of the algorithm.
+
+The paper needs to be reorganized. The motivation should be integrated into the introduction section. There is lot of redundancy between the introduction and the related work section and should be eliminated.
+
+The related work talks about recent works in GPU based scheduling for deep learning tasks considering the nature of the tasks. However,  the approach taken by this paper seems orthogonal.  It does not consider any parameters from the task except the number of GPUs requested.  Thus, it does not compare with any of the recent algorithms in the experiment section.
