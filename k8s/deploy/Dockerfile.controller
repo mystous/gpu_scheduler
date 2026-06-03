@@ -1,0 +1,9 @@
+# SFQA/PTR 컨트롤러(정적 바이너리 둘 다 포함). command 로 어느 것을 실행할지 선택(controllers.yaml).
+#   CGO_ENABLED=0 go build -mod=vendor -o sfqa-controller ./cmd/sfqa-controller
+#   CGO_ENABLED=0 go build -mod=vendor -o ptr-controller  ./cmd/ptr-controller
+#   sudo docker build -t squad/controller:dev -f deploy/Dockerfile.controller .
+#   sudo kind load docker-image squad/controller:dev --name <cluster>
+FROM scratch
+COPY sfqa-controller /sfqa-controller
+COPY ptr-controller /ptr-controller
+ENTRYPOINT ["/sfqa-controller"]

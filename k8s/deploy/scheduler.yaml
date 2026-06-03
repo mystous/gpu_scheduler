@@ -1,0 +1,56 @@
+# SQUAD 커스텀 kube-scheduler (secondary scheduler). QueueSort=SQUADSort, PrioritySort 비활성(R1).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: squad-scheduler-config
+  namespace: squad
+data:
+  config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1
+    kind: KubeSchedulerConfiguration
+    leaderElection:
+      leaderElect: true
+      resourceName: squad-scheduler
+      resourceNamespace: squad
+    profiles:
+      - schedulerName: squad-scheduler
+        plugins:
+          queueSort:
+            enabled:
+              - name: SQUADSort
+            disabled:
+              - name: PrioritySort      # QueueSort 는 하나만 허용(R1) → 기본 비활성
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: squad-scheduler
+  namespace: squad
+  labels:
+    app: squad-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squad-scheduler
+  template:
+    metadata:
+      labels:
+        app: squad-scheduler
+    spec:
+      serviceAccountName: squad-scheduler
+      containers:
+        - name: scheduler
+          image: squad/scheduler:dev      # kind load docker-image 로 적재
+          imagePullPolicy: IfNotPresent
+          command: ["/squad-scheduler"]
+          args:
+            - --config=/etc/squad/config.yaml
+            - --v=2
+          volumeMounts:
+            - name: config
+              mountPath: /etc/squad
+      volumes:
+        - name: config
+          configMap:
+            name: squad-scheduler-config

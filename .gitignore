@@ -406,3 +406,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# SQUAD re-experiment: tools/build artifacts (not source)
+git-lfs-3.5.1/
+git-lfs.tgz
+holder_img/holder

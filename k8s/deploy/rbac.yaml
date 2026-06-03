@@ -1,0 +1,101 @@
+# SQUAD 네임스페이스 + RBAC (secondary scheduler + 두 컨트롤러)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: squad
+---
+# ── secondary scheduler ──
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: squad-scheduler
+  namespace: squad
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: squad-scheduler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kube-scheduler        # 기존 kube-scheduler 권한 재사용
+subjects:
+  - kind: ServiceAccount
+    name: squad-scheduler
+    namespace: squad
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: squad-scheduler-volume
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:volume-scheduler
+subjects:
+  - kind: ServiceAccount
+    name: squad-scheduler
+    namespace: squad
+---
+# leader election (squad ns 내 leases)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: squad-scheduler-le
+  namespace: squad
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: squad-scheduler-le
+  namespace: squad
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: squad-scheduler-le
+subjects:
+  - kind: ServiceAccount
+    name: squad-scheduler
+    namespace: squad
+---
+# ── SFQA / PTR 컨트롤러 ──
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: squad-controller
+  namespace: squad
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: squad-controller
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "patch", "delete", "create"]   # SFQA: patch(annotation), PTR: delete/create(이주)
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: squad-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: squad-controller
+subjects:
+  - kind: ServiceAccount
+    name: squad-controller
+    namespace: squad

@@ -1,0 +1,42 @@
+# SFQA 컨트롤러(P* annotation 주입) + PTR 컨트롤러(디프래그 이주). 둘 다 GPU 불필요.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sfqa-controller
+  namespace: squad
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: sfqa-controller}
+  template:
+    metadata:
+      labels: {app: sfqa-controller}
+    spec:
+      serviceAccountName: squad-controller
+      containers:
+        - name: sfqa
+          image: squad/controller:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/sfqa-controller"]
+          args: ["--period=10s", "--alpha=0.13889", "--beta=80"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ptr-controller
+  namespace: squad
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: ptr-controller}
+  template:
+    metadata:
+      labels: {app: ptr-controller}
+    spec:
+      serviceAccountName: squad-controller
+      containers:
+        - name: ptr
+          image: squad/controller:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/ptr-controller"]
+          args: ["--period=15s", "--omega=20", "--dp-max=100000"]

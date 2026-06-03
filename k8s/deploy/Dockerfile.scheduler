@@ -1,0 +1,7 @@
+# 빌드는 호스트에서 vendor 로 수행(방화벽). 정적 바이너리만 담는 단순 이미지.
+#   CGO_ENABLED=0 go build -mod=vendor -o squad-scheduler ./cmd/scheduler
+#   sudo docker build -t squad/scheduler:dev -f deploy/Dockerfile.scheduler .
+#   sudo kind load docker-image squad/scheduler:dev --name <cluster>
+FROM scratch
+COPY squad-scheduler /squad-scheduler
+ENTRYPOINT ["/squad-scheduler"]
