@@ -9,6 +9,10 @@ namespace global_const {
   const int dp_execution_maximum = 100000;
   const int defragmentation_criteria = 20;
   const int statistics_array_size = 8;
+  // 민감도 스윕 대상(docs/KNOB_COST_AND_SENSITIVITY.md) — 기본값은 기존 하드코딩과 동일
+  const double r_penalty = 0.1;        // 자원 적합도 감쇠 (job_emulator::adjust_wait_queue)
+  const double priority_base = 2.0;    // P = 1/base^j 의 밑
+  const int queue_prefix_mult = 3;     // SFQA 재정렬 창 = 서버 수 × 이 값
 };
 
 enum class accelator_type : int {

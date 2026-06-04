@@ -148,7 +148,9 @@ private:
   system_clock::time_point job_start_tp;
   system_clock::time_point progress_tp;
   int max_age_count = 0;
-  const int max_age_count_constant = 3;
+  int max_age_count_constant = global_const::queue_prefix_mult;   // 민감도 스윕: prefix 배수
+  double r_penalty_constant = global_const::r_penalty;            // 민감도 스윕: R 감쇠
+  double priority_base_constant = global_const::priority_base;    // 민감도 스윕: P 밑
   double starvation_prevention_criteria = global_const::starvation_upper;
   double age_weight_constant = global_const::age_weight;
   int dp_execution_maximum = global_const::dp_execution_maximum;

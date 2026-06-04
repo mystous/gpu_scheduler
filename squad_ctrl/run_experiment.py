@@ -59,6 +59,21 @@ def stratified_sample(jobs, n, seed=42):
 
 def build(args):
     jobs = INGESTERS[args.trace](args.input, limit=args.limit)
+    if args.drop_over > 0:  # 초장기 잡은 cap이 아니라 모집단에서 제거(분포 왜곡 방지)
+        before = len(jobs)
+        jobs = [j for j in jobs if j.duration <= args.drop_over]
+        print(f"[run:{args.run_id}] duration>{args.drop_over/86400:.0f}일 제거: "
+              f"{before - len(jobs)}건({(before-len(jobs))/before*100:.2f}%)", flush=True)
+    if args.window_days > 0:  # 연속 윈도우로 한정(arrival 버스트 보존) + 재영점
+        t0 = min(j.arrival_time for j in jobs)
+        ws = t0 + args.window_start_day * 86400
+        we = ws + args.window_days * 86400
+        jobs = [j for j in jobs if ws <= j.arrival_time < we]
+        rebase = min(j.arrival_time for j in jobs)  # 윈도우 시작을 t=0으로 재영점
+        for j in jobs:
+            j.arrival_time -= rebase
+        print(f"[run:{args.run_id}] 윈도우 day {args.window_start_day}~"
+              f"{args.window_start_day + args.window_days}: {len(jobs)}건", flush=True)
     if args.sample > 0:
         before = len(jobs)
         jobs = stratified_sample(jobs, args.sample, args.seed)
@@ -70,10 +85,19 @@ def build(args):
     peak, _ = peak_demand(jobs)
     print(f"[run:{args.run_id}] {len(jobs)} jobs, peak {peak} GPU "
           f"({peak/args.total_gpu:.1f}× capacity)", flush=True)
+    est_rng = random.Random(args.seed + 1)  # f-모델 노이즈(재현 가능)
     out = []
     for j in jobs:
         spec = assign(j, run_mode="holder")
-        m = job_manifest(j, spec, "default-scheduler", namespace=NS, sfqa_gate=(args.policy != "none"))
+        m = job_manifest(j, spec, "default-scheduler", namespace=NS,
+                         sfqa_gate=(args.policy not in ("none", "kueue")))
+        if args.est_noise_f > 0:
+            # Mu'alem & Feitelson(TPDS'01) f-모델: 추정 = 실제 × (1+u), u~U[0,f].
+            # holder는 실제 duration 그대로 실행, 컨트롤러(EASY 예약)만 추정 라벨을 봄.
+            est = j.duration * (1.0 + est_rng.uniform(0.0, args.est_noise_f))
+            m["spec"]["template"]["metadata"]["labels"]["squad.io/duration-est"] = str(int(est))
+        if args.policy == "kueue":  # Kueue: Job 라벨로 LocalQueue 제출(웹훅이 suspend 관리)
+            m["metadata"].setdefault("labels", {})["kueue.x-k8s.io/queue-name"] = "squad-lq"
         out.append((j.arrival_time, m))
     return out
 
@@ -88,11 +112,19 @@ def main():
     ap.add_argument("--kappa", type=float, default=400.0)
     ap.add_argument("--min-dur", type=float, default=30.0)
     ap.add_argument("--max-dur", type=float, default=90.0, help="압축 후 duration 상한(초). 실험 시간 제한")
+    ap.add_argument("--drop-over", type=float, default=0.0,
+                    help="원본 duration이 이 값(초)을 넘는 잡을 샘플링 전에 제거(0=off). cap과 달리 분포 왜곡 없음")
+    ap.add_argument("--window-start-day", type=float, default=0.0, help="트레이스 시작 기준 윈도우 시작(일)")
+    ap.add_argument("--window-days", type=float, default=0.0, help="연속 윈도우 길이(일). 0=전체")
+    ap.add_argument("--est-noise-f", type=float, default=0.0,
+                    help="duration 추정 오차 f-모델(Mu'alem&Feitelson TPDS'01): est=dur×(1+U[0,f]). 0=완벽 추정")
     ap.add_argument("--gpu-types", default="NVIDIA-B200")
     ap.add_argument("--total-gpu", type=int, default=8)
     ap.add_argument("--policy", default="none",
-                    choices=["none", "fifo", "sjf", "priority", "las", "sfqa"],
-                    help="none=gate 없음(순수 default FIFO). 나머지는 gate+policy_controller 필요")
+                    choices=["none", "fifo", "sjf", "priority", "las", "sfqa", "sfqa-auto",
+                             "easy", "kueue"],
+                    help="none=gate 없음(순수 default FIFO). kueue=Kueue LocalQueue 제출"
+                         "(gate·컨트롤러 없음). 나머지는 gate+policy_controller 필요")
     ap.add_argument("--run-id", default="run")
     ap.add_argument("--timeout", type=float, default=1800)
     ap.add_argument("--submit-clamp", type=float, default=5.0,
@@ -141,9 +173,18 @@ def main():
     mc.terminate()
 
     # pod lifecycle → JCT·큐잉
+    # Kueue 는 admission 전까지 Job suspend(pod 미생성) → 대기가 Job 레벨에서 발생.
+    # 공정 비교 위해 kueue 정책은 created 를 Job 생성시각으로 치환(gate 방식은 pod≈Job 생성).
+    job_created = {}
+    if args.policy == "kueue":
+        for j in batch.list_namespaced_job(NS).items:
+            job_created[j.metadata.name] = j.metadata.creation_timestamp
     rows = []
     for p in v1.list_namespaced_pod(NS).items:
         created = p.metadata.creation_timestamp
+        if args.policy == "kueue":
+            jn = (p.metadata.labels or {}).get("job-name")
+            created = job_created.get(jn, created)
         started = p.status.start_time
         finished = None
         if p.status.container_statuses:

@@ -11,13 +11,17 @@
 
 using namespace std;
 
-// ���� ���� ����
+// ���� ���� ����
 int thread_total = 4;
 double alpha_para[3] = { 0.13889, 0.83889, 0.1 };
 double beta_para[3] = { 70.0, 95.0, 5.0 };
 int d_para[3] = { 100000, 1000000, 100000 };
 int w_para[3] = { 20, 100, 10 };
 bool sch[4] = { true, false, false, false };
+// 민감도 스윕용 선택 라인(7~9번째). 미지정 시 기존 하드코딩값과 동일(하위호환)
+double r_penalty_g = global_const::r_penalty;
+double p_base_g = global_const::priority_base;
+int prefix_mult_g = global_const::queue_prefix_mult;
 string task_file_name = "job_flow_total(task,flavor,single).csv";
 string server_file_name = "server.csv";
 
@@ -99,6 +103,15 @@ void parse_config_file(const string& config_filename) {
     case 5:
       parse_array(ss, sch, 4);
       break;
+    case 6:
+      ss >> r_penalty_g;     // 선택: R 감쇠 (기본 0.1)
+      break;
+    case 7:
+      ss >> p_base_g;        // 선택: P = 1/base^j 의 밑 (기본 2.0)
+      break;
+    case 8:
+      ss >> prefix_mult_g;   // 선택: SFQA 재정렬 창 = 서버수 × 배수 (기본 3)
+      break;
     default:
       cerr << "Unexpected line in config file: " << line << endl;
       break;
@@ -167,6 +180,9 @@ void build_hyperparameter() {
         option.using_preemetion = true;
         option.reorder_count = d;
         option.preemption_task_window = w;
+        option.r_penalty = r_penalty_g;
+        option.priority_base = p_base_g;
+        option.queue_prefix_mult = prefix_mult_g;
 
         hyperparameter_searchspace.push_back(option);
       }
@@ -192,6 +208,9 @@ void build_hyperparameter() {
             option.using_preemetion = true;
             option.reorder_count = d;
             option.preemption_task_window = w;
+            option.r_penalty = r_penalty_g;
+            option.priority_base = p_base_g;
+            option.queue_prefix_mult = prefix_mult_g;
 
             hyperparameter_searchspace.push_back(option);
           }

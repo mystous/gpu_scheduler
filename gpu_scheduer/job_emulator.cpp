@@ -258,6 +258,10 @@ void job_emulator::set_option(global_structure::scheduler_options options) {
   age_weight_constant = options.age_weight;
   dp_execution_maximum = options.reorder_count;
   defragmentaion_criteria = options.preemption_task_window;
+  r_penalty_constant = options.r_penalty;
+  priority_base_constant = options.priority_base;
+  max_age_count_constant = options.queue_prefix_mult;
+  max_age_count = server_list.size() * max_age_count_constant;  // 서버 로드 후 set_option 호출 대비
   if (nullptr != scheduler_obj) {
     delete scheduler_obj;
   }
@@ -417,7 +421,7 @@ void job_emulator::adjust_wait_queue() {
     int avaliable_accelator_count = server.get_avaliable_accelator_count();
     for (int i = 0; i < accelerator_count; ++i) {
       if ((avaliable_accelator_count - i) <= 0) { continue; }
-      double suitablitiy_index = 1 - (avaliable_accelator_count - i - 1)* 0.1;
+      double suitablitiy_index = 1 - (avaliable_accelator_count - i - 1) * r_penalty_constant;
       if (suitablitiy_index > resource_suitability_index[i]) {
         resource_suitability_index[i] = suitablitiy_index;
       }
@@ -429,7 +433,7 @@ void job_emulator::adjust_wait_queue() {
     int max_repriority_score_index = 0;
     double max_repriority_score = 0.;
     for (int j = 0; j < wait_queue.size(); ++j) {
-      double priority = 1 * ( 1 / pow(2, j));
+      double priority = 1 * ( 1 / pow(priority_base_constant, j));
       double starvation_score = wait_queue[j].age 
                                 * age_weight_constant 
                                 * resource_suitability_index[wait_queue[j].job->get_accelerator_count()-1];
@@ -905,8 +909,8 @@ void job_emulator::calculate_statistics(double* rate_array, int size, double* st
   int p75_index = static_cast<int>(size * 0.75);
   int p95_index = static_cast<int>(size * 0.95);
 
-  stats[statistics::p_25] = sorted_array[min(p25_index, size - 1)];
-  stats[statistics::mid] = sorted_array[min(p50_index, size - 1)];
-  stats[statistics::p_75] = sorted_array[min(p75_index, size - 1)];
-  stats[statistics::p_95] = sorted_array[min(p95_index, size - 1)];
+  stats[statistics::p_25] = sorted_array[std::min(p25_index, size - 1)];
+  stats[statistics::mid] = sorted_array[std::min(p50_index, size - 1)];
+  stats[statistics::p_75] = sorted_array[std::min(p75_index, size - 1)];
+  stats[statistics::p_95] = sorted_array[std::min(p95_index, size - 1)];
 }

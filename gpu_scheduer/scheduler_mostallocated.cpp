@@ -79,7 +79,7 @@ void scheduler_mostallocated::postproessing_set_server() {
   for (int i = 0; i < target_server->size(); i++) {
     server_entry* server = &target_server->at(i);
     int accelerator_count = server->get_accelerator_count();
-    max_accelerator_count = max(max_accelerator_count, accelerator_count);
+    max_accelerator_count = std::max(max_accelerator_count, accelerator_count);
   }
 
   for (auto&& list : accelerator_count_hash_list) {

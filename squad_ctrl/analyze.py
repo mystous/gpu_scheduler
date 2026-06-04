@@ -15,9 +15,20 @@ GROUPS = {
     "사내 (in-house, 20 job, 1.5×)": [("base", "default-FIFO"), ("sfqa", "SFQA")],
     "Alibaba v2023 (40 job, 2.2×)": [("a23_base", "default-FIFO"), ("a23_sfqa", "SFQA")],
     "Philly (40 job, 저부하)": [("ph_base", "default-FIFO"), ("ph_sfqa", "SFQA")],
-    "다정책 비교 (Alibaba v2023, 40 job, 2.2×)": [
+    "다정책 비교 (Alibaba v2023, 40 job, 2.2×) [age버그 버전]": [
         ("m_base", "default-FIFO"), ("m_fifo", "gate-FIFO"), ("m_sjf", "SJF"),
         ("m_las", "LAS(≈FIFO)"), ("m_sfqa", "SFQA"),
+    ],
+    "★최종: Philly 1000 층화샘플 다정책 (age·β 수정, peak 3.6×)": [
+        ("p_base", "default-FIFO"), ("p_fifo", "gate-FIFO"), ("p_sjf", "SJF"),
+        ("p_las", "LAS"), ("p_sfqa", "SFQA"),
+    ],
+    "★sfqa-auto v2 + SOTA 베이스라인 (Philly 1000 동일조건, 2026-06-04)": [
+        ("p_sfqa_auto", "SFQA-auto(τ=10)"), ("p_auto_t1", "SFQA-auto(τ=1)"),
+        ("p_easy", "EASY-backfill"), ("p_kueue", "Kueue"),
+    ],
+    "κ=6000 적응성 (peak 5.4×, 무튜닝 적응 vs 고정 노브)": [
+        ("p_sfqa_k6000", "SFQA 고정(κ3000 튜닝값)"), ("p_auto_k6000", "SFQA-auto(τ=1)"),
     ],
 }
 

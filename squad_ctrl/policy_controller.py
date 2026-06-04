@@ -5,27 +5,34 @@
 gate 기반 FIFO/SJF/Priority/LAS/SFQA 를 같은 오버헤드 조건에서 비교한다(리젝 ③ 대응).
 
 정책:
-  fifo     — pod 생성시각 순(오래된 것 먼저)
-  sjf      — squad.io/duration 짧은 것 먼저 (JCT 최소화, starvation 유발)
-  priority — squad.io/priority 높은 것 먼저
-  las      — least-attained-service(받은 GPU-time 적은 것 먼저, Tiresias 근사)
-  sfqa     — P* = P + α·A·R (starvation 방지)
+  fifo      — pod 생성시각 순(오래된 것 먼저)
+  sjf       — squad.io/duration 짧은 것 먼저 (JCT 최소화, starvation 유발)
+  priority  — squad.io/priority 높은 것 먼저
+  las       — least-attained-service(받은 GPU-time 적은 것 먼저, Tiresias 근사)
+  sfqa      — P* = P + α·A·R (starvation 방지, 고정 노브)
+  sfqa-auto — zero-knob v2(docs/ADAPTIVE_SFQA_DESIGN.md): min mean JCT s.t. BSLD≤σ*(t).
+              σ*=1/(1−ρ̂) (PS-fair 한계), W*=σ*·max(s,τ)−s, u=대기/W*.
+              2-tier: u≥1(제약 위반)은 u·R 내림차순 우선, 나머지는 SJF.
+  easy      — EASY-backfilling(HPC 표준): FIFO + 선두 예약. 선두가 안 들어가면
+              실행 중 잡의 예상 종료시각으로 예약 시점 T를 잡고, T 전에 끝나는
+              뒤 잡만 backfill(예약 침해 금지). duration 추정을 쓰는 강한 베이스라인.
 
 실행(호스트): /raid/squad/venv/bin/python policy_controller.py --policy sjf --period 5
 """
 import argparse
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from kubernetes import client, config
 
-from squad_algo import Server, PendingJob, Params, Slot, reorder_queue
+from squad_algo import Server, PendingJob, Params, Slot, reorder_queue, compute_r_table
 
 GPU = "nvidia.com/gpu"
 GPU_PRODUCT = "nvidia.com/gpu.product"
 GATE = "squad.io/sfqa"
 FLAVOR_LBL = "squad.io/gpu-type"
 DUR_LBL = "squad.io/duration"
+EST_LBL = "squad.io/duration-est"  # f-모델 추정치(있으면 EASY 예약은 이것만 봄)
 PRIO_LBL = "squad.io/priority"
 AGE_ANNO = "squad.io/age"
 AGE_UPDATED = "squad.io/age-updated"
@@ -80,13 +87,20 @@ def build_servers(nodes, pods, flavor):
 
 
 class PolicyCtrl:
-    def __init__(self, v1, policy, params, period, age_unit):
+    def __init__(self, v1, policy, params, period, age_unit, tau=10.0):
         self.v1 = v1
         self.policy = policy
         self.params = params
         self.period = period
         self.age_unit = age_unit  # age 1 증가에 필요한 대기 초(실측 스케일에 맞춤)
         self.attained = {}  # LAS: job_key -> 누적 GPU-second
+        # sfqa-auto(v2) 상태 — 전부 측정값에서 유도, 튜닝 노브 없음
+        self.tau = tau            # BSLD floor(Feitelson 관례 10s) — 노브 아닌 문헌 상수
+        self.rho_ewma = {}        # flavor -> EWMA(점유 GPU/전체)
+        self.jct_sum = 0.0        # 완료 잡 JCT 합 (EWMA half-life 자기 스케일링용)
+        self.jct_n = 0
+        self.jct_seen = set()
+        self.running_info = []    # easy: [(예상 종료시각, gpu)] — reconcile에서 갱신
 
     def age_of(self, p):
         """age = pending 대기 시간(now - creationTimestamp) / age_unit.
@@ -99,8 +113,77 @@ class PolicyCtrl:
         wait = (datetime.now(timezone.utc) - created).total_seconds()
         return int(wait / self.age_unit)
 
+    # ── sfqa-auto(v2) 유도량 — docs/ADAPTIVE_SFQA_DESIGN.md §2 ──────────────
+    def _observe_completion(self, p):
+        """완료 pod JCT 관측 → EWMA half-life 자기 스케일링 + Laplace 분모."""
+        k = key(p)
+        if k in self.jct_seen or not p.status.container_statuses:
+            return
+        term = p.status.container_statuses[0].state.terminated
+        if term and term.finished_at and p.metadata.creation_timestamp:
+            self.jct_seen.add(k)
+            self.jct_sum += (term.finished_at - p.metadata.creation_timestamp).total_seconds()
+            self.jct_n += 1
+
+    def _update_rho(self, flavor, used, total):
+        if total <= 0:
+            return
+        now = used / total
+        half = max(self.jct_sum / self.jct_n if self.jct_n else 60.0, self.period)
+        w = 0.5 ** (self.period / half)
+        self.rho_ewma[flavor] = w * self.rho_ewma.get(flavor, now) + (1 - w) * now
+
+    def sigma_star(self, flavor):
+        """PS-fair slowdown 한계 σ*=1/(1−ρ̂). ρ̂는 Laplace 평활로 1 미만 보장."""
+        rho = min(self.rho_ewma.get(flavor, 0.0), 1.0 - 1.0 / (self.jct_n + 2))
+        return 1.0 / (1.0 - rho)
+
     def order(self, gated, servers, ar, flavor):
         """정책별 gate 해제 순서(앞이 먼저)."""
+        if self.policy == "sfqa-auto":
+            sigma = self.sigma_star(flavor)
+            R = compute_r_table(servers, flavor)
+            now = datetime.now(timezone.utc)
+            tier1, tier2 = [], []
+            for p in gated:
+                s = max(1.0, float(lbl(p, DUR_LBL, "1")))
+                wait = (now - p.metadata.creation_timestamp).total_seconds()
+                wstar = max(self.tau, sigma * max(s, self.tau) - s)  # BSLD≤σ* ⇔ W≤W*
+                u = wait / wstar                                     # 공정성 예산 소진율
+                k = max(1, min(8, pod_gpu(p)))
+                r = R[k - 1] if R[k - 1] > 0 else 0.5
+                (tier1 if u >= 1.0 else tier2).append((u * r, s, p))
+            tier1.sort(key=lambda t: -t[0])   # 제약 위반: u·R 내림차순(공정성 복구)
+            tier2.sort(key=lambda t: t[1])    # 제약 충족: SJF(평균 최적)
+            return [t[2] for t in tier1] + [t[2] for t in tier2]
+        if self.policy == "easy":
+            # EASY-backfilling: FIFO 순서, 선두 예약 시점 T를 침해하지 않는 잡만 통과.
+            # 반환 = ungate 허용 집합(순서 포함) — reconcile 의 capacity 루프가 그대로 적용.
+            fifo = sorted(gated, key=lambda p: p.metadata.creation_timestamp)
+            free = sum(s.available() for s in servers)
+            now = datetime.now(timezone.utc)
+            out = []
+            for i, p in enumerate(fifo):
+                g = pod_gpu(p)
+                if g <= free:
+                    out.append(p)
+                    free -= g
+                    continue
+                # 선두 막힘 → 예약 시점 T: 실행 중 잡 종료 누적으로 g 확보되는 시각
+                avail, T = free, None
+                for end, rg in sorted(self.running_info):
+                    avail += rg
+                    if avail >= g:
+                        T = end
+                        break
+                for q in fifo[i + 1:]:   # T 전에 끝나는 잡만 backfill (추정 기준)
+                    gq = pod_gpu(q)
+                    dq = float(lbl(q, EST_LBL, lbl(q, DUR_LBL, "0")))
+                    if gq <= free and (T is None or now + timedelta(seconds=dq) <= T):
+                        out.append(q)
+                        free -= gq
+                break
+            return out
         if self.policy == "sfqa":
             by_key = {key(p): p for p in gated}
             jobs = [PendingJob(key(p), pod_gpu(p), flavor, age=self.age_of(p))
@@ -143,6 +226,7 @@ class PolicyCtrl:
             alloc[f] = alloc.get(f, 0) + int(str((n.status.allocatable or {}).get(GPU, "0")))
 
         pending = {}
+        self.running_info = []
         for p in pods:
             g = pod_gpu(p)
             if g == 0:
@@ -151,9 +235,18 @@ class PolicyCtrl:
                 f = node_flavor.get(p.spec.node_name, "any")
                 used[f] = used.get(f, 0) + g
                 self.attained[key(p)] = self.attained.get(key(p), 0.0) + self.period * g  # LAS 누적
+                st = p.status.start_time or p.metadata.creation_timestamp
+                if st:  # easy: 예상 종료시각(시작 + duration *추정* — est 라벨 있으면 그것)
+                    dur = float(lbl(p, EST_LBL, lbl(p, DUR_LBL, "0")))
+                    self.running_info.append((st + timedelta(seconds=dur), g))
             elif has_gate(p) and p.status.phase == "Pending":
                 f = lbl(p, FLAVOR_LBL, "any")
                 pending.setdefault(f, []).append(p)
+            elif p.status.phase == "Succeeded":
+                self._observe_completion(p)  # sfqa-auto: JCT 관측(half-life·Laplace)
+
+        for f in alloc:
+            self._update_rho(f, used.get(f, 0), alloc[f])  # sfqa-auto: ρ EWMA
 
         for f, gated in pending.items():
             total = alloc.get(f, 0)
@@ -170,16 +263,19 @@ class PolicyCtrl:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--policy", default="sfqa", choices=["fifo", "sjf", "priority", "las", "sfqa"])
+    ap.add_argument("--policy", default="sfqa",
+                    choices=["fifo", "sjf", "priority", "las", "sfqa", "sfqa-auto", "easy"])
     ap.add_argument("--period", type=float, default=5.0)
     ap.add_argument("--alpha", type=float, default=0.13889)
     ap.add_argument("--beta", type=float, default=80.0)
     ap.add_argument("--age-unit", type=float, default=10.0,
                     help="age 1 증가에 필요한 대기 초. 실측 큐잉 스케일에 맞춤(기본 10s)")
+    ap.add_argument("--tau", type=float, default=10.0,
+                    help="sfqa-auto BSLD floor(초). Feitelson 관례 10s — 노브 아닌 문헌 상수")
     args = ap.parse_args()
     v1 = load()
     ctrl = PolicyCtrl(v1, args.policy, Params(alpha=args.alpha, beta=args.beta, prevent_starv=True),
-                      args.period, args.age_unit)
+                      args.period, args.age_unit, tau=args.tau)
     print(f"[policy:{args.policy}] start period={args.period}s", flush=True)
     while True:
         try:

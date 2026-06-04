@@ -63,6 +63,23 @@ JoCC R1("suitability 0.1, priority halving, 3×servers 임의") + IEEE Cloud R5(
 ### 2.4 현재 상태
 
 - [x] 설계 (이 문서)
-- [ ] config.set 확장 구현 (C++ — 승인 후)
-- [ ] 45-run 1-D 스윕 실행 (승인 후)
-- [ ] 곡선·표 생성 → 논문 부록
+- [x] config.set 확장 구현 — 7~9번째 선택 라인(r_penalty, p_base, prefix_mult), 하위호환.
+      `enum_definition.h` global_const 추가, `scheduler_option` 필드 추가, `set_option` 전파.
+      (부수 수정: 리눅스 빌드를 막던 `std::min/max` 모호성 3건 — job_emulator·mostallocated·mcts)
+- [x] 1-D 스윕 12 configs 실행 (사내 트레이스 368 jobs, 2026-06-04) → `/raid/squad/sensitivity/sweep_summary.{md,csv}`
+- [ ] Philly/Alibaba 시뮬레이터 포맷 변환 후 교차 트레이스 반복 (후속)
+- [ ] τ 스윕 (sfqa-auto 실측 5 runs — 후속)
+
+### 2.5 결과 (2026-06-04)
+
+| 상수 | 스윕 | makespan Δ | 판정 |
+|---|---|---|---|
+| R 페널티 0.05–0.3 | 5점 | −0.8% ~ +2.0% | **robust** — 0.1은 둔감 구간 |
+| P 밑 1.5–4 | 4점 | +0.3% ~ +1.8% | **robust** — 2는 둔감 구간 |
+| prefix 배수 m | 1,2,3,5,10 | m=1: **+8.9%**(alloc −6.3pp) / m≥2: ≤1.4% | **m=1만 민감** |
+
+**논문 서술**: "재정렬 창(n=m×서버수)은 m=1이면 SFQA가 볼 수 있는 후보가 부족해 makespan
++8.9% 저하 — 창의 존재 자체가 필요함을 보인다. m≥2부터는 결과가 둔감하며(≤1.4%),
+기본값 3은 둔감 구간의 안전한 중앙값이다. R 감쇠·우선순위 밑은 전 스윕 구간에서 5% 미만
+변화로, 결과는 이 관례값들에 둔감하다." — '임의 상수' 지적(JoCC R1, IEEE Cloud R5)을
+'둔감 입증 + 필요조건 식별'로 전환.
