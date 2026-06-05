@@ -30,6 +30,10 @@ GROUPS = {
     "κ=6000 적응성 (peak 5.4×, 무튜닝 적응 vs 고정 노브)": [
         ("p_sfqa_k6000", "SFQA 고정(κ3000 튜닝값)"), ("p_auto_k6000", "SFQA-auto(τ=1)"),
     ],
+    "충실 duration (JCT≤2h, 윈도우 d51~65, S=360, cap 없음)": [
+        ("f360_kueue", "Kueue"), ("f360_auto", "SFQA-auto(τ=10)"), ("f360_easy", "EASY(완벽추정)"),
+        ("f360_easyf1", "EASY f=1"), ("f360_easyf3", "EASY f=3"),
+    ],
 }
 
 
