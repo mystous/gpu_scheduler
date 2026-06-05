@@ -59,11 +59,18 @@ def stratified_sample(jobs, n, seed=42):
 
 def build(args):
     jobs = INGESTERS[args.trace](args.input, limit=args.limit)
-    if args.drop_over > 0:  # 초장기 잡은 cap이 아니라 모집단에서 제거(분포 왜곡 방지)
+    if args.drop_over > 0:  # 초장기 잡 제거 (주의: 장기 잡은 multi-GPU 비중↑ → 구성 왜곡)
         before = len(jobs)
         jobs = [j for j in jobs if j.duration <= args.drop_over]
         print(f"[run:{args.run_id}] duration>{args.drop_over/86400:.0f}일 제거: "
               f"{before - len(jobs)}건({(before-len(jobs))/before*100:.2f}%)", flush=True)
+    if args.clamp_over > 0:  # 초장기 잡 절단(잡 유지 → GPU 분포 보존, 사용자 결정 2026-06-05)
+        nc = sum(1 for j in jobs if j.duration > args.clamp_over)
+        for j in jobs:
+            if j.duration > args.clamp_over:
+                j.duration = args.clamp_over
+        print(f"[run:{args.run_id}] duration>{args.clamp_over/86400:.0f}일 절단: "
+              f"{nc}건({nc/len(jobs)*100:.2f}%)", flush=True)
     if args.window_days > 0:  # 연속 윈도우로 한정(arrival 버스트 보존) + 재영점
         t0 = min(j.arrival_time for j in jobs)
         ws = t0 + args.window_start_day * 86400
@@ -113,7 +120,9 @@ def main():
     ap.add_argument("--min-dur", type=float, default=30.0)
     ap.add_argument("--max-dur", type=float, default=90.0, help="압축 후 duration 상한(초). 실험 시간 제한")
     ap.add_argument("--drop-over", type=float, default=0.0,
-                    help="원본 duration이 이 값(초)을 넘는 잡을 샘플링 전에 제거(0=off). cap과 달리 분포 왜곡 없음")
+                    help="원본 duration이 이 값(초)을 넘는 잡을 샘플링 전에 제거(0=off). 단 장기 잡 제거는 GPU 구성 왜곡 — clamp 권장")
+    ap.add_argument("--clamp-over", type=float, default=0.0,
+                    help="원본 duration이 이 값(초)을 넘으면 이 값으로 절단(0=off). 잡을 버리지 않아 GPU 분포 보존")
     ap.add_argument("--window-start-day", type=float, default=0.0, help="트레이스 시작 기준 윈도우 시작(일)")
     ap.add_argument("--window-days", type=float, default=0.0, help="연속 윈도우 길이(일). 0=전체")
     ap.add_argument("--est-noise-f", type=float, default=0.0,

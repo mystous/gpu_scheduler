@@ -12,7 +12,7 @@
 | `sweep_summary.{md,csv}` | C++ 시뮬 민감도 스윕(R 페널티·P 밑·재정렬 창) |
 | `philly_sample1000_{raw,normalized}.csv` | 본선 층화 1000 (전체 분포 보존, seed=42) |
 | `philly_sample500_jct2h_{fullspan,window}.csv` | JCT≤2h 모집단 층화 500 (충실 체인용) |
-|  `philly_sample2000_jct2d_fullspan.csv` | **JCT≤2일 모집단 층화 2000** (차기 실험용 — 모집단 분포와 일치: GPU 잡수 88/2/4/5%, **GPU-시간 비중은 1-GPU 23% vs 8-GPU 51%**, dur p50 18.2분/max 47.9h) |
+|  `philly_sample2000_jct2dcap_fullspan.csv` | **층화 2000, JCT>2일은 2일로 절단(클램프)** — 잡 제거 없음 → GPU 잡수 분포 원본 그대로(87/2/5/6%), GPU-시간 비중 8-GPU 60%, dur p50 22.2분/max 48h(절단 65건). drop 방식은 multi-GPU 장기 잡을 빼서 구성을 왜곡하므로 폐기(사용자 결정 2026-06-05) |
 
 샘플 생성 규칙(전 샘플 공통): 모집단 필터(JCT 상한) → gpu_count 층별 비례 층화 → seed=42 →
 duration 분포 자동 보존 검증 → CSV 저장. 재현: `run_experiment.py --sample N --seed 42 --drop-over <초>`.
