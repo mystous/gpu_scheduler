@@ -20,6 +20,18 @@ efficiency(M) = (φ+M0)/(φ+M)  (큰 배치일수록 통계효율 감소)
 
 ILP은 작은 규모면 그대로, 크면 greedy(잡별 best (r_i·G)^p 칸을 용량 한도까지 채움)로 근사.
 출력: 잡별 (queue_sec, service_sec, gpu_count) — fairness 호환. service=완료−시작(이주 포함 체류).
+
+결론 — 계산 overhead가 명백한 단점:
+  라운드마다 '활성 잡 전체 × config goodput'을 평가하므로, 부하가 높을수록 라운드당 비용과
+  총 라운드 수가 함께 폭증한다. 실측(Philly 111k, b200):
+    - 256 GPU 극과부하(3.6×) 단일 sia ≈ 2시간 (engine 정책 ~30초 대비 200배+)
+    - 512 GPU 과부하(1.8×) 이종 sia ≈ 100분
+    - 1024 GPU 저부하(0.9×)에선 ~수분 (활성 잡 적어 빠름)
+  즉 goodput-최적 라운드 ILP의 정확성을 얻는 대가가 스케줄링 계산 비용이다(부하에 민감).
+  완화: 실제 K8s에선 스케줄 주기(60–300s)가 길고 결정 지연이 JCT(수시간)에 거의 무영향이라
+  운영상 부담은 작다. 그러나 (a) 대규모 시뮬 wall-clock 부담, (b) 초대규모·고빈도 클러스터의
+  실시간 스케줄링 병목 가능성은 남으며 — 원 논문도 ILP에 시간 제한(round budget)을 둔다.
+  반면 SQUAD(SFQA/sfqa-auto)는 단일 승급 O(n)·벡터화로 부하 무관하게 ~수십 초로 경량이다.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -163,10 +175,13 @@ class SiaSim:
                 remain[best[2]] -= best[1]
         return alloc
 
-    def run(self):
+    def run(self, progress_every=2000):
+        import sys
         arr = sorted(self.jobs.values(), key=lambda x: x.arrival)
         ai = 0
         prev = {}
+        rc = 0                                              # 라운드 카운터(진행 추세 로그용)
+        ntot = len(arr)
         # 라운드 진행
         end_horizon = max(j.arrival for j in arr) + sum(j.work for j in arr)  # 느슨한 상한
         while True:
@@ -199,6 +214,10 @@ class SiaSim:
             self.alloc_samples.append((self.now, used, self.total_gpu))
             prev = {j.id: j.cur_cfg for j in self.active if j.cur_cfg}
             self.now += self.round
+            rc += 1
+            if progress_every and rc % progress_every == 0:  # 진행 추세: 라운드·도착·완료·활성
+                print(f"    [sia] round={rc} arrived={ai}/{ntot} fin={len(self.finished)} "
+                      f"active={len(self.active)}", flush=True, file=sys.stderr)
             if self.now > end_horizon * 2 + 1e6:    # 안전장치
                 break
         return self._results()
