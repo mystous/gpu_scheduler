@@ -16,7 +16,7 @@ sys.path.insert(0, "/home/mystous/gpu_scheduler/sim")
 from order_fairness import per_job_score
 
 A = "/raid/squad/analysis"
-OUT = "/home/mystous/gpu_scheduler/results/sim_sweep"
+OUT = "/home/mystous/gpu_scheduler/sim/sweep_results"
 GPUS = [256, 512, 1024]
 KINDS = ["single", "hetero"]
 POLS = ["fifo", "sjf", "las", "kueue", "easy", "themis", "sfqa", "sfqa-auto", "lucid", "sia"]
