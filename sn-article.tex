@@ -41,6 +41,7 @@
 %%%% Standard Packages
 %%<additional latex packages if required can be included here>
 
+\usepackage{kotex}% 한글 (xelatex로 컴파일)
 \usepackage{graphicx}%
 \usepackage{multirow}%
 \usepackage{amsmath,amssymb,amsfonts}%
@@ -90,123 +91,139 @@
 \affil[2]{\orgdiv{CTO}, \orgname{LG Uplus Corp.}, \orgaddress{\city{Seoul}, \country{Republic of Korea}}}
 \affil[3]{\orgdiv{School of Business}, \orgname{Ehwa Woman University}, \orgaddress{\city{Seoul}, \country{Republic of Korea}}}
 
-\abstract{As a representative example of hardware accelerators or coprocessors, Datacenter GPU is an essential hardware resource for AI research that provides significant computational power albeit at a considerable financial cost. This importance has grown with the widespread adoption of transformer-based large language models (LLMs), which often require dozens or even hundreds of NVIDIA datacenter GPUs for training. Consequently, the efficient allocation and management of GPU resources are crucial. The scheduling problem is a classic NP hard combinatorial optimization problem; mapping jobs with unknown runtimes to a finite set of GPUs cannot be solved optimally in polynomial time. Existing schedulers typically optimize a single metric (e.g., throughput, fairness, or deadline compliance) under specific assumptions. Instead of proposing another scheduler, Scheduling Queue Unblocking and Allocation Defragmentation for Gang Scheduling (SQUAD) introduces a complementary mechanism composed of two algorithms that enhance a broad class of baseline schedulers that do not rely on cumulative or historical state metrics. First, the starvation free queue-adjustment algorithm monitors wait times and resource demands to detect head of line blocking, and reorders the queue to prevent starvation. Second, the preemptive task reallocation algorithm selectively preempts and migrates running jobs to consolidate scattered GPUs when the fragmentation exceeds a threshold. These two mechanisms act as preprocessors that optimize the job queue and server state, enabling any scheduler to operate in a highly efficient resource pool. These interventions are triggered only when the heuristic conditions indicate that the expected reduction in the wait and execution times outweighs the migration overhead. Across multiple workloads and baseline scheduling policies, such as packing, round-robin, and Monte Carlo tree search, the two SQUAD algorithms reduce the wall clock time by approximately 7.8–14\% and increase the GPU allocation rate by approximately 14.98 percentage points. As SQUAD operates at the base regardless of the scheduler layer and leaves the core policies intact, it can be integrated into existing GPU cluster managers to improve its utilization without sacrificing stability.}
+\abstract{하드웨어 가속기 또는 보조 프로세서의 대표적 예인 데이터센터 GPU는 상당한 비용에도 불구하고 막대한 연산 능력을 제공하는, AI 연구에 필수적인 하드웨어 자원이다. 트랜스포머 기반 대규모 언어 모델(LLM)의 광범위한 확산과 함께 그 중요성은 더욱 커졌으며, LLM 학습에는 수십에서 수백 장의 NVIDIA 데이터센터 GPU가 요구되는 경우가 많다. 따라서 GPU 자원의 효율적인 할당과 관리는 매우 중요하다. 스케줄링 문제는 고전적인 NP-hard 조합 최적화 문제로, 실행 시간을 알 수 없는 작업들을 유한한 GPU 집합에 매핑하는 문제는 다항 시간 안에 최적으로 풀 수 없다. 기존 스케줄러들은 일반적으로 특정 가정 아래에서 단일 지표(예: 처리량, 공정성, 마감 기한 준수)를 최적화하지만, 작업 대기 큐 선두에서 발생하는 HOL 블로킹(head-of-line blocking, 선두 차단)으로 인한 기아(starvation)는 정책 계층과 무관하게 잔존한다. 본 논문은 실제 쿠버네티스(Kubernetes) GPU 클러스터에서 백필(backfill)을 수행하는 프로덕션 스케줄러조차 최악 대기 시간이 2,450초에 이르는 기아를 겪음을 실측으로 보인다. SQUAD(Scheduling Queue Unblocking and Allocation Defragmentation for Gang Scheduling)는 또 하나의 스케줄러를 제안하는 대신, 누적·이력 상태 지표에 의존하지 않는 광범위한 기반(baseline) 스케줄러들을 보완·강화하는 전처리 메커니즘을 제시한다. 핵심은 기아 방지(starvation-free) 큐 조정 알고리즘(SFQA)으로, 대기 시간과 자원 요구량을 모니터링하여 HOL 블로킹을 감지하고 기아를 방지하도록 큐를 재정렬한다. 나아가 큐잉 이론에 근거해 튜닝 노브를 제거한 무튜닝(zero-knob) 변형 sfqa-auto는 클러스터 부하 $\rho$로부터 공정성 임계 $\sigma^*=1/(1-\rho)$를 직접 유도하여, 워크로드의 시간 스케일이 변해도 별도 재튜닝 없이 효율과 공정성의 균형점을 유지한다. 이를 보완하는 선점 작업 재배치 알고리즘(PTR)은 단편화가 임계값을 초과하면 실행 중인 작업을 선별적으로 선점·이주시켜 흩어진 GPU를 통합하며, 그 이주 비용은 모델 크기별 체크포인트 다운타임(예: 7B 모델 약 116초)으로 실측해 모델링한다. 우리는 제안 기법을 (i) 실제 NVIDIA B200 쿠버네티스 클러스터 실측, (ii) Philly 트레이스 111k 작업 규모의 이산 사건 시뮬레이션, (iii) 실측 오버헤드 보정의 세 계층으로 평가했다. 실측에서 SFQA는 기본 FIFO 대비 최악 대기 시간을 68\% 줄였고, sfqa-auto는 무튜닝으로 고정 계수판을 능가하며 프로덕션 표준(Kueue) 대비 최악 대기를 12\% 낮췄다. 111k 규모 시뮬레이션에서 sfqa-auto는 FIFO 대비 중앙값 대기를 50--61\% 단축하면서 공정성을 유지하는 유일한 경량 정책이었다. SQUAD는 스케줄러 계층과 무관하게 그 하부에서 동작하며 핵심 정책을 그대로 유지하므로, 안정성을 해치지 않으면서 기존 GPU 클러스터 관리자에 통합되어 활용도를 높일 수 있다.}
 \keywords{Head-of-Line blocking, reallocation, reorder wait queue, GPU, fragmentation, job queue, waiting queue, Starvation-Free, defragmentation}
 \maketitle
 
 \section{Introduction}\label{sec1}
-Scheduling training or inference jobs on GPU servers is a crucial aspect of system-level optimization. The GPU allocation rate and utilization on the server are critical operational metrics that affect operational and research costs. Moreover, GPU resources are inherently limited to research and business groups, prompting extensive studies for optimal job scheduling. Some organizations form “hyperclusters” which are dedicated clusters of hundreds or thousands of GPUs connected by high-bandwidth interconnects. This approach not only drives up costs but also imposes scalability limits and causes resource fragmentation across clusters\cite{athlur2022varuna}. Similarly, an analysis of production traces showed that allocating fractional GPUs in shared environments leads to severe fragmentation, leaving hundreds of GPUs idle and unavailable for incoming jobs\cite{USENIX288717}. These findings underscore the importance of designing schedulers and defragmentation mechanisms that can effectively manage GPU resources despite increasing model sizes and diverse workloads. However, there is no universal solution because most studies are based on specific conditions or highly idealized scenarios. This is because the problem of assigning tasks with unknown completion times to a queue is a well-known NP-hard combinatorial optimization problem\cite{ROBSON1980119}. Most job-scheduling problems involve a combination of flow shops, job shops, single machines, open shops, and k-machine parallel scheduling\cite{b1}. Thus, most job-scheduling problems are handled by an approximation algorithm\cite{b2}. 
+GPU 서버에서 학습 또는 추론 작업을 스케줄링하는 일은 시스템 수준 최적화의 핵심 요소다. 서버의 GPU 할당률과 사용률은 운영 비용과 연구 비용에 직접적인 영향을 미치는 중요한 운영 지표다. 더욱이 GPU 자원은 연구·사업 조직에 본질적으로 한정되어 있어, 최적의 작업 스케줄링을 위한 연구가 활발히 이루어져 왔다. 일부 조직은 고대역폭 인터커넥트로 연결된 수백~수천 장 GPU의 전용 클러스터인 ``하이퍼클러스터''를 구성한다. 이 접근은 비용을 끌어올릴 뿐 아니라 확장성의 한계를 부과하고 클러스터 간 자원 단편화(fragmentation)를 유발한다\cite{athlur2022varuna}. 마찬가지로, 프로덕션 트레이스 분석에 따르면 공유 환경에서의 부분(fractional) GPU 할당은 심각한 단편화를 초래하여 수백 장의 GPU가 유휴 상태로 남아 신규 작업에 할당되지 못하게 만든다\cite{USENIX288717}. 이러한 발견들은 모델 규모의 증가와 다양한 워크로드 속에서도 GPU 자원을 효과적으로 관리할 수 있는 스케줄러와 단편화 해소 메커니즘 설계의 중요성을 잘 보여준다. 그러나 대부분의 연구가 특정 조건이나 고도로 이상화된 시나리오에 기반하기 때문에 보편적인 해법은 존재하지 않는다. 완료 시간을 알 수 없는 작업들을 큐에 배정하는 문제는 잘 알려진 NP-hard 조합 최적화 문제이기 때문이다\cite{ROBSON1980119}. 대부분의 작업 스케줄링 문제는 flow shop, job shop, 단일 기계, open shop, k-기계 병렬 스케줄링의 조합으로 구성되며\cite{b1}, 따라서 대부분 근사 알고리즘으로 다루어진다\cite{b2}.
 
-Nevertheless, research on schedulers for deep learning model training and inference jobs continues. Ye et al.\cite{b3} provided a taxonomy of deep-learning job scheduling: first, by workload type (training, inference, etc.), and second, by the specific characteristics and objectives (efficiency, fairness, deadlines, etc.)of each workload. They identified state-of-the-art schedulers, such as Sia\cite{b4}, which excels in utilization, fairness, and job completion time, and Lucid\cite{b5}, which uses multi-state profiling to optimize performance. Most existing GPU schedulers adopt variations of these methods. Therefore, if the job characteristics change, scheduling policies or schedulers should be adjusted accordingly.
+그럼에도 불구하고 딥러닝 모델 학습·추론 작업을 위한 스케줄러 연구는 계속되고 있다. Ye 등\cite{b3}은 딥러닝 작업 스케줄링의 분류 체계를 제시했다. 첫째는 워크로드 유형(학습, 추론 등)에 따른 분류이고, 둘째는 각 워크로드의 구체적 특성과 목표(효율성, 공정성, 마감 기한 등)에 따른 분류다. 이들은 사용률·공정성·작업 완료 시간에서 뛰어난 Sia\cite{b4}, 다중 상태 프로파일링으로 성능을 최적화하는 Lucid\cite{b5} 등을 최신(state-of-the-art) 스케줄러로 꼽았다. 기존 GPU 스케줄러 대부분은 이러한 방법들의 변형을 채택한다. 따라서 작업 특성이 변하면 스케줄링 정책이나 스케줄러도 그에 맞게 조정되어야 한다.
 
-Therefore, the recently proposed GPU scheduling approaches exhibit inherent limitations. For instance, in a learning-to-rank-based LLM scheduler, Kendall’s Tau ranking metric has occasionally been shown to fail to reflect end-to-end performance; random shuffling within the shortest 70\% of requests maintains the Tau score (0.5), but significantly increases latency (1.8× increase observed with Llama-8B on ShareGPT). Furthermore, this method has not yet been fully tested with the integration of newer LLM service optimizations, such as chunk-prefill and prefill-decode disaggregation\cite{fu2024efficient}. Similarly, fragmentation-aware scheduling approaches, such as Fragmentation Gradient Descent (FGD)\cite{weng2023beware}, designed to manage GPU-sharing workloads, focus on a narrow 'one step' measurement of fragmentation to ensure scheduler independence. This narrow focus can lead to suboptimal performance during the initial phases when the clusters are resource-rich and fragmentation is naturally low.
+이처럼 최근 제안된 GPU 스케줄링 접근법들은 내재적 한계를 보인다. 예컨대 learning-to-rank 기반 LLM 스케줄러에서는 Kendall's Tau 순위 지표가 종단 간(end-to-end) 성능을 반영하지 못하는 경우가 관찰되었다. 가장 짧은 70\%의 요청 내부를 무작위로 뒤섞어도 Tau 점수(0.5)는 유지되지만 지연 시간은 크게 증가한다(ShareGPT에서 Llama-8B 기준 1.8배 증가 관찰). 또한 이 방법은 chunk-prefill, prefill-decode 분리(disaggregation) 같은 최신 LLM 서비스 최적화와의 통합이 아직 충분히 검증되지 않았다\cite{fu2024efficient}. 마찬가지로 GPU 공유 워크로드 관리를 위해 설계된 Fragmentation Gradient Descent(FGD)\cite{weng2023beware} 같은 단편화 인지 스케줄링 접근법은 스케줄러 독립성을 보장하기 위해 단편화의 좁은 `한 스텝(one step)' 측정에 집중한다. 이러한 좁은 초점은 클러스터 자원이 풍부하고 단편화가 자연히 낮은 초기 단계에서 차선의(suboptimal) 성능으로 이어질 수 있다.
 
-Therefore, these sophisticated scheduling approaches, which are designed to optimize resource allocation, introduce their own complexities and limitations. For instance, dynamic schedulers such as  Optimus\cite{peng2018optimus} rely on online resource performance models to estimate training speed and convergence. Although effective, the performance of Optimus is sensitive to prediction errors, particularly  when estimating model convergence, where prediction errors of up to 20\% have been observed. Furthermore, its reliance on a checkpoint-based method to adjust the resource configuration introduces overhead, which can be significant for jobs involving hundreds of workers or parameter servers. Separately, approaches that target fairness and placement sensitivity, such as Themis\cite{peng2018optimus}, achieve their goals by introducing significant architectural and computational complexities. Themis used a centralized round-by-round auction mechanism to determine the resource allocation based on app-provided bids. This mechanism incurs a high computational overhead, reaching 1,398 ms at the 95th percentile during high contention, owing to the use of a solver (e.g., Gurobi) for the partial allocation auction. Moreover, Themis’s effectiveness relies on complex inputs from applications to estimate a placement-sensitive finish-time fairness metric, which requires applications to precisely model the slowdown caused by non-ideal GPU placement.
+자원 할당 최적화를 위해 설계된 이들 정교한 스케줄링 접근법은 그 자체의 복잡성과 한계를 동반한다. 예컨대 Optimus\cite{peng2018optimus} 같은 동적 스케줄러는 온라인 자원 성능 모델에 의존해 학습 속도와 수렴을 추정한다. 효과적이긴 하나 Optimus의 성능은 예측 오차에 민감하며, 특히 모델 수렴 추정에서는 최대 20\%의 예측 오차가 관찰되었다. 또한 자원 구성 조정을 체크포인트 기반 방식에 의존하는 점은 오버헤드를 유발하는데, 수백 개의 워커나 파라미터 서버가 관여하는 작업에서는 그 부담이 상당할 수 있다. 별개로, Themis\cite{mahajan2020themis}처럼 공정성과 배치 민감성(placement sensitivity)을 목표로 하는 접근법은 상당한 구조적·계산적 복잡성을 도입하는 방식으로 목표를 달성한다. Themis는 앱이 제출하는 입찰가(bid)를 바탕으로 자원 할당을 결정하는 중앙집중식 라운드 단위 경매 메커니즘을 사용했다. 이 메커니즘은 부분 할당 경매에 솔버(예: Gurobi)를 쓰기 때문에 높은 계산 오버헤드를 유발하며, 경합이 심할 때 95퍼센타일 기준 1,398ms에 달한다. 더욱이 Themis의 효과는 배치 민감 완료 시간 공정성(finish-time fairness) 지표 추정을 위한 애플리케이션의 복잡한 입력에 의존하는데, 이는 비이상적 GPU 배치로 인한 속도 저하를 애플리케이션이 정밀하게 모델링할 것을 요구한다.
 
-In contrast to these highly complex and overhead-prone approaches, SQUAD focuses on a complementary mechanism that enhances existing scheduling by addressing the core limitations of GPU cluster management. SQUAD does not attempt to solve the NP-hard problem directly; rather, it resolves two major bottlenecks—Head-of-Line (HOL) blocking and resource fragmentation—which are independent of the core scheduling policy and degrade the performance of any compatible scheduler. By addressing these prescheduling inefficiencies, SQUAD ensures that the scheduler operates in an optimized state.
+이처럼 복잡도가 높고 오버헤드가 따르는 접근법들과 달리, SQUAD는 GPU 클러스터 관리의 핵심 한계를 해소함으로써 기존 스케줄링을 강화하는 상호 보완 메커니즘에 집중한다. SQUAD는 NP-hard 문제를 직접 풀려고 시도하지 않는다. 대신 핵심 스케줄링 정책과 독립적이면서도 호환되는 모든 스케줄러의 성능을 저하시킬 수 있는 주요 병목 --- HOL 블로킹(Head-of-Line blocking)과 자원 단편화 --- 을 해소한다. 이러한 스케줄링 전 단계의 비효율을 해결함으로써 SQUAD는 스케줄러가 최적화된 상태에서 동작하도록 보장한다.
 
- Our approach achieved a 7.8\%–14\% reduction in job completion time (depending on the workload and baseline scheduler) and improved the GPU allocation rate by approximately 14.98 percentage points. We validated our approach using augmented job logs generated from real GPU server pool data. SQUAD achieves this using two distinct and equally important algorithms. 
+기아가 단지 이론적 우려가 아님을 강조할 필요가 있다. 우리는 실제 쿠버네티스 GPU 클러스터(NVIDIA B200)에서 Philly 트레이스를 재생하여, 백필을 수행하는 실제 kube-scheduler조차 기본 FIFO 정책 아래에서 최악 대기 시간이 2,450초에 달하는 기아를 일으킴을 관측했다. 이는 ``실제 스케줄러는 엄격한 FIFO가 아니므로 기아가 발생하지 않는다''는 통념을 정면으로 반박하며, 정책 계층과 독립적인 전처리 개입의 필요성을 실측으로 뒷받침한다.
+
+본 연구는 이 문제를 해결하는 SQUAD를 제안하고, 이를 단일 시뮬레이터가 아닌 세 계층 --- 실제 쿠버네티스 클러스터 실측, 대규모 트레이스 시뮬레이션, 실측 오버헤드 보정 --- 으로 평가한다. SQUAD의 핵심 기여는 다음과 같다.
 
 \vspace{1em}
-The key contributions of this study  are as follows.
 \begin{enumerate}
-\item \textbf{Starvation-Free Queue Adjustment:} When a job requests the maximum number of GPUs on a server, it may experience long wait times if the server has insufficient resources, resulting in starvation. This condition, HOL blocking, delays subsequent jobs even when servers with adequate GPUs are available. Our Starvation-Free Queue Adjustment mechanism specifically monitors the wait times and resource requirements of queued jobs, dynamically reordering the queue to eliminate HOL blocking and ensure fairness across varying job sizes.
-\item \textbf{Preemptive Allocation Defragmentation:} Simultaneously, GPU server pools frequently suffer from resource fragmentation, where scattered free slots prevent the allocation of large, contiguous jobs. Our Preemptive Task Reallocation algorithm actively addresses this by selectively preempting and migrating running jobs based on the expected gain/overhead. This mechanism consolidates external fragmented resources, maximizing the GPU allocation rate.
-\item Our approach can determine the optimal coefficients based on job and scheduler characteristics. This means that our research demonstrates the capability to identify the optimal coefficients regardless of the specific workload presented. Deep learning is fundamentally an iterative process, this implies that the most efficient GPU cluster operation can be achieved through continuous retrospective optimization. To validate its effectiveness, we developed a scalable simulator for rapid evaluation.
-
+\item \textbf{기아 방지 큐 조정(Starvation-Free Queue Adjustment, SFQA):} 어떤 작업이 서버의 최대 GPU 수를 요청하면, 서버 자원이 부족할 경우 긴 대기 시간을 겪으며 기아 상태에 빠질 수 있다. 이 상태, 즉 HOL 블로킹은 충분한 GPU를 가진 서버가 있어도 후속 작업들을 지연시킨다. SFQA는 대기 중인 작업들의 대기 시간과 자원 요구량을 모니터링하고 큐를 동적으로 재정렬하여, HOL 블로킹을 제거하고 다양한 작업 크기 전반의 공정성을 보장한다. 실제 쿠버네티스 클러스터 실측에서 SFQA는 기본 FIFO 대비 최악 대기 시간(기아)을 68\% 단축했다.
+\item \textbf{무튜닝 적응형 SFQA(sfqa-auto):} 기존 SFQA는 트레이드오프를 제어하는 계수들을 워크로드별로 사전 탐색해야 한다는 한계가 있었다. 우리는 이 계수 결정을 큐잉 이론에 위임하여 튜닝 노브를 제거한 sfqa-auto를 제안한다. 클러스터 부하 $\rho$로부터 공정성 임계 $\sigma^*=1/(1-\rho)$(Processor-Sharing 공정성 기준)를 직접 유도하므로, 워크로드의 시간 스케일이 바뀌어도 재튜닝이 필요 없다. 실측에서 sfqa-auto는 무튜닝으로 고정 계수판을 능가했고, 부하가 두 배로 변해도 동일 설정으로 균형점을 유지했다(고정 계수판은 같은 조건에서 균형점을 잃었다).
+\item \textbf{세 계층 평가와 선점 재배치 비용의 실측:} 우리는 SQUAD를 실제 kube-scheduler 클러스터 실측, Philly 111k 작업 규모의 이산 사건 시뮬레이션, 그리고 둘을 잇는 실측 오버헤드 보정의 세 계층으로 평가한다. 특히 선점 작업 재배치(PTR)가 단편화 해소를 위해 유발하는 체크포인트 이주 다운타임을 모델 크기별로 실측(예: 7B 모델 약 116초)하여, 재배치의 이득과 비용을 정량적으로 비교한다.
 \end{enumerate}
 
-Both mechanisms are essential for the overall system performance; queue adjustment prevents unfair delays, and reallocation ensures that resources are physically available for efficient scheduling.
+SFQA(및 그 무튜닝 변형)는 불공정한 지연을 방지하고, PTR은 효율적인 스케줄링을 위한 자원이 물리적으로 가용하도록 보장한다. 두 메커니즘은 상호 독립적으로, 또는 함께 적용될 수 있다.
 
 
-The remainder of this paper is organized as follows: Section \ref{Related} presents several related studies. The following section explains why job-waiting queue adjustments are required. Section \ref{algo:intro} presents the details of queue adjustment and fragmentation curation mathematically. In the subsequent section, we demonstrate how effective queue adjustment and fragmentation curation maintain a high efficiency within the GPU server pool, even with varying job characteristics. In addition, we present the performance results of applying our mechanism to job logs enhanced using actual data. Finally, we summarize this study and discuss potential directions for future development in Section \ref{conclu}.
+본 논문의 나머지 구성은 다음과 같다. \ref{Related}절에서는 관련 연구들을 소개한다. 그다음 절에서는 작업 대기 큐 조정이 왜 필요한지 설명한다. \ref{algo:intro}절에서는 큐 조정과 단편화 관리(fragmentation curation)의 세부 사항을 수학적으로 제시한다. 이어지는 절에서는 작업 특성이 변하더라도 효과적인 큐 조정과 단편화 관리가 GPU 서버 풀의 높은 효율을 어떻게 유지하는지 보인다. 아울러 실제 데이터로 보강한 작업 로그에 본 메커니즘을 적용한 성능 결과를 제시한다. 마지막으로 \ref{conclu}절에서 본 연구를 요약하고 향후 발전 방향을 논의한다.
 
-Although the precise term is ‘datacenter GPU’, we use ‘GPU’ throughout this paper for simplicity, referring specifically to datacenter GPUs.
+정확한 용어는 `데이터센터 GPU'이지만, 본 논문에서는 간결성을 위해 데이터센터 GPU를 지칭하는 의미로 `GPU'를 사용한다.
 
 
 \section{Related Works}\label{Related}
 
 \subsection{Efficient LLM Scheduling by Learning to Rank}\label{SCRANK}
-Traditional LLM serving systems use the FCFS scheduling strategy because the output generation length is typically unknown, which causes severe Head-Of-Line (HOL) blocking and reduces throughput. Efficient LLM Scheduling by Learning to Rank\cite{fu2024efficient} demonstrated that accurately predicting the exact length is unnecessary; instead, knowing the relative ranks of the output lengths is sufficient to approximate the optimal SJF/SRTF scheduling. The authors proposed a novel Ranking Scheduler that uses a learning-to-rank approach implemented via a small auxiliary model (e.g., OPT-125M). The model was trained using the listwise ListMLE loss to optimize the ranking quality, which was measured using the Kendall rank correlation coefficient (Kendall’s Tau), which is directly correlated with lower latency. The scheduler supports on-the-fly per-iteration scheduling and incorporates a Starvation Prevention mechanism to ensure fairness for long requests. When integrated with state-of-the-art serving systems, the method achieved significant performance gains, including up to 2.8x lower p90 latency in chatbot serving and 6.5x higher throughput in synthetic data generation. The computational overhead of the predictor model is negligible, typically less than 2\%. However, the authors also noted the following limitations: a high Kendall’s Tau does not always guarantee low latency (e.g., shuffling the shortest 70\% of requests maintained Tau$\approx$0.5, but doubled the latency), and the approach was not evaluated with newer optimizations, such as request pre-filling. These factors suggest potential gaps in the generality of the method.
+전통적인 LLM 서빙 시스템은 출력 생성 길이를 일반적으로 알 수 없기 때문에 FCFS 스케줄링 전략을 사용하며, 이는 심각한 HOL 블로킹을 유발하고 처리량을 떨어뜨린다. Efficient LLM Scheduling by Learning to Rank\cite{fu2024efficient}는 정확한 길이 예측이 불필요하며, 출력 길이의 상대적 순위만 알아도 최적 SJF/SRTF 스케줄링을 근사하기에 충분함을 보였다. 저자들은 소형 보조 모델(예: OPT-125M)로 구현한 learning-to-rank 접근법을 사용하는 새로운 Ranking Scheduler를 제안했다. 이 모델은 순위 품질을 최적화하기 위해 listwise ListMLE 손실로 학습되었고, 순위 품질은 낮은 지연 시간과 직접 상관되는 Kendall 순위 상관계수(Kendall's Tau)로 측정되었다. 이 스케줄러는 반복(iteration) 단위의 즉시 스케줄링을 지원하며, 긴 요청의 공정성을 보장하기 위한 기아 방지(Starvation Prevention) 메커니즘을 포함한다. 최신 서빙 시스템과 통합했을 때 챗봇 서빙에서 p90 지연 최대 2.8배 감소, 합성 데이터 생성에서 처리량 6.5배 증가 등 상당한 성능 향상을 달성했다. 예측 모델의 계산 오버헤드는 무시할 수준으로, 일반적으로 2\% 미만이다. 그러나 저자들은 다음 한계도 지적했다. 높은 Kendall's Tau가 항상 낮은 지연을 보장하지는 않으며(예: 가장 짧은 70\% 요청을 뒤섞어도 Tau$\approx$0.5는 유지되지만 지연은 2배가 됨), request pre-filling 같은 최신 최적화와 함께 평가되지 않았다. 이러한 요인들은 이 방법의 일반성에 잠재적 공백이 있음을 시사한다. 이 방법은 ``출력 길이 추정에 기반한 SJF + 기아 방지''라는 구조에서 SQUAD의 sfqa-auto와 목적을 공유하지만, LLM 서빙의 요청(iteration) 단위에서 동작한다. 반면 SQUAD는 클러스터 수준의 갱(gang) 스케줄링을 대상으로 하며, sfqa-auto는 duration 추정을 선택적으로만 사용하고 추정이 부정확해도 견고하도록 설계된다.
 
 \subsection{FGD}\label{FGC}
-Despite the widespread use of GPU sharing to increase utilization, production clusters suffer from severe GPU fragmentation caused by the allocation of partial GPUs, leaving hundreds of GPUs unallocatable (a 21–42\% fragmentation rate observed in traces). This fragmentation challenge requires a formulation beyond classic bin packing because GPU allocation must be contiguous, although GPUs within a node are interchangeable. The authors introduced a novel statistical fragmentation measure that quantifies the expected amount of unallocatable GPU resources given a task randomly sampled from the target workload. Based on this measure, they proposed Fragmentation Gradient Descent (FGD)\cite{weng2023beware}, a heuristic that guides scheduling by selecting the node assignment that results in the minimum fragmentation increment. Evaluated on high-fidelity simulations using production traces (over 6.2k GPUs), FGD reduced unallocated GPUs by up to 49\% compared to existing packing heuristics, enabling the utilization of 150–290 additional GPUs. FGD also effectively reduces stranded resources and consolidates tasks on the least-occupied nodes.
+사용률 향상을 위해 GPU 공유가 널리 쓰이고 있음에도, 프로덕션 클러스터는 부분(partial) GPU 할당이 유발하는 심각한 GPU 단편화에 시달리며, 이로 인해 수백 장의 GPU가 할당 불가 상태로 남는다(트레이스에서 21--42\%의 단편화율 관찰). 노드 내 GPU들은 서로 교환 가능하지만 GPU 할당은 연속적이어야 하므로, 이 단편화 문제는 고전적 빈 패킹(bin packing)을 넘어서는 정식화를 요구한다. 저자들은 대상 워크로드에서 무작위로 추출한 작업이 주어졌을 때 할당 불가능한 GPU 자원의 기대량을 정량화하는 새로운 통계적 단편화 측도를 도입했다. 이 측도를 바탕으로, 단편화 증가량이 최소가 되는 노드 배정을 선택하여 스케줄링을 안내하는 휴리스틱인 Fragmentation Gradient Descent(FGD)\cite{weng2023beware}를 제안했다. 프로덕션 트레이스(6.2천 장 이상의 GPU)를 사용한 고충실도 시뮬레이션 평가에서 FGD는 기존 패킹 휴리스틱 대비 미할당 GPU를 최대 49\% 줄였으며, 150--290장의 GPU를 추가로 활용 가능하게 했다. FGD는 또한 고립(stranded) 자원을 효과적으로 줄이고 점유가 가장 적은 노드로 작업을 통합한다. FGD는 SQUAD와 같은 문제(단편화)를 공격하지만 서로 직교하는 축에 위치한다. FGD는 \textit{배치 시점}에 단편화 증가가 최소인 노드를 선택하여 단편화 생성을 회피하는 반면, SQUAD의 SFQA는 \textit{큐 순서}에서 단편화의 피해자(기아 작업)에게 우선권을 주고(식 \eqref{eq:01}의 자원 적합도 $R$ 항이 빈 슬롯에 맞는 작업을 우선), PTR은 이미 발생한 단편화를 실행 중 작업의 이주로 \textit{사후 제거}한다. 본 논문은 FGD를 원논문 알고리즘 그대로 구현하여 동일 조건의 배치 베이스라인으로 실험에 포함한다(\S\ref{eval:sim}). 실험 결과 FGD는 배치 최적화만으로 중앙값 대기를 크게 줄이지만 큐를 건드리지 않아 과부하에서 기아를 막지 못함을 보여, 효율(배치)과 공정성(큐)이 직교 축임을 실증한다.
 
 \subsection{Optimus}\label{Optimus}
-Optimus\cite{peng2018optimus} is proposed as a customized job scheduler for deep learning (DL) clusters to overcome the limitations of existing schedulers that allocate fixed resources to DL training jobs, leading to low resource efficiency and prolonged job completion times. The primary goal of Optimus is to minimize job training time and enhance resource efficiency by leveraging online resource performance models. Optimus uses online fitting to track training progress and accurately predict model convergence (steps/epochs required) and simultaneously estimates the training speed as a function of dynamically allocated resources (workers and parameter servers). Crucially, this performance modeling approach is built on runtime data and requires no prior knowledge of the internals of the ML model or hardware configuration of the cluster.
-Based on these predictive performance models, Optimus implements a heuristic method to dynamically allocate resources to minimize the average Job Completion Time (JCT). It also designs a task placement scheme guided by the principle of maximizing training speed using the smallest number of servers and deploying tasks evenly, thus mitigating communication overhead. In addition, Optimus identifies and resolves a significant load-imbalance issue within the parameter server architecture (e.g., MXNet) by introducing  a Parameter Assignment Algorithm (PAA) that efficiently assigns model slices. According to Kubernetes, Optimus demonstrated substantial performance gains, outperforming representative cluster schedulers (DRF and Tetris) by improving the JCT by 139\%. 
+Optimus\cite{peng2018optimus}는 딥러닝(DL) 학습 작업에 고정 자원을 할당하여 자원 효율이 낮고 작업 완료 시간이 길어지는 기존 스케줄러의 한계를 극복하기 위해 제안된, DL 클러스터 맞춤형 작업 스케줄러다. Optimus의 일차 목표는 온라인 자원 성능 모델을 활용해 작업 학습 시간을 최소화하고 자원 효율을 높이는 것이다. Optimus는 온라인 피팅(online fitting)으로 학습 진행을 추적해 모델 수렴(필요 스텝/에폭 수)을 정확히 예측하는 동시에, 동적으로 할당된 자원(워커와 파라미터 서버)의 함수로 학습 속도를 추정한다. 결정적으로, 이 성능 모델링 접근법은 런타임 데이터 위에 구축되어 ML 모델 내부나 클러스터 하드웨어 구성에 대한 사전 지식을 요구하지 않는다.
+이러한 예측 성능 모델을 바탕으로 Optimus는 평균 작업 완료 시간(JCT)을 최소화하도록 자원을 동적으로 할당하는 휴리스틱을 구현한다. 또한 최소한의 서버로 학습 속도를 극대화하고 작업을 고르게 배치한다는 원칙에 따라 작업 배치 기법을 설계하여 통신 오버헤드를 완화한다. 아울러 Optimus는 파라미터 서버 아키텍처(예: MXNet) 내부의 심각한 부하 불균형 문제를 식별하고, 모델 슬라이스를 효율적으로 배정하는 Parameter Assignment Algorithm(PAA)을 도입해 이를 해결한다. Kubernetes 환경에서 Optimus는 대표적 클러스터 스케줄러(DRF, Tetris)를 능가하며 JCT를 139\% 개선하는 상당한 성능 향상을 보였다. 그러나 Optimus는 정확한 온라인 성능 모델과 탄력적(elastic) 파라미터 서버 구조를 전제하므로 애플리케이션 수정과 예측 정확도에 의존한다. SQUAD는 이러한 모델이나 앱 협조 없이 대기 큐와 서버 상태만으로 동작하여 정보 요구가 최소라는 점에서 대비된다.
 
 \subsection{Themis}\label{Themis}
-Themis\cite{mahajan2020themis} proposed a new scheduling framework that introduced finish-time fairness as a long-term fairness metric. Metric r is defined as the ratio of an app's completion time in the shared cluster ($T_{sh}$)to its ideal completion time in a dedicated 1/N cluster ($T_{id}$), with the goal of minimizing the maximum r. Themis achieved this through a two-level scheduling architecture in which a central ARBITER runs round-by-round auctions based on resource leases. ML applications (apps) participate by submitting bids that reflect their performance and placement preferences through estimated r-values for different resource allocations. The auction mechanism guarantees desirable properties (strategy-proofness, Pareto efficiency, and envy-freeness) and applies Round-by-Round Filtering to maximize the sharing incentive (SI) fairness criterion. The evaluation showed that Themis improves fairness by more than 2.25X and enhances cluster efficiency by 5–250\% compared with state-of-the-art schedulers.
+Themis\cite{mahajan2020themis}는 장기 공정성 지표로 완료 시간 공정성(finish-time fairness)을 도입한 새로운 스케줄링 프레임워크를 제안했다. 지표 $r$은 공유 클러스터에서의 앱 완료 시간($T_{sh}$)을 전용 1/N 클러스터에서의 이상적 완료 시간($T_{id}$)으로 나눈 비율로 정의되며, 최대 $r$을 최소화하는 것이 목표다. Themis는 중앙 ARBITER가 자원 임대(lease)에 기반한 라운드 단위 경매를 실행하는 2단계 스케줄링 아키텍처로 이를 달성했다. ML 애플리케이션(앱)들은 서로 다른 자원 할당에 대한 추정 $r$ 값을 통해 자신의 성능·배치 선호를 반영한 입찰가를 제출하는 방식으로 참여한다. 이 경매 메커니즘은 바람직한 성질들(전략 무용성(strategy-proofness), 파레토 효율, 무시기성(envy-freeness))을 보장하며, 공유 인센티브(SI) 공정성 기준을 극대화하기 위해 라운드 단위 필터링(Round-by-Round Filtering)을 적용한다. 평가 결과 Themis는 최신 스케줄러들 대비 공정성을 2.25배 이상 개선하고 클러스터 효율을 5--250\% 향상시켰다. Themis의 완료 시간 공정성($T_{sh}/T_{id}$)은 본질적으로 속도 저하(slowdown) 기반 공정성으로, SQUAD의 sfqa-auto가 채택하는 공정성 임계 $\sigma^*=1/(1-\rho)$와 같은 계보에 속한다. 다만 Themis는 솔버 기반 경매(경합 시 95퍼센타일 1,398ms)와 앱이 제출하는 $r$ 값 추정에 의존하는 반면, sfqa-auto는 측정된 부하만으로 임계를 유도하는 $O(n)$ 경량 연산이라는 점이 다르다.
 
 \subsection{Lucid}\label{LU}
-Lucid\cite{b5} introduced an efficient and user-friendly approach to deep learning job scheduling based on three foundational principles: ease of integration, scalability, and transparency. It avoids intrusive modifications by operating without preemption and eliminates the need for user intervention or adjustments to existing deep learning frameworks. These design choices effectively address challenges such as operational rigidity, error susceptibility, and high integration or maintenance overheads. In addition, Lucid was designed to handle complex and large-scale workloads efficiently, while providing clear and adjustable operations for system administrators. Lucid’s primary focus was to reduce the average JCT for training workloads to cater to the demands of deep learning users. In addition to improving resource efficiency, it provides prompt debugging feedback. Looking ahead, Lucid aims to support additional scheduling objectives, such as ensuring fairness and meeting service-level agreements, thereby expanding its applicability to diverse workload scenarios.
+Lucid\cite{b5}는 통합 용이성, 확장성, 투명성이라는 세 가지 기본 원칙에 기반한 효율적이고 사용자 친화적인 딥러닝 작업 스케줄링 접근법을 제시했다. 선점 없이 동작함으로써 침습적 수정을 피하고, 사용자의 개입이나 기존 딥러닝 프레임워크의 변경을 요구하지 않는다. 이러한 설계 선택은 운영 경직성, 오류 취약성, 높은 통합·유지보수 오버헤드 같은 문제들을 효과적으로 해소한다. 또한 Lucid는 복잡한 대규모 워크로드를 효율적으로 처리하면서도 시스템 관리자에게 명확하고 조정 가능한 운영 수단을 제공하도록 설계되었다. Lucid의 일차적 초점은 딥러닝 사용자의 요구에 부응해 학습 워크로드의 평균 JCT를 줄이는 것이었다. 자원 효율 개선에 더해 신속한 디버깅 피드백도 제공한다. 향후 Lucid는 공정성 보장, 서비스 수준 협약(SLA) 충족 같은 추가적인 스케줄링 목표를 지원하여 다양한 워크로드 시나리오로 적용 범위를 넓히는 것을 목표로 한다. Lucid는 비침습적 운영을 지향한다는 점에서 SQUAD와 철학을 공유하지만 프로파일링 작업을 요구한다. 또한 우리의 대규모 시뮬레이션에서 Lucid는 작은 작업을 즉시 배치해 중앙값 대기를 극소화하지만 긴 작업의 꼬리 대기를 방치하는 경향을 보였는데, SQUAD는 바로 이 최악 대기(기아)를 유계로 억제하는 데 초점을 둔다.
 
 \subsection{Sia}\label{SI}
-Sia\cite{b4} is a scheduler specifically designed to handle resource-adaptive deep learning jobs in heterogeneous GPU clusters. It addresses the challenges of balancing the GPU type, count, and batch size assignments dynamically, which are particularly difficult because of the vast search space and diverse scaling behavior of different jobs. By leveraging an integer linear programming (ILP) formulation and pragmatically reducing the search space, Sia efficiently assigns resources while minimizing overhead. In addition, Sia employs an innovative throughput modeling approach that relies on minimal initial profiling and dynamically refines its predictions, enabling effective resource allocation without significant profiling costs. Furthermore, Sia proved effective in maintaining fairness metrics and efficiently scaling complex hybrid parallel jobs, such as Megatron-style models\cite{b5:1}, while maintaining robust performance across varying cluster sizes and workloads. These results highlight Sia’s scalability, adaptability, and superior performance in addressing the complex challenges associated with heterogeneous resources and job variability.
+Sia\cite{b4}는 이종(heterogeneous) GPU 클러스터에서 자원 적응형(resource-adaptive) 딥러닝 작업을 다루기 위해 특별히 설계된 스케줄러다. GPU 타입·수량·배치 크기 배정을 동적으로 균형 잡는 문제를 다루는데, 이는 방대한 탐색 공간과 작업마다 다른 스케일링 거동 때문에 특히 어렵다. 정수 선형 계획법(ILP) 정식화를 활용하고 탐색 공간을 실용적으로 축소함으로써, Sia는 오버헤드를 최소화하면서 자원을 효율적으로 배정한다. 또한 Sia는 최소한의 초기 프로파일링에 의존하면서 예측을 동적으로 정제하는 혁신적인 처리량 모델링 접근법을 채택하여, 큰 프로파일링 비용 없이 효과적인 자원 할당을 가능하게 한다. 나아가 Sia는 공정성 지표를 유지하고 Megatron 스타일 모델\cite{b5:1} 같은 복잡한 하이브리드 병렬 작업을 효율적으로 확장하는 데 효과적임을 입증했으며, 다양한 클러스터 규모와 워크로드 전반에서 견고한 성능을 유지했다. 이러한 결과는 이종 자원과 작업 가변성이라는 복합적 난제를 다루는 데 있어 Sia의 확장성, 적응성, 우수한 성능을 잘 보여준다. 우리의 시뮬레이션에서도 Sia는 이종 클러스터에서 탁월한 처리량 중심 성능을 보였으나, ILP 평가가 라운드마다 활성 작업 수에 비례해 계산 비용이 급증하여 고부하에서 스케줄링 결정 시간이 SQUAD 계열 대비 200배 이상 커지는 한계를 드러냈다. SQUAD는 작업 내부 적응형 병렬화가 아니라 작업 간 배치를 다루며, 단일 승급 $O(n)$ 연산으로 부하와 무관하게 경량으로 동작한다.
 
 \subsection{Algorithms for Preemptive Co-scheduling of Kernels on GPUs}\label{PCS}
-Algorithms for the preemptive coscheduling of kernels on GPUs\cite{b6} aim to minimize the number of preemptions while achieving an optimal makespan. This study demonstrated that the optimal preemptive makespan can be computed efficiently using a linear programming solution. However, determining the minimum number of preemptions among all solutions with an optimal makespan has proven to be NP-hard. These findings highlight the effectiveness of graph-based scheduling techniques in balancing computational efficiency with minimal disruption in high-demand GPU environments.
+GPU 커널의 선점형 공동 스케줄링 알고리즘\cite{b6}은 최적 makespan을 달성하면서 선점 횟수를 최소화하는 것을 목표로 한다. 이 연구는 최적 선점 makespan이 선형 계획법 해법으로 효율적으로 계산될 수 있음을 보였다. 그러나 최적 makespan을 갖는 모든 해 가운데 최소 선점 횟수를 결정하는 문제는 NP-hard임이 증명되었다. 이러한 발견은 수요가 높은 GPU 환경에서 계산 효율과 최소한의 중단 사이의 균형을 잡는 데 그래프 기반 스케줄링 기법이 효과적임을 보여준다.
+
+\subsection{EASY Backfilling}\label{EASY}
+EASY 백필링\cite{mualem2001backfilling}은 HPC 배치 스케줄링에서 수십 년간 검증된 표준 기법으로, 큐 선두 작업을 위해 자원을 예약(reservation)하되 그 예약을 침범하지 않는 후속 작업은 앞당겨 실행(backfill)함으로써 선두 작업의 기아를 막으면서 활용도를 높인다. 그러나 EASY는 각 작업의 실행 시간 추정에 의존하며, 사용자 추정은 흔히 2--10배의 오차를 갖는다. 흥미롭게도 과대추정이 오히려 예약을 보수화하여 성능을 개선하는 ``과대추정 역설''이 보고되었고\cite{tsafrir2007backfilling}, 본 논문의 실측에서도 이 고전적 결과가 재현되어 측정 파이프라인의 타당성을 방증한다. 본 논문은 EASY를 정보 우위(완벽한 duration) 베이스라인으로 사용하여 sfqa-auto의 상한선으로 삼는다. SQUAD의 sfqa-auto는 예약 대신 나이(age) 기반 승급으로 기아를 막아 duration 추정 자체가 불필요하다는 점이 다르다.
+
+\subsection{Kueue}\label{KUEUE}
+Kueue\cite{kueue2024}는 쿠버네티스 네이티브 작업 큐잉 시스템으로, 작업을 일시 중단(suspend)·재개하는 방식으로 쿼타(quota) 기반 공정 공유를 제공한다. Kueue는 코어 스케줄러를 교체하지 않고 게이트 계층에서 동작한다는 점에서 SQUAD와 같은 레이어에 속하며, 따라서 본 논문의 실측에서 가장 직접적인 프로덕션 표준 베이스라인이다. 다만 Kueue의 공정성은 쿼타 분배에 한정되어 HOL 블로킹으로 인한 최악 대기(기아)를 유계로 보장하거나 단편화를 해소하지는 않는다.
+
+\subsection{Baseline selection rationale}\label{baseline-rationale}
+베이스라인 비교가 의미를 가지려면 두 시스템이 (i) 같은 결정 변수(같은 스케줄링 객체)를, (ii) 같은 계층에서, (iii) 비교 가능한 정보·인프라 가정 아래 내려야 한다. 이 조건 중 하나라도 어긋나면 그 비교는 스케줄링 로직이 아니라 문제 정의나 인프라를 비교하는 것이 되어 방법론적으로 부당하다. 이 기준에 따라 본 논문은 세 축으로 베이스라인을 선정한다. (1) 같은 계층·같은 정보: FIFO, gate-FIFO 통제군, Kueue --- 순수 정책 효과를 분리한다. (2) 같은 계층·정보 우위: SJF, LAS(Tiresias)\cite{gu2019tiresias}, EASY 백필링(완벽 추정 가정), Themis --- 정보가 유리한 정책에 대해서도 SQUAD가 경쟁함을 보인다. (3) 같은 계층·최신 기법: FGD(배치), Lucid, Sia --- 동일 계층의 가장 강한 학술 스케줄러를 망라한다.
+
+반면 다음 세 시스템은 위 (i)--(iii) 중 하나 이상을 위반하므로 실험 비교에서 제외하며, 이는 누락이 아니라 비교의 타당성을 위한 의도적 선택이다. 각 시스템의 전이 가능한 스케줄링 원리는 이미 위 베이스라인으로 대표된다.
+\begin{itemize}
+\item \textbf{Learning-to-Rank\cite{fu2024efficient} (계층 불일치):} LLM 서빙 엔진 내부에서 생성 \textit{요청}을 iteration 단위로 재정렬하는 기법으로, 결정 객체(밀리초 단위·매 iteration 자유 선점되는 요청)와 시간 스케일이 클러스터 갱 \textit{작업}(분--일 단위·자유 선점 불가)과 근본적으로 다르다. 학습 작업에는 ``출력 길이''가 없고 iteration 단위 선점도 불가능하여 클러스터 트레이스에 적용하는 것 자체가 정의되지 않는다. 다만 그 본질인 ``예측 순위 기반 SJF + 기아 방지''는 sfqa-auto의 2계층 규칙과 동형이며, 완벽 예측 극한인 SJF가 이미 베이스라인으로 포함되어 그 원리를 대표한다.
+\item \textbf{Optimus\cite{peng2018optimus} (가정·정보 불일치):} 핵심 메커니즘인 워커/파라미터 서버의 \textit{탄력적} 재조정은 고정 요청 갱 작업(본 트레이스)에서 조정 대상이 없어 퇴화하며, 기존 배치·정렬 휴리스틱과 구분되지 않는다. 또한 작업별 온라인 수렴 성능 모델과 앱 수준 계측을 요구하는데, 이는 정보 최소 전처리기인 SQUAD와의 직접 비교를 스케줄링 로직이 아닌 인프라 우위 비교로 만든다. 그 목표(duration 인지 평균 JCT 최소화)는 SJF·Themis로, 적응성 축은 이종 탄력 스케줄링 SOTA인 Sia로 실험에 대표된다.
+\item \textbf{Preemptive Co-scheduling of Kernels\cite{b6} (계층 자체가 다름):} 단일 GPU 내부에서 연산 \textit{커널}을 시분할 공동 스케줄링하는 기법으로, SQUAD가 할당하는 단위(whole GPU)보다 한 계층 아래에서 동작한다. 공유하는 결정 변수가 없으며, SQUAD가 할당한 GPU 내부에서 함께 동작할 수 있는 상보적 관계다.
+\end{itemize}
 
 \section{Motivation}
-Interestingly, significantly advanced deep learning technology has also led to inefficiencies in GPU server pools. Container\cite{b7}-based, reproducible, and shareable training environments, enabled by services such as Docker Hub\cite{b8} and Hugging Face\cite{b9}, have greatly accelerated deep learning research worldwide. With various ML frameworks, libraries, and fundamental neural network architectures for deep learning being widely shared, unnecessary time spent on reproducibility has been minimized. Consequently, most researchers have focused on refining algorithms in a consistent environment. The GPU-dependent components of model architecture are often abstracted or hidden.
+흥미롭게도, 크게 발전한 딥러닝 기술은 GPU 서버 풀의 비효율 또한 초래했다. Docker Hub\cite{b8}, Hugging Face\cite{b9} 같은 서비스가 가능하게 한 컨테이너\cite{b7} 기반의 재현 가능하고 공유 가능한 학습 환경은 전 세계 딥러닝 연구를 크게 가속했다. 딥러닝을 위한 다양한 ML 프레임워크, 라이브러리, 기본 신경망 아키텍처가 널리 공유되면서 재현성 확보에 들이는 불필요한 시간이 최소화되었다. 그 결과 대부분의 연구자는 일관된 환경에서 알고리즘을 다듬는 데 집중하게 되었고, 모델 아키텍처의 GPU 의존적 구성 요소는 추상화되거나 감추어지는 경우가 많다.
 
-Because GPU access is abstracted, containers typically interact with GPUs at the card level. Consequently, although hardware supports time slicing to improve the GPU allocation rate, this capability cannot be flexibly utilized during model training or GPU server pool management. Moreover, as the scale of deep learning models increases, the need to use multiple GPUs simultaneously has become common. While managing a GPU server pool, an endless stream of jobs is continuously submitted, each with varying completion times and GPU counts. Consequently, fragmentation occurs within the GPU server pool, leading to inefficiency. Fragmentation occurs in the following situations.
+GPU 접근이 추상화되어 있기 때문에 컨테이너는 일반적으로 카드 단위로 GPU와 상호작용한다. 그 결과, 하드웨어가 GPU 할당률을 높이는 타임 슬라이싱을 지원하더라도 모델 학습이나 GPU 서버 풀 관리 과정에서 이 기능을 유연하게 활용할 수 없다. 더욱이 딥러닝 모델의 규모가 커지면서 여러 GPU를 동시에 사용하는 일이 보편화되었다. GPU 서버 풀을 운영하는 동안 완료 시간과 GPU 수가 제각각인 작업들이 끊임없이 제출된다. 그 결과 GPU 서버 풀 내부에 단편화가 발생하여 비효율로 이어진다. 단편화는 다음과 같은 상황에서 발생한다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=10cm]{Pic/Fig_01.png}}
-\caption{GPU server pool status before newly submitted jobs are scheduled.}
+\caption{새로 제출된 작업들이 스케줄링되기 전의 GPU 서버 풀 상태.}
 \label{fig:01}
 \end{figure}
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=10cm]{Pic/Fig_02.png}}
-\caption{Waiting job queue status before newly submitted jobs are scheduled.}
+\caption{새로 제출된 작업들이 스케줄링되기 전의 작업 대기 큐 상태.}
 \label{fig:02}
 \end{figure}
 
-Figs. \ref{fig:01} and \ref{fig:02} show the status of the GPU server pool and waiting job queue, respectively. A scheduler that uses the most-allocated manager can allocate tasks $\textit{t}_{0}$ and 
- $\textit{t}_{1}$. However, it cannot schedule $\textit{t}_{2}$ because $\textit{t}_{2}$ depends on completing other jobs to free up GPU slots. This implies that tasks $\textit{t}_{3}$, $\textit{t}_{4}$, and 
- $\textit{t}_{5}$ can only be scheduled afterward (Fig. \ref{fig:03}).
+그림 \ref{fig:01}과 \ref{fig:02}는 각각 GPU 서버 풀과 작업 대기 큐의 상태를 보여준다. most-allocated 방식을 사용하는 스케줄러는 작업 $\textit{t}_{0}$과 $\textit{t}_{1}$을 할당할 수 있다. 그러나 $\textit{t}_{2}$는 다른 작업들이 완료되어 GPU 슬롯이 비워지기를 기다려야 하므로 스케줄링할 수 없다. 이는 작업 $\textit{t}_{3}$, $\textit{t}_{4}$, $\textit{t}_{5}$가 그 이후에야 스케줄링될 수 있음을 의미한다(그림 \ref{fig:03}).
 
-As illustrated in Figs. \ref{fig:03}, despite having sufficient GPU slots to schedule $\textit{t}_{3}$, $\textit{t}_{4}$, and $\textit{t}_{5}$, these jobs cannot be scheduled due to $\textit{t}_{2}$, which is HOL blocking. This is because the previously allocated jobs cause the GPU server pool to become fragmented. Fragmentation in the GPU server pool occurs continuously during operation and is occasionally resolved. The worst case occurs when there are seven GPUs available on all GPU servers and the HOL blocking requests eight GPUs.
+그림 \ref{fig:03}에 나타난 것처럼, $\textit{t}_{3}$, $\textit{t}_{4}$, $\textit{t}_{5}$를 스케줄링하기에 충분한 GPU 슬롯이 있음에도 이 작업들은 $\textit{t}_{2}$ 때문에 스케줄링되지 못한다. 이것이 HOL 블로킹이다. 이는 앞서 할당된 작업들이 GPU 서버 풀을 단편화시키기 때문이다. GPU 서버 풀의 단편화는 운영 중 지속적으로 발생하며 간헐적으로만 해소된다. 최악의 경우는 모든 GPU 서버에 7장의 GPU가 남아 있는데 HOL 블로킹 작업이 8장을 요청하는 상황이다.
 
-In this case, the GPU server pool has the lowest GPU allocation rate before any job is completed. In this study, we experimentally investigated this phenomenon. Job logs were collected based on the most-allocated scheduling approach. Job logs were recorded from an actual GPU server pool. Job logs were collected over approximately three months. We analyzed the scheduling conditions based on the required GPU count. The analyses assumed a GPU server pool composed of Nvidia A30 and A100 GPUs with a single job waiting queue and no job cancellations while waiting. 
+이 경우 GPU 서버 풀은 어떤 작업이 완료되기 전까지 가장 낮은 GPU 할당률에 머무른다. 본 연구는 이 현상을 실험적으로 조사했다. 작업 로그는 most-allocated 스케줄링 방식 기반으로 수집되었으며, 실제 GPU 서버 풀에서 약 3개월에 걸쳐 기록되었다. 우리는 요구 GPU 수를 기준으로 스케줄링 조건을 분석했다. 분석은 Nvidia A30과 A100 GPU로 구성된 GPU 서버 풀, 단일 작업 대기 큐, 대기 중 작업 취소 없음을 가정했다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=10cm]{Pic/Fig_03.png}}
-\caption{GPU server pool status after some jobs are scheduled.}
+\caption{일부 작업이 스케줄링된 후의 GPU 서버 풀 상태.}
 \label{fig:03}
 \end{figure}
 
-The characteristics of the job log are shown in Fig. \ref{fig:05}, which illustrates the requested number of GPUs and the training time for each job. Because of the mixture of A30 and A100 GPUs, there is an exceptionally high number of jobs requesting four GPUs, whereas the other GPU request counts follow a uniform distribution. The training time follows a Weibull minimum distribution. 
+작업 로그의 특성은 그림 \ref{fig:05}에 나타나 있으며, 각 작업의 요청 GPU 수와 학습 시간을 보여준다. A30과 A100 GPU가 혼재되어 있는 탓에 4장의 GPU를 요청하는 작업이 유난히 많고, 그 외의 GPU 요청 수는 균등 분포를 따른다. 학습 시간은 Weibull minimum 분포를 따른다.
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_06.png}}
-\caption{GPU server pool allocation rate when job has been allocated}
+\caption{작업이 할당된 시점의 GPU 서버 풀 할당률}
 \label{fig:05}
 \end{figure}
 
-We examined the frequency of HOL blocking using scheduling analysis. In particular, we observed the overall allocation rate of the GPU server pool when job groups with different GPU request counts were scheduled. For jobs requesting only one or two GPUs, scheduling can occur even at a high GPU server pool allocation rate. However, if a blockage is in front of the waiting queue, these jobs cannot be allocated until the blockage is resolved. This often results in allocation when the overall allocation rate of the server pool decreases to a certain level. Fig.\ref{fig:06} shows that jobs requesting between one and eight GPUs are allocated at similar pool allocation rates, suggesting a high frequency of blockage. 
+우리는 스케줄링 분석을 통해 HOL 블로킹의 빈도를 조사했다. 특히 GPU 요청 수가 서로 다른 작업 그룹이 스케줄링될 때 GPU 서버 풀의 전체 할당률을 관찰했다. GPU를 1--2장만 요청하는 작업은 서버 풀 할당률이 높은 상태에서도 스케줄링될 수 있다. 그러나 대기 큐 선두에 막힘(blockage)이 있으면 이 작업들은 그 막힘이 해소될 때까지 할당되지 못한다. 그 결과 서버 풀의 전체 할당률이 일정 수준까지 떨어진 뒤에야 할당되는 경우가 잦다. 그림 \ref{fig:06}은 1--8장의 GPU를 요청하는 작업들이 비슷한 풀 할당률에서 할당되고 있음을 보여주며, 이는 막힘의 빈도가 높음을 시사한다.
+
+이 현상이 시뮬레이터의 산물이 아니라 실제 시스템의 문제임을 확인하기 위해, 우리는 실제 쿠버네티스 클러스터(NVIDIA B200)에서 Philly 트레이스의 층화 표본을 재생하여 큐잉 지연을 직접 측정했다. 백필을 수행하는 실제 kube-scheduler 아래에서 기본 FIFO 정책은 최악 대기 시간이 2,450초에 달하는 기아를 보였다. 이는 실제 프로덕션 스케줄러가 엄격한 FIFO가 아니어도 HOL 블로킹에 의한 기아가 사라지지 않음을 입증한다. 더욱이 여러 정책을 동일 조건에서 비교하면, 중앙값 대기와 최악 대기는 서로 맞바꾸어지는(trade-off) 관계를 이룬다. 어떤 정책도 두 지표를 동시에 최선으로 만들지 못하며(makespan은 정책 간 6\% 이내로 거의 동일하므로 바뀌는 것은 대기의 분포 형태다), 이는 작업 보존(work-conserving) 정책 간 Kleinrock 보존 법칙\cite{kleinrock1976queueing}과 일치한다. 따라서 본질적 과제는 ``어느 균형점을 택할 것인가''와 ``그 점을 워크로드가 바뀔 때마다 재튜닝 없이 유지할 수 있는가''로 귀결된다. 이는 SFQA와 그 무튜닝 변형 sfqa-auto의 설계 동기를 직접적으로 형성한다.
 
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=12cm]{Pic/Fig_05.png}}
-\caption{Actual job log characteristics.}
+\caption{실제 작업 로그의 특성.}
 \label{fig:06}
 \end{figure}
 
-The challenge of optimally scheduling an infinite number of jobs with unknown completion and scheduling request times is NP-hard\cite{ROBSON1980119}. Consequently, this problem cannot be entirely resolved using scheduling algorithms alone. Consequently, this study prioritizes addressing HOL blocking rather than enhancing scheduling algorithms. Furthermore, a defragmentation technique was adopted to mitigate external fragmentation. Consequently, we introduce new mechanisms called queue adjustment and fragmentation curation.
+완료 시간과 스케줄링 요청 시점을 알 수 없는 무한한 작업들을 최적으로 스케줄링하는 문제는 NP-hard다\cite{ROBSON1980119}. 따라서 이 문제는 스케줄링 알고리즘만으로는 완전히 해결될 수 없다. 이에 본 연구는 스케줄링 알고리즘의 개선보다 HOL 블로킹의 해소를 우선시한다. 나아가 외부 단편화를 완화하기 위해 단편화 해소(defragmentation) 기법을 채택했다. 그 결과 우리는 큐 조정(queue adjustment)과 단편화 관리(fragmentation curation)라는 새로운 메커니즘을 제시한다.
 
-We developed an in-house simulation for job scheduling and server adjustment to facilitate the analysis and rapid repeated development of mechanisms to resolve HOL blocking. It parses job logs and responds to scheduling using different methods. New scheduling methodologies can be added without affecting existing mechanisms. This implies that the queue and fragmentation adjustments operate independently of the job-scheduling method. 
+우리는 HOL 블로킹 해소 메커니즘의 분석과 신속한 반복 개발을 위해 작업 스케줄링·서버 조정용 자체(in-house) 시뮬레이션을 개발했다. 이 시뮬레이터는 작업 로그를 파싱하고 다양한 방식으로 스케줄링에 응답한다. 기존 메커니즘에 영향을 주지 않고 새로운 스케줄링 방법론을 추가할 수 있다. 이는 큐 조정과 단편화 조정이 작업 스케줄링 방식과 독립적으로 동작함을 의미한다.
 
 \section{Resolving HOL blocking in Job Queue and GPU Fragmentation}\label{algo:intro}
-We propose two approaches to address HOL blocking in the job-waiting queue and fragmentation of the GPU server pool. First, we introduce a starvation-free algorithm to reduce HOL blocking. Second, we develop a preemptive task reallocation algorithm to minimize fragmentation in the GPU server pool. Both algorithms aim to optimize the usage of the GPU server pool. Each algorithm functions independently and has its own set of trade-offs. These trade-offs are determined using the coefficients applied to each algorithm.
+우리는 작업 대기 큐의 HOL 블로킹과 GPU 서버 풀의 단편화를 해결하기 위한 두 가지 접근법을 제안한다. 첫째, HOL 블로킹을 줄이기 위한 기아 방지(starvation-free) 알고리즘을 도입한다. 둘째, GPU 서버 풀의 단편화를 최소화하기 위한 선점 작업 재배치(preemptive task reallocation) 알고리즘을 개발한다. 두 알고리즘 모두 GPU 서버 풀의 활용 최적화를 목표로 한다. 각 알고리즘은 독립적으로 동작하며 각자의 트레이드오프를 갖는다. 이 트레이드오프는 각 알고리즘에 적용되는 계수로 결정된다.
 \subsection{Starvation-free Algorithm}
-The advanced queue and fragmentation management proposed in this study aims to ensure a high allocation rate for the GPU server pool, regardless of the type or method of scheduler used. The starvation-free and preemptive task reallocation algorithms function before scheduler execution. Together, these two algorithms optimize the job-waiting queue and server states, enabling optimal scheduling performance independent of the scheduler type or mechanism.
+본 연구가 제안하는 고도화된 큐·단편화 관리는 사용하는 스케줄러의 종류나 방식과 무관하게 GPU 서버 풀의 높은 할당률을 보장하는 것을 목표로 한다. 기아 방지 알고리즘과 선점 작업 재배치 알고리즘은 스케줄러 실행 전에 동작한다. 이 두 알고리즘은 함께 작업 대기 큐와 서버 상태를 최적화하여, 스케줄러의 종류나 메커니즘과 무관하게 최적의 스케줄링 성능을 가능하게 한다.
 
-HOL blocking frequently occurs during GPU server pool operations and is eventually resolved; however, this resolution can be time-consuming. This delay negatively affects the overall allocation rate. Scheduling to prevent HOL blocking is an NP-hard problem, and it is nearly impossible to predict when HOL blocking occurs. This is because of the unpredictable nature of the types of jobs that request GPUs and the resources required in the real world. Therefore, scheduling to prevent HOL blocking is an indirect approach. Starvation-free algorithms address blockage issues by directly modifying the priorities of jobs in the waiting queue. We also consider the trade-offs that arise from these modifications using specific coefficients. Although adjusting the queue can enable jobs blocked by a blockage to be scheduled, there is a trade-off in that, in the worst-case scenario, jobs associated with the blockage may never be allocated. This algorithm was designed to prevent starvation in top-priority jobs. Arbitrarily eliminating HOL blocking or adjusting the priorities can lead to fairness issues.
+HOL 블로킹은 GPU 서버 풀 운영 중 빈번히 발생하며 결국에는 해소되지만, 그 해소에 오랜 시간이 걸릴 수 있다. 이 지연은 전체 할당률에 부정적인 영향을 미친다. HOL 블로킹을 예방하는 스케줄링은 NP-hard 문제이며, HOL 블로킹이 언제 발생할지 예측하는 것은 거의 불가능하다. 현실 세계에서 GPU를 요청하는 작업의 유형과 요구 자원이 예측 불가능하기 때문이다. 따라서 HOL 블로킹을 예방하려는 스케줄링은 간접적인 접근에 머무른다. 기아 방지 알고리즘은 대기 큐에 있는 작업들의 우선순위를 직접 수정함으로써 막힘 문제를 해결한다. 우리는 이러한 수정이 낳는 트레이드오프 또한 특정 계수들을 사용해 고려한다. 큐를 조정하면 막힘에 가로막힌 작업들이 스케줄링될 수 있게 되지만, 최악의 경우 막힘에 해당하는 작업이 영원히 할당되지 못할 수 있다는 트레이드오프가 존재한다. 본 알고리즘은 최상위 우선순위 작업의 기아를 방지하도록 설계되었다. HOL 블로킹을 임의로 제거하거나 우선순위를 임의로 조정하면 공정성 문제가 발생할 수 있다.
 
-Let $P^*$ represent the adjusted priority value of tasks $t_0^*$, $t_1^*$, $t_2^*$, \dots, $t_n^*$. $P^*$ is calculated and reassigned before scheduling is initiated. The scheduler uses modified job priorities. The adjusted job priority $P^*$ is defined as:
+$P^*$를 작업 $t_0^*$, $t_1^*$, $t_2^*$, \dots, $t_n^*$의 조정된 우선순위 값이라 하자. $P^*$는 스케줄링이 시작되기 전에 계산되어 재부여된다. 스케줄러는 수정된 작업 우선순위를 사용한다. 조정된 작업 우선순위 $P^*$는 다음과 같이 정의된다:
 
 \begin{equation}
 P^* =
@@ -218,7 +235,7 @@ P, & \text{otherwise}
 \vspace{1em}
 \end{equation}
 
-The first term $P$ represents the original priority of tasks $t_0$, $t_1$, \dots, $t_n$, where $n$ is three times the number of servers. Specifically, the priorities are defined as follows: $p_0$ = 1, $p_1$ = 0.5, and $p_2$ = 0.25, with each subsequent priority decreasing by half; a higher value indicates a greater priority than a lower one. The second term consists of the variables $\alpha A \times R$ which represents the starvation index. Here, $\alpha$ is the coefficient that dictates the rate at which the starvation index gains importance. For example, to ensure that the priority of the second job in the waiting queue increases within six hours, assuming that $R$ is set to one, $\alpha$ should be set to at least 0.013889. In numerical terms, when $P_1$ is 0.5, the calculation $0.013889 \times 36 \times 1 = 0.500004$ results in an updated priority of 1.000004, surpassing the $P_0$ value of 1, thereby shifting the priority. In this context, $A$ refers to the age of the task, which increases by one every ten minutes, and $R$ is the resource suitability index. $A$ is reset when a job is scheduled. The value of $R$ is one when the number of required accelerators exactly matches the available number. However, it decreases by $0.1$ for each additional accelerator. Finally, $\beta$ is the minimum allocation rate that determines whether the starvation-free algorithm should be activated. The starvation-free algorithm is triggered if the allocation rate $AR$ falls below this threshold. Algorithm \ref{alg:adjust_wait_queue} shows the implementation of a starvation-free algorithm using \eqref{eq:01}.
+첫 번째 항 $P$는 작업 $t_0$, $t_1$, \dots, $t_n$의 원래 우선순위를 나타내며, 여기서 $n$은 서버 수의 3배다. 구체적으로 우선순위는 $p_0$ = 1, $p_1$ = 0.5, $p_2$ = 0.25와 같이 정의되어 이후 우선순위가 절반씩 감소하며, 값이 클수록 우선순위가 높다. 두 번째 항은 기아 지수(starvation index)를 나타내는 변수 $\alpha A \times R$로 구성된다. 여기서 $\alpha$는 기아 지수가 중요성을 얻는 속도를 결정하는 계수다. 예컨대 대기 큐의 두 번째 작업의 우선순위가 6시간 안에 역전되도록 하려면, $R$을 1로 가정할 때 $\alpha$는 최소 0.013889로 설정되어야 한다. 수치로 보면 $P_1$이 0.5일 때 $0.013889 \times 36 \times 1 = 0.500004$가 계산되어 갱신된 우선순위는 1.000004가 되고, 이는 $P_0$ 값 1을 넘어서므로 우선순위가 역전된다. 이때 $A$는 작업의 나이(age)로 10분마다 1씩 증가하며, $R$은 자원 적합도 지수(resource suitability index)다. $A$는 작업이 스케줄링되면 초기화된다. $R$ 값은 요구 가속기 수가 가용 수와 정확히 일치하면 1이고, 가속기가 하나 추가될 때마다 $0.1$씩 감소한다. 마지막으로 $\beta$는 기아 방지 알고리즘의 발동 여부를 결정하는 최소 할당률이다. 할당률 $AR$이 이 임계값 아래로 떨어지면 기아 방지 알고리즘이 발동된다. Algorithm \ref{alg:adjust_wait_queue}는 \eqref{eq:01}을 사용한 기아 방지 알고리즘의 구현을 보여준다.
 
 \begin{algorithm}
 \caption{Starvation-free Algorithm}\label{alg:adjust_wait_queue}
@@ -263,8 +280,44 @@ The first term $P$ represents the original priority of tasks $t_0$, $t_1$, \dots
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{Zero-knob Adaptive SFQA (sfqa-auto)}\label{sfqa-auto}
+식 \eqref{eq:01}의 SFQA는 효과적이지만, 계수 $\alpha$(나이 가중치)와 $\beta$(발동 임계)를 워크로드별로 사전에 탐색해야 한다. 우리는 이 계수 결정을 큐잉 이론에 위임하여 튜닝 노브를 제거한 변형 sfqa-auto를 제안한다. 핵심 착상은 스케줄러를 다음 제약 최적화 문제의 온라인 근사로 보는 것이다:
+\begin{equation}
+\min~ \text{mean JCT} \quad \text{s.t.}~ \mathrm{BSLD}_i(t) \le \sigma^*(t)~~\forall i,
+\tag{1a}
+\label{eq:auto-opt}
+\end{equation}
+여기서 $\mathrm{BSLD}_i=(W_i+s_i)/\max(s_i,\tau)$는 유계 속도 저하(bounded slowdown)\cite{feitelson1998metrics}이고, $W_i$는 대기 시간, $s_i$는 서비스 시간, $\tau$(=10s)는 초단기 작업의 퇴화를 막는 문헌 표준 하한이다\cite{mualem2001backfilling}. 공정성 임계 $\sigma^*(t)$는 측정된 클러스터 부하 $\rho(t)$로부터 직접 유도된다:
+\begin{equation}
+\sigma^*(t) = \frac{1}{1-\rho(t)}.
+\tag{1b}
+\label{eq:sigma}
+\end{equation}
+이 값은 Processor-Sharing(PS)이 달성하는 평균 속도 저하이자 Wierman--Harchol-Balter의 공정성 기준\cite{wierman2003classifying}으로, ``현재 부하에서 이상적 공평 분배(PS)였다면 겪었을 속도 저하까지는 정상''이라는 의미를 갖는다. 따라서 $\sigma^*$는 임의 상수가 아니라 큐잉 이론의 공정성 정의 그 자체다. $\rho$는 점유 GPU 비율의 지수 가중 이동 평균으로 추정하며, 모든 양은 측정값에서 계산되어 튜닝 대상 노브가 없다.
+
+각 대기 작업의 공정성 예산은 \eqref{eq:auto-opt}의 제약을 $W_i$에 대해 풀어 얻는다:
+\begin{equation}
+W^*_i(t) = \sigma^*(t)\cdot\max(s_i,\tau) - s_i, \qquad u_i(t) = \frac{A_i}{W^*_i(t)},
+\tag{1c}
+\label{eq:urgency}
+\end{equation}
+여기서 $A_i$는 작업의 나이이고 $u_i$는 무차원 긴급도(공정성 예산 소진율)다. $u_i \ge 1$은 작업 $i$의 BSLD가 PS-공정 한계 $\sigma^*$를 초과함, 즉 공정성 제약 위반을 뜻한다. 스케줄링 규칙은 제약 최적화의 표준 구조를 따르는 2계층 순서다:
+\begin{itemize}
+\item \textbf{계층 1}(위반, $u_i\ge 1$): $u_i\cdot R_i$ 내림차순 --- 공정성 복구 우선,
+\item \textbf{계층 2}(충족, $u_i<1$): $s_i$ 오름차순(SJF) --- 평균 완료 시간 최적\cite{smith1956various},
+\end{itemize}
+계층 1 전체가 계층 2보다 앞선다. $R_i$는 식 \eqref{eq:01}의 자원 적합도 지수를 계승하여 같은 위반 수준이면 자원이 맞는 작업을 우선한다. 제약이 느슨하면 목적 함수의 최적해(SJF)로, 제약이 활성화되면 위반 해소로 자연스럽게 전환되므로 별도의 댐핑 휴리스틱이 필요 없다. $u_i$는 대기 중 단조 증가하므로 계층 승격은 비가역적이고 진동이 없다. 부하가 변하면 $\sigma^*(t)$가 따라 변하므로, 고정 계수 $\alpha,\beta$가 워크로드 시간 스케일 변화에서 균형점을 잃는 문제(원본 SFQA의 한계)가 원천적으로 제거된다. 즉 sfqa-auto는 SFQA의 ``나이로 기아를 방지한다''는 정체성을 유지하면서 계수 결정을 큐잉 이론에 위임한 것이며, 원본의 $\alpha\cdot\beta$(고정 노브)는 $\sigma^*(t)$(측정값)로 흡수된다.
+
 \subsection{Preemptive task reallocation Algorithm}
-The preemptive nature of accelerator-based learning tasks implies that they can be paused or resumed from the paused points using checkpoints. This characteristic can be utilized to resolve fragmentation in the server pool. Resolving fragmentation is not about adjusting to the current queue but rather about consolidating preemptive tasks in one place to increase the number of servers without job allocation. Preemptive jobs are moved to maximize the number of servers with no assigned jobs. Dynamic programming is used to determine the optimal reallocation. There are two main trade-offs when using dynamic programming for job reallocation. The first is the execution time of the dynamic programming algorithm. The goal is not to find the optimal placement for all preemptive jobs but to maximize the number of servers with no assigned jobs. Given the small scale of the server pool, redundant optimal placements can be found quickly; however, the total number of possible configurations for all preemptive jobs is extremely large. Consequently, if all configurations are considered, the time cost of dynamic programming may outweigh the benefits of defragmentation. The second trade-off is the time required for reallocation. Using checkpoints for reallocation does not operate at the OS kernel level; instead, it involves stopping the job, performing reallocation, and resuming execution because downtime is required for this operation. It is essential to find an appropriate balance between total downtime and the benefits gained from reallocation.
+가속기 기반 학습 작업의 선점 가능(preemptive) 특성은 체크포인트를 이용해 작업을 일시 중지하고 중지 지점부터 재개할 수 있음을 의미한다. 이 특성은 서버 풀의 단편화 해소에 활용될 수 있다. 단편화 해소는 현재 큐에 맞추어 조정하는 것이 아니라, 선점 가능 작업들을 한곳으로 통합하여 작업이 할당되지 않은 서버의 수를 늘리는 것이다. 선점 가능 작업들은 배정된 작업이 없는 서버의 수가 최대가 되도록 이동된다. 최적 재배치를 결정하는 데에는 동적 계획법(dynamic programming)을 사용한다. 작업 재배치에 동적 계획법을 사용할 때는 두 가지 주요 트레이드오프가 있다. 첫째는 동적 계획법 알고리즘의 실행 시간이다. 목표는 모든 선점 가능 작업의 최적 배치를 찾는 것이 아니라 배정된 작업이 없는 서버의 수를 최대화하는 것이다. 서버 풀의 규모가 작다면 중복되는 최적 배치를 빠르게 찾을 수 있지만, 모든 선점 가능 작업의 가능한 구성의 총수는 극도로 크다. 따라서 모든 구성을 고려하면 동적 계획법의 시간 비용이 단편화 해소의 이득을 상회할 수 있다. 둘째 트레이드오프는 재배치에 소요되는 시간이다. 체크포인트를 이용한 재배치는 OS 커널 수준에서 동작하지 않는다. 대신 작업을 정지하고, 재배치를 수행하고, 실행을 재개하는 과정을 거치므로 이 작업에는 다운타임이 필요하다. 총 다운타임과 재배치로 얻는 이득 사이의 적절한 균형을 찾는 것이 필수적이다.
+
+이 다운타임을 정량화하기 위해, 우리는 실제 GPU(NVIDIA B200)에서 모델 크기별 체크포인트 저장·복원 시간을 실측했다. 학습 작업의 체크포인트는 가중치(bf16, 2\,B/파라미터)와 Adam 옵티마이저 상태(fp32 $m,v$, 8\,B/파라미터)를 합쳐 약 10\,B/파라미터를 차지하며, 측정된 처리율은 저장 0.85\,GiB/s, 복원 1.75\,GiB/s였다. 따라서 이주 다운타임 $D$는 샤딩(sharding)을 고려해 GPU당 샤드 크기 기준으로 다음과 같이 모델링된다:
+\begin{equation}
+D = \frac{c_{\text{shard}}}{0.85} + \frac{c_{\text{shard}}}{1.75} + (t_{\text{teardown}} + t_{\text{sched}}),
+\tag{6a}
+\label{eq:downtime}
+\end{equation}
+여기서 $c_{\text{shard}}$는 GPU당 체크포인트 샤드 크기(GiB), 마지막 항은 실측된 작업 종료·재스케줄 고정 오버헤드(약 3초)다. 이 모델에 따르면 1B 모델은 약 17초, 7B 모델은 약 116초, 13B 모델은 약 208초의 다운타임이 든다. PTR는 단편화 해소로 얻는 이득(빈 서버 확보에 따른 대기 작업의 조기 배치)이 이주 작업들의 총 다운타임 $\sum D$를 상회할 때에만 발동되어야 하며, 이 손익 곡선이 $\delta$(재귀 상한)와 $\omega$(발동 큐 길이)를 결정하는 원리적 근거가 된다.
 
 \begin{equation}
 dp(i, a_0, a_1, \dots, a_{n-1}, \text{calls}) = F_i
@@ -273,7 +326,7 @@ dp(i, a_0, a_1, \dots, a_{n-1}, \text{calls}) = F_i
 \vspace{1em}
 \end{equation}
 
-Equation \eqref{eq:02} represents the dynamic programming, dp stands for dynamic programming, for the maximum number of servers $F_i$ with exactly the total accelerator count in the server left after the reallocation task $i$, where $a_0, a_1, \dots, a_{n-1}$ are the available hardware accelerators on each server, and \text{calls} denotes the number of recursive calls. Each server $S_j$ begins with tasks already allocated, implying that its available hardware accelerators are reduced based on the tasks already placed on that server. Equation \eqref{eq:03} shows the initial status of dp.
+식 \eqref{eq:02}는 작업 $i$의 재배치 후 서버의 전체 가속기 수가 온전히 남아 있는 서버의 최대 개수 $F_i$를 구하는 동적 계획법(dp는 dynamic programming의 약자)을 나타낸다. 여기서 $a_0, a_1, \dots, a_{n-1}$은 각 서버의 가용 하드웨어 가속기 수이고, \text{calls}는 재귀 호출 횟수를 나타낸다. 각 서버 $S_j$는 이미 작업이 할당된 상태에서 시작하며, 이는 해당 서버에 이미 배치된 작업들만큼 가용 하드웨어 가속기가 줄어 있음을 의미한다. 식 \eqref{eq:03}은 dp의 초기 상태를 보여준다.
 
 \begin{equation}
 dp(0, a_0, a_1, \dots, a_{n-1}, 0) = F_0
@@ -282,7 +335,7 @@ dp(0, a_0, a_1, \dots, a_{n-1}, 0) = F_0
 \vspace{1em}
 \end{equation}
 
-where $a_j$ is the current number of available hardware accelerators on server $j$. The maximum capacity of each server is $M_j=4$ or $M_j=8$ depending on the server type. The dp process begins only if the waiting queue length is satisfied; that is, the wait queue ($WQ$) length $\geq \omega$. $t_r$ is a running task on the server that performs preemptive operations. $r$ denotes the recursive call depth.
+여기서 $a_j$는 서버 $j$의 현재 가용 하드웨어 가속기 수다. 각 서버의 최대 용량은 서버 타입에 따라 $M_j=4$ 또는 $M_j=8$이다. dp 과정은 대기 큐 길이 조건이 충족될 때, 즉 대기 큐($WQ$)의 길이 $\geq \omega$일 때에만 시작된다. $t_r$은 선점 동작이 수행되는 서버에서 실행 중인 작업이다. $r$은 재귀 호출 깊이를 나타낸다.
 
 \begin{equation}
 \begin{split}
@@ -293,7 +346,7 @@ dp(i, a_0, a_1, \dots, a_{n-1}, \text{calls}) + \sum_{j=0}^{n-1} f(a_j, t_r, M_j
 \tag{4}
 \end{equation}
 
-where $i \neq S_i$ indicates that task $t_i$ does not need to be reassigned to the original server $S_i$. Once the calls reach $\delta$, recursion stops. When task $t_i$ is reassigned from server $S_i$, the resources used by the task are released; that is, $a'_{S_i} = a_{S_i} + a_{t_i}$. After reassigning task $t_i$ to server $j$ (with $j \neq S_i$), the available hardware accelerators on server $j$ are updated as $a'_j = a_j - a_{t_i}$. In addition, $a'_j \geq 0$ must hold, implying that the server cannot be overcommitted.
+여기서 $i \neq S_i$는 작업 $t_i$가 원래 서버 $S_i$로 재배정될 필요가 없음을 나타낸다. 호출 횟수가 $\delta$에 도달하면 재귀는 중단된다. 작업 $t_i$가 서버 $S_i$에서 재배정되면 그 작업이 사용하던 자원이 해제된다. 즉 $a'_{S_i} = a_{S_i} + a_{t_i}$이다. 작업 $t_i$를 서버 $j$($j \neq S_i$)로 재배정한 후 서버 $j$의 가용 하드웨어 가속기는 $a'_j = a_j - a_{t_i}$로 갱신된다. 또한 $a'_j \geq 0$이 성립해야 하며, 이는 서버가 초과 할당(overcommit)될 수 없음을 의미한다.
 
 \begin{equation}
 f(a_j, t_r, M_j) =
@@ -306,7 +359,7 @@ f(a_j, t_r, M_j) =
 \vspace{1em}
 \end{equation}
 
-Equation \eqref{eq:05} checks whether, after task reassignment, server $j$ has exactly the maximum number of remaining hardware accelerators (either four or eight, depending on $M_j$).
+식 \eqref{eq:05}는 작업 재배정 후 서버 $j$의 잔여 하드웨어 가속기 수가 정확히 최대치($M_j$에 따라 4 또는 8)인지 확인한다.
 
 \begin{equation}
 dp(m, a_0, a_1, \dots, a_{n-1}, \text{calls}) = F_m, \text{if } F_m > F_0.
@@ -315,7 +368,7 @@ dp(m, a_0, a_1, \dots, a_{n-1}, \text{calls}) = F_m, \text{if } F_m > F_0.
 \vspace{1em}
 \end{equation}
 
-Equation \eqref{eq:06} presents the final state that reallocates preemptive tasks to the most reasonable server as a result of dynamic programming. Therefore, Algorithm \ref{alg:preemptive_reallocation} represents the detailed sequence of dynamic programming. 
+식 \eqref{eq:06}은 동적 계획법의 결과로 선점 가능 작업들을 가장 합리적인 서버로 재배치한 최종 상태를 나타낸다. Algorithm \ref{alg:preemptive_reallocation}은 이 동적 계획법의 상세한 절차를 보여준다.
 
 \begin{algorithm}
 \caption{Preemptive task reallocation Algorithm}\label{alg:preemptive_reallocation}
@@ -368,19 +421,18 @@ Equation \eqref{eq:06} presents the final state that reallocates preemptive task
 \STATE $F \gets dp(r+1, F, calls)$   
 \end{algorithmic}
 \end{algorithm}
-The queue adjustment and fragmentation curation proposed in this study aim to maintain a high allocation rate for the GPU server pool, regardless of the scheduler type or method. The starvation-free and preemptive task reallocation algorithms function before scheduler execution. Together, these two algorithms optimize the job-waiting queue and server states, enabling an optimal scheduling performance independent of the scheduler type or mechanism. 
+본 연구가 제안하는 큐 조정과 단편화 관리는 스케줄러의 종류나 방식과 무관하게 GPU 서버 풀의 높은 할당률 유지를 목표로 한다. 기아 방지 알고리즘과 선점 작업 재배치 알고리즘은 스케줄러 실행 전에 동작한다. 이 두 알고리즘은 함께 작업 대기 큐와 서버 상태를 최적화하여, 스케줄러의 종류나 메커니즘과 무관하게 최적의 스케줄링 성능을 가능하게 한다.
 
-The two algorithms operate independently of the scheduler and are executed before the scheduler, which operates at regular intervals. They rely solely on the job-waiting queue and current job allocation status within the server pool to determine their actions. Because starvation-free and preemptive task reallocation algorithms are not interdependent, they can function separately, and users may opt to run only one of the algorithms if desired. This study directly manages the job-waiting queue and jobs allocated to the servers, making it incompatible with schedulers that also perform job scheduling for these elements. 
- Therefore, this study did not target schedulers that rely on cumulative metrics or contexts.
+두 알고리즘은 스케줄러와 독립적으로 동작하며, 일정 주기로 동작하는 스케줄러보다 먼저 실행된다. 이들은 동작 결정에 작업 대기 큐와 서버 풀 내 현재 작업 할당 상태만을 사용한다. 기아 방지 알고리즘과 선점 작업 재배치 알고리즘은 상호 의존적이지 않으므로 별개로 동작할 수 있으며, 사용자가 원하면 둘 중 하나만 실행할 수도 있다. 본 연구는 작업 대기 큐와 서버에 할당된 작업을 직접 관리하므로, 이 요소들에 대한 작업 스케줄링을 함께 수행하는 스케줄러와는 호환되지 않는다. 따라서 본 연구는 누적 지표나 컨텍스트에 의존하는 스케줄러를 대상으로 하지 않았다.
 
 \section{Optimization of Coefficient $\alpha$, $\beta$, $\omega$, and $\delta$}
-The starvation-free and preemptive task reallocation algorithms utilize the coefficients $\alpha$, $\beta$, $\omega$, and $\delta$ to control the trade-offs. This section presents an analyses on the impact of the four coefficients on performance improvement and derives an objective function to determine the optimal values for each coefficient. This approach enables the calculation of coefficients tailored to various job behaviors.
+기아 방지 알고리즘과 선점 작업 재배치 알고리즘은 트레이드오프 제어를 위해 계수 $\alpha$, $\beta$, $\omega$, $\delta$를 사용한다. 이 절에서는 먼저 네 계수가 성능에 미치는 영향과 워크로드별 최적값을 분석한다. 그러나 이 분석의 결론 --- 최적 계수가 워크로드 특성에 따라 크게 달라진다는 사실 --- 은 곧 고정 계수 방식의 근본적 한계를 드러낸다. 따라서 본 절은 ``각 워크로드마다 최적 계수를 사전 탐색한다''는 접근을 정당화하는 데 그치지 않고, 그 한계를 \ref{sfqa-auto}절의 무튜닝 sfqa-auto가 어떻게 해소하는지로 논의를 이어간다.
 \subsection{Correlation between performance and coefficients}
-All four coefficients must be calculated and applied to ensure accurate operation. The impact of each coefficient was measured using job logs to determine the optimal values. The coefficient ranges are listed in Table. \ref{tab:01}.
+정확한 동작을 보장하려면 네 계수 모두 계산되어 적용되어야 한다. 최적값을 결정하기 위해 작업 로그를 사용하여 각 계수의 영향을 측정했다. 계수의 범위는 표 \ref{tab:01}에 정리되어 있다.
 
 \begin{table}[htb!]
 \centering
-\caption{Coefficient Range}
+\caption{계수 탐색 범위}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Coefficient} & \textbf{$\alpha$} & \textbf{$\beta$} & \textbf{$\omega$} & \textbf{$\delta$} \\ \toprule
@@ -390,30 +442,30 @@ Step        & 0.01              & 5\%              & 10                & 100k   
 \label{tab:01}
 \end{table}
 
-First, we analyze the impact of each coefficient on the completion time of all jobs in the log using SHAP\cite{b10} values. The results of the SHAP analysis are shown in Fig. \ref{fig:09}. The four-coefficient SHAP value analysis yielded 40,086 possible combinations.
+먼저 SHAP\cite{b10} 값을 사용해 각 계수가 로그 내 전체 작업의 완료 시간에 미치는 영향을 분석한다. SHAP 분석 결과는 그림 \ref{fig:09}에 나타나 있다. 네 계수의 SHAP 값 분석에서 40,086개의 가능한 조합이 도출되었다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=11cm]{Pic/Fig_09.png}}
-\caption{SHAP value analysis of coefficients.}
+\caption{계수들의 SHAP 값 분석.}
 \label{fig:09}
 \end{figure}
 
-Fig. \ref{fig:09} analyzes the impact of each coefficient on overall job completion time, or wall time. The coefficient $\beta$ has a strong negative correlation, where higher values of $\beta$ correspond to reduced wall time. The coefficient $\alpha$ also negatively correlates with the wall time but exerts a weaker influence than $\beta$. The coefficient $\delta$ shows no significant positive or negative correlation with wall time. The coefficient {$\omega$} exhibits a weak positive correlation, indicating that lower values of $\omega$ slightly reduce the wall time, although its influence is less than that of $\alpha$.
+그림 \ref{fig:09}는 각 계수가 전체 작업 완료 시간, 즉 총 소요 시간(wall time)에 미치는 영향을 분석한 것이다. 계수 $\beta$는 강한 음의 상관을 보이며, $\beta$ 값이 클수록 wall time이 줄어든다. 계수 $\alpha$ 역시 wall time과 음의 상관을 갖지만 $\beta$보다 영향력이 약하다. 계수 $\delta$는 wall time과 유의미한 양·음의 상관을 보이지 않는다. 계수 $\omega$는 약한 양의 상관을 보여 $\omega$가 낮을수록 wall time이 약간 줄어들지만, 그 영향력은 $\alpha$보다 작다.
 \subsection{Trade-off analysis and definition of related metrics}
-To optimize the four coefficients, it is essential to calculate the trade-offs. The coefficients $\alpha$ and $\beta$ help eliminate HOL blocking but may also cause blocked jobs to remain unscheduled indefinitely, leading to starvation or extended delays. To prevent this, the appropriate coefficients must be set. Thus, the cumulative waiting time for each job is grouped by the number of requested accelerators and calculated as a trade-off, which we define as the accumulated average distance (AAD).
+네 계수를 최적화하려면 트레이드오프의 산정이 필수적이다. 계수 $\alpha$와 $\beta$는 HOL 블로킹 제거에 도움을 주지만, 막혀 있던 작업이 무기한 스케줄링되지 못하게 만들어 기아나 장기 지연으로 이어질 수도 있다. 이를 방지하려면 적절한 계수가 설정되어야 한다. 이에 각 작업의 누적 대기 시간을 요청 가속기 수로 묶어 트레이드오프로 산정하며, 이를 누적 평균 거리(accumulated average distance, AAD)로 정의한다.
 \begin{equation}
 AAD = \sum_{k=1}^8 \frac{(WT'_k - WT_k)}{2^{8-k}}
 \tag{7}
 \label{eq:07}
 \end{equation}
 
-Equation \eqref{eq:07} measures the weighted average difference between the waiting times before and after applying $\alpha$ and $\beta$. Let the original sum of the waiting times of the jobs grouped by the requested hardware accelerators count be denoted by $WT_1$, \dots, $WT_8$. 
+식 \eqref{eq:07}은 $\alpha$와 $\beta$ 적용 전후 대기 시간의 가중 평균 차이를 측정한다. 요청 하드웨어 가속기 수로 묶인 작업들의 원래 대기 시간 합을 $WT_1$, \dots, $WT_8$로 표기한다.
 
-After applying $\alpha$ and $\beta$, the updated waiting times are $WT'_1$, $WT'_2$, \dots, $WT'_8$. The distance between waiting times is calculated as the average accumulated distance. In addition, the distance is halved each time the number of requested accelerators decreases. 
+$\alpha$와 $\beta$를 적용한 후의 갱신된 대기 시간은 $WT'_1$, $WT'_2$, \dots, $WT'_8$이다. 대기 시간 간의 거리는 평균 누적 거리로 계산된다. 또한 요청 가속기 수가 하나 줄어들 때마다 거리는 절반이 된다.
 
-The accumulated maximum distance is the value selected from the waiting time differences. $w_t$ represents the set of waiting times for jobs based on the requested hardware-accelerator count. Therefore, $w'_t$ represents the set of maximum waiting times for each requested hardware accelerator count. 
+누적 최대 거리는 대기 시간 차이들 가운데 선택된 값이다. $w_t$는 요청 하드웨어 가속기 수 기준 작업 대기 시간들의 집합을 나타낸다. 따라서 $w'_t$는 각 요청 하드웨어 가속기 수별 최대 대기 시간들의 집합을 나타낸다.
 
-Equation \eqref{eq:08} shows the accumulated maximum distance (AMD).
+식 \eqref{eq:08}은 누적 최대 거리(accumulated maximum distance, AMD)를 보여준다.
 
 \begin{equation}
 AMD = \sum_{k=1}^8 \max \left( \frac{w'_t - w_t}{2^{8-k}} \right)
@@ -422,12 +474,12 @@ AMD = \sum_{k=1}^8 \max \left( \frac{w'_t - w_t}{2^{8-k}} \right)
 \vspace{1em}
 \end{equation}
 
-The computation of these metrics ensures that both the average and maximum deviations in task waiting times are considered, enforcing fairness in scheduling and preventing any significant performance deterioration owing to starvation or excessive waiting. 
+이 지표들의 계산은 작업 대기 시간의 평균 편차와 최대 편차가 모두 고려되도록 보장하여, 스케줄링의 공정성을 강제하고 기아나 과도한 대기로 인한 심각한 성능 저하를 방지한다.
 
-The preemptive task reallocation algorithm takes longer when dynamic programming is performed, indicating the additional time required compared to not using this algorithm. The trade-off of the preemptive task reallocation algorithm is measured using the algorithm execution time (AET).
+선점 작업 재배치 알고리즘은 동적 계획법이 수행될 때 시간이 더 소요되며, 이는 이 알고리즘을 사용하지 않을 때 대비 추가로 필요한 시간을 의미한다. 선점 작업 재배치 알고리즘의 트레이드오프는 알고리즘 실행 시간(algorithm execution time, AET)으로 측정한다.
 
 \subsection{Objective functions}
-The coefficients $\alpha$ and $\beta$ are adjusted to minimize the wall time, AAD, and AMD. To determine the optimal values of these two coefficients, a grid search over a range of $\alpha$ and $\beta$ values is performed. The wall time, AAD, and AMD are computed for each combination of $\alpha$ and $\beta$. All three metrics are normalized for the min–max scaler to ensure fair comparison across the metrics. An objective function is defined to aggregate the normalized values of the three. The objective function of the starvation-free algorithm is given by \eqref{eq:09}. The objective function has a simple formation. Hence, the minimum value is determined using the min–max scalar. $\delta$ and $\omega$ are calculated using the min–max scalar.
+계수 $\alpha$와 $\beta$는 wall time, AAD, AMD를 최소화하도록 조정된다. 이 두 계수의 최적값을 결정하기 위해 $\alpha$와 $\beta$ 값 범위에 대한 그리드 서치를 수행한다. $\alpha$와 $\beta$의 각 조합에 대해 wall time, AAD, AMD를 계산한다. 지표 간 공정한 비교를 위해 세 지표 모두 min--max 스케일러로 정규화한다. 세 정규화 값을 종합하는 목적 함수를 정의한다. 기아 방지 알고리즘의 목적 함수는 \eqref{eq:09}로 주어진다. 목적 함수는 단순한 형태이므로 min--max 스케일러로 최솟값을 결정한다. $\delta$와 $\omega$도 min--max 스케일러로 계산한다.
 
 \begin{equation}
 Obj_i^{sfa} = walltime_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
@@ -436,7 +488,14 @@ Obj_i^{sfa} = walltime_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \vspace{1em}
 \end{equation}
 
-The objective function for $\delta$ and $\omega$ aims to minimize both the wall time and overhead introduced by preemptive task reallocation. This is measured indirectly using the dynamic programming execution time (ms) (DPE). In addition, this algorithm aims to maximize preemption gain. The preemption gain is the measured gap between the original and algorithm-applied wall times. It marks as PMG. Equation \eqref{eq:10} represents the objective function for $\delta$ and $\omega$.
+$\delta$와 $\omega$의 목적 함수는 wall time과 선점 작업 재배치가 유발하는 오버헤드를 모두 최소화하는 것을 목표로 한다. 오버헤드는 동적 계획법 실행 시간(ms)(DPE)으로 간접 측정한다. 또한 이 알고리즘은 선점 이득(preemption gain)의 극대화를 목표로 한다. 선점 이득은 원래의 wall time과 알고리즘 적용 후 wall time 사이의 측정된 격차이며, PMG로 표기한다. 식 \eqref{eq:10}은 $\delta$와 $\omega$의 목적 함수를 나타낸다.
+
+\subsection{From fixed coefficients to zero-knob adaptation}
+앞선 분석은 표 \ref{tab:02}에서 보듯 최적 계수가 워크로드 분포에 따라 크게 달라짐을 보여준다. 이는 운영 환경에서 두 가지 비용을 부과한다. 첫째, 워크로드마다 사전 탐색이 필요하다 --- 본 연구의 그리드 서치는 240개 조합에 대해 약 8.3일의 측정을 요했다. 둘째, 더 근본적으로, 한 번 고정한 계수는 워크로드의 시간 스케일이 바뀌면 의도한 균형점을 잃는다.
+
+우리는 이 드리프트(drift)를 실제 쿠버네티스 실측으로 확인했다. 동일한 1,000개 작업 트레이스를 시간 축으로 두 배 압축하여 부하를 높였을 때(peak 약 5.4배), $\kappa=3000$에서 튜닝한 고정 SFQA 계수는 나이 단위가 새로운 대기 시간 스케일을 따라가지 못해 과보정되었고, 중앙값·90퍼센타일 대기가 sfqa-auto의 약 1.8배로 악화되었다. 반면 sfqa-auto는 동일한 코드와 설정으로 부하에 적응하여 중앙값·90퍼센타일 대기를 45\% 낮게 유지했다(\ref{sfqa-auto}절). 이는 \eqref{eq:sigma}의 $\sigma^*(t)$가 측정된 부하에서 유도되어 모든 양이 무차원이기 때문이며, 따라서 튜닝 비용은 0이다. 즉 \ref{tab:02}의 ``계수가 워크로드 의존적''이라는 발견은 sfqa-auto의 필요성에 대한 직접적 증거다.
+
+남은 소수의 내부 상수에 대해서는 별도의 민감도 분석으로 견고성을 확인했다. C++ 시뮬레이터로 12개 구성을 스윕한 결과, 자원 적합도 페널티(0.05--0.3)와 우선순위 밑(1.5--4)은 makespan 변동이 2\% 이내로 둔감했고, 큐 재정렬 창 $m$은 $m=1$에서만 +8.9\%로 악화되고 $m\ge 2$에서는 1.4\% 이내였다(본 연구는 안전값 $m=3$ 채택). 이는 이 상수들이 임의로 선택된 값이 아니라 넓은 범위에서 안정적임을 보여준다.
 
 \begin{equation}
 Obj_i^{ptr} = walltime_i^{norm} + DPE_i^{norm} + PMG_i^{norm}
@@ -446,31 +505,31 @@ Obj_i^{ptr} = walltime_i^{norm} + DPE_i^{norm} + PMG_i^{norm}
 \end{equation}
 
 \section{Experimental Evaluation}
-Queue adjustment and fragmentation curation are simple, flexible, and powerful mechanisms. To the best of our knowledge, no existing method directly addresses HOL blocking in the job-waiting queue and fragmentation within the servers. To validate the flexibility and performance of the queue adjustment and fragmentation curation, we identified the optimized coefficients for various job distributions and evaluated the improvements in scheduling performance using these coefficients. To identify the optimal coefficients for various job distributions, we simulated the accelerator requests and job execution times using eight distributions: normal, exponential, log-normal, gamma, beta, Weibull minimum, uniform, and Poisson. All generated job logs contained 1,000 jobs. The ranges of the coefficients in the search space are listed in Table. \ref{tab:01} However, only the range for $\omega$ was modified to span from 20 to 200 in increments of 20.
+큐 조정과 단편화 관리는 단순하고 유연하며 강력한 메커니즘이다. 우리가 아는 한, 작업 대기 큐의 HOL 블로킹과 서버 내부의 단편화를 직접 다루는 기존 방법은 없다. 큐 조정과 단편화 관리의 유연성과 성능을 검증하기 위해, 다양한 작업 분포에 대해 최적화된 계수를 식별하고 그 계수를 사용했을 때의 스케줄링 성능 개선을 평가했다. 다양한 작업 분포의 최적 계수를 식별하기 위해 정규, 지수, 로그 정규, 감마, 베타, Weibull minimum, 균등, 푸아송의 8개 분포로 가속기 요청과 작업 실행 시간을 시뮬레이션했다. 생성된 모든 작업 로그는 1,000개의 작업을 포함한다. 탐색 공간의 계수 범위는 표 \ref{tab:01}에 정리되어 있다. 다만 $\omega$의 범위만 20에서 200까지 20 간격으로 수정했다.
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_10.png}}
-\caption{Augmented job log characteristics.}
+\caption{증강 작업 로그의 특성.}
 \label{fig:10}
 \end{figure}
 
-To measure the performance improvement, we used two types of job logs: actual logs from Section III and augmented job logs based on the actual logs. These logs contained 368 and 3,001 job entries, respectively. The evaluation used two job logs to compare the results before and after applying queue adjustment and fragmentation curation. The four coefficients used were identical to those in the search space above. The characteristics of the augmented job logs are presented in Fig. \ref{fig:10}. It includes the requested number of GPUs and wall time for each job.
+성능 개선을 측정하기 위해 두 종류의 작업 로그를 사용했다. III절의 실제 로그와 그것을 기반으로 한 증강(augmented) 작업 로그로, 각각 368개와 3,001개의 작업 항목을 포함한다. 평가는 두 작업 로그를 사용하여 큐 조정·단편화 관리 적용 전후의 결과를 비교했다. 사용된 네 계수는 위의 탐색 공간과 동일하다. 증강 작업 로그의 특성은 그림 \ref{fig:10}에 제시되어 있으며, 각 작업의 요청 GPU 수와 wall time을 포함한다.
 
-A simulator was employed to determine the optimal coefficients and compare the performance of the mechanisms. The simulations were executed on a Windows 11 system with an Intel Core Ultra 7 155H 3.80 GHz processor and 32GB of RAM, which was developed in C++ using Visual Studio Community 2022.
+최적 계수의 결정과 메커니즘 간 성능 비교에는 시뮬레이터를 사용했다. 시뮬레이션은 Intel Core Ultra 7 155H 3.80GHz 프로세서와 32GB RAM을 갖춘 Windows 11 시스템에서 실행되었으며, 시뮬레이터는 Visual Studio Community 2022로 C++로 개발되었다.
 
 \subsection{Optimal value of coefficient $\alpha$, $\beta$, $\omega$, and $\delta$}
 \begin{figure}[htb!]
 %\begin{figure}[H]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_11.png}}
-\caption{Eight types of job distribution characteristics.}
+\caption{8가지 작업 분포의 특성.}
 \label{fig:11}
 \end{figure}
-The simulation results for the eight types of distribution job logs represent the optimal value of each coefficient. Fig. \ref{fig:11}. presents the characteristics of each job log. Table \ref{tab:02}. shows the optimal values of the coefficients $\alpha$, $\beta$, $\omega$, and $\delta$ for each distribution and the time reduction achieved by the algorithm. Additionally, Table \ref{tab:02} shows that the optimal coefficients vary according to job-log characteristics. This suggests that rather than using fixed coefficients, it is beneficial to adjust them according to the specific characteristics of the workload.
+8가지 분포 작업 로그에 대한 시뮬레이션 결과는 각 계수의 최적값을 나타낸다. 그림 \ref{fig:11}은 각 작업 로그의 특성을 보여준다. 표 \ref{tab:02}는 분포별 계수 $\alpha$, $\beta$, $\omega$, $\delta$의 최적값과 알고리즘이 달성한 시간 단축을 보여준다. 아울러 표 \ref{tab:02}는 최적 계수가 작업 로그의 특성에 따라 달라짐을 보여준다. 이는 고정된 계수를 쓰기보다 워크로드의 구체적 특성에 맞춰 계수를 조정하는 것이 유리함을 시사한다.
 
-The results demonstrate that queue adjustment and fragmentation curation operate effectively across various types of workloads. Furthermore, it highlights the importance of fine-tuning the coefficients to match the specific characteristics of each workload.
+이 결과는 큐 조정과 단편화 관리가 다양한 유형의 워크로드 전반에서 효과적으로 동작함을 입증한다. 나아가 각 워크로드의 특성에 맞춘 계수 미세 조정의 중요성을 부각한다.
 
 \begin{table}[htb!]
 \centering
-\caption{Optimal Value of Coefficients}
+\caption{계수의 최적값}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Distribution methodology} & \textbf{$\alpha$} & \textbf{$\beta$} & \textbf{$\omega$} & \textbf{$\delta$} \\ \toprule
@@ -487,11 +546,11 @@ Poisson &0.22 &90\% & 100 & 300k \\ \bottomrule
 \end{table}
 
 \subsection{Evaluation of scheduling improvement}
-The previous optimal search method for coefficients allowed us to define the coefficients for both the actual and augmented job logs. The coefficients are listed in Table \ref{tab:03} and Figs. \ref{fig:12}(A) and \ref{fig:12}(B) illustrate the effects of the optimal coefficients on wall time, the trade-off metric, the allocation rate, and the utilization rate when simulating using both job logs. The X-axis represents the time at which one unit corresponds to 10 min. GPU server pool allocation and total utilization were also obtained. In Figs. \ref{fig:12}(C) and \ref{fig:12}(D), both the allocation rate and utilization of the actual job log shift to the right, indicating a higher allocation rate and utilization.
+앞선 계수 최적 탐색 방법으로 실제 작업 로그와 증강 작업 로그 각각의 계수를 정할 수 있었다. 계수는 표 \ref{tab:03}에 정리되어 있으며, 그림 \ref{fig:12}(A)와 \ref{fig:12}(B)는 두 작업 로그로 시뮬레이션했을 때 최적 계수가 wall time, 트레이드오프 지표, 할당률, 사용률에 미치는 효과를 보여준다. X축은 시간을 나타내며 한 단위는 10분에 해당한다. GPU 서버 풀 할당률과 총 사용률도 함께 얻었다. 그림 \ref{fig:12}(C)와 \ref{fig:12}(D)에서 실제 작업 로그의 할당률과 사용률 모두 오른쪽으로 이동하는데, 이는 더 높은 할당률과 사용률을 나타낸다.
 
 \begin{table}[htb!]
 \centering
-\caption{Optimal Coefficient Values for Job Log}
+\caption{작업 로그별 최적 계수 값}
 \begin{tabular}{@{}ccc@{}}
 \toprule
 \textbf{Coefficient} & \textbf{Actual job log} & \textbf{Augmented job log} \\ \toprule
@@ -505,71 +564,143 @@ $\delta$ &200k &300k \\ \bottomrule
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_12.png}}
-\caption{Simulation results comparison for two job log.}
+\caption{두 작업 로그에 대한 시뮬레이션 결과 비교.}
 \label{fig:12}
 \end{figure}
 
-Table \ref{tab:04} lists the wall times for each algorithm combination. The simulation results for the actual and augmented job logs exhibited different behaviors. Before applying the queue adjustment and fragmentation curation wall, the times of the actual job log and augmented job were 165 days, 2 h, and 1 min, and 1,547 days, 6 h, and 1 min, respectively. After applying the algorithm, the wall times of the two job logs were reduced by approximately 13 and 80 days, respectively. The actual job log achieved a performance gain of 7.8 \% during the wall time. A performance gain of 14.98 \% was achieved for the archived augmented job logs. The results are presented in Fig. \ref{fig:12}(A), Fig. \ref{fig:12}(B), and Table \ref{tab:04}. An augmented job log was generated based on the actual job log. The first part of the augmented job log consists of 368 jobs identical to those in the actual job log. Subsequently, augmentation was performed to reflect the behavior of the actual job logs. As a result of this augmentation, the dominance of the job group requiring four GPUs diminished. Consequently, the augmented job log was approximately 8.1 times larger than the actual job log. A large number of logs indicates that fragmentation in the GPU server pool intensifies as the workload accumulates over time.
+표 \ref{tab:04}는 알고리즘 조합별 wall time을 정리한 것이다. 실제 작업 로그와 증강 작업 로그의 시뮬레이션 결과는 서로 다른 거동을 보였다. 큐 조정·단편화 관리 적용 전 실제 작업 로그와 증강 작업 로그의 wall time은 각각 165일 2시간 1분, 1,547일 6시간 1분이었다. 알고리즘 적용 후 두 작업 로그의 wall time은 각각 약 13일과 80일 단축되었다. 실제 작업 로그는 wall time에서 7.8\%의 성능 향상을 달성했고, 증강 작업 로그에서는 14.98\%의 성능 향상이 달성되었다. 결과는 그림 \ref{fig:12}(A), \ref{fig:12}(B), 표 \ref{tab:04}에 제시되어 있다. 증강 작업 로그는 실제 작업 로그를 기반으로 생성되었다. 증강 작업 로그의 첫 부분은 실제 작업 로그와 동일한 368개의 작업으로 구성되고, 이후 실제 작업 로그의 거동을 반영하도록 증강이 수행되었다. 이 증강의 결과로 4 GPU를 요구하는 작업 그룹의 지배력이 줄어들었다. 그 결과 증강 작업 로그는 실제 작업 로그보다 약 8.1배 커졌다. 로그가 많다는 것은 워크로드가 시간에 걸쳐 누적될수록 GPU 서버 풀의 단편화가 심해짐을 의미한다.
 
 \begin{table}[htb!]
 \centering
-\caption{Walltime of Simulation Results}
+\caption{시뮬레이션 결과의 Wall Time}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Applied Algorithm} & \textbf{Actual job log} & \textbf{Augmented job log} \\ \toprule
-Normal & 165d 02h 01m & 1,547d 06h 01m \\ 
-All algorithms & 152d 02h 20m & 1,464d 08h 07m \\ 
-Starvation-free algorithm only & 151d 01h 38m & 1,464d 06h 22m \\
-Preemptive task reallocation \\ algorithm only & 165d 10h 01m & 1,545d 17h 03m \\ \bottomrule
+기본(미적용) & 165d 02h 01m & 1,547d 06h 01m \\
+두 알고리즘 모두 & 152d 02h 20m & 1,464d 08h 07m \\
+기아 방지 알고리즘만 & 151d 01h 38m & 1,464d 06h 22m \\
+선점 작업 재배치 알고리즘만 & 165d 10h 01m & 1,545d 17h 03m \\ \bottomrule
 \end{tabular}
 \label{tab:04}
 \end{table}
 
-Table \ref{tab:04} shows the differences in wall time when both algorithms are applied together compared to when each algorithm is applied individually. The reduction in the overall job processing time when applying both algorithms or the starvation-free algorithm alone is consistent for both actual and augmented job logs. However, when only the preemptive task reallocation algorithm is applied, the wall time for the actual job log increased compared to when no algorithm was applied. This is because, with fewer jobs, defragmentation can exacerbate HOL blocking.
+표 \ref{tab:04}는 두 알고리즘을 함께 적용했을 때와 각 알고리즘을 개별 적용했을 때의 wall time 차이를 보여준다. 두 알고리즘 모두 또는 기아 방지 알고리즘만 적용했을 때의 전체 작업 처리 시간 단축은 실제·증강 작업 로그 모두에서 일관되게 나타난다. 그러나 선점 작업 재배치 알고리즘만 적용한 경우, 실제 작업 로그의 wall time은 알고리즘 미적용 시보다 오히려 증가했다. 작업 수가 적을 때는 단편화 해소가 HOL 블로킹을 악화시킬 수 있기 때문이다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_13.png}}
-\caption{Allocation rate comparison of algorithm combination.}
+\caption{알고리즘 조합별 할당률 비교.}
 \label{fig:13}
 \end{figure}
 
-However, from the perspective of the allocation rate, applying each algorithm individually to the actual job log achieves a higher allocation rate than applying no algorithm. This is shown in Fig. \ref{fig:13}(A). Similarly, for the augmented job log, both the individual and combined algorithms achieve higher allocation rates, as shown in Fig. \ref{fig:13}(B). In Fig. \ref{fig:13}(A), the application of the preemptive task reallocation algorithm, denoted as Optimized(P), shows a slightly higher allocation rate, indicated by a slight shift to the right compared to the normal case. When only the starvation-free algorithm or both algorithms were applied, the allocation rate increased significantly, denoted as Optimized(S). In addition, when both algorithms were applied, a marginal shift to the right was observed, which was denoted as Optimized. The effectiveness of the algorithms is even more evident in the augmented job log simulation results shown in Fig. \ref{fig:13}(B), where higher allocation rates are observed, even when only the starvation-free algorithm is applied.
+그러나 할당률 관점에서는, 실제 작업 로그에 각 알고리즘을 개별 적용하는 것이 알고리즘 미적용보다 높은 할당률을 달성한다. 이는 그림 \ref{fig:13}(A)에 나타나 있다. 마찬가지로 증강 작업 로그에서도 그림 \ref{fig:13}(B)에서 보듯 개별 적용과 결합 적용 모두 더 높은 할당률을 달성한다. 그림 \ref{fig:13}(A)에서 선점 작업 재배치 알고리즘의 적용(Optimized(P)로 표기)은 기본 대비 오른쪽으로 약간 이동한, 소폭 높은 할당률을 보인다. 기아 방지 알고리즘만 또는 두 알고리즘을 함께 적용했을 때는 할당률이 크게 증가했다(Optimized(S)로 표기). 또한 두 알고리즘을 함께 적용했을 때는 오른쪽으로의 미세한 추가 이동이 관찰되었다(Optimized로 표기). 알고리즘의 효과는 그림 \ref{fig:13}(B)의 증강 작업 로그 시뮬레이션 결과에서 더욱 뚜렷한데, 기아 방지 알고리즘만 적용해도 더 높은 할당률이 관찰된다.
 
 %\begin{figure}[htb!]
 \begin{figure}[H]
 \centerline{\includegraphics[width=13cm]{Pic/Fig_14.png}}
-\caption{Allocation rate comparison of various scheduling methodologies.}
+\caption{다양한 스케줄링 방법론의 할당률 비교.}
 \label{fig:14}
 \end{figure}
 
-Queue adjustment and fragmentation curation handle the job-waiting queue and GPU server pool directly. Therefore, this is an agonistic mechanism against the scheduler methodologies. Previous evaluations used the most-allocated scheduler. Table \ref{tab:05} lists the queue adjustment and fragmentation curation archiving performance gains for the other three schedulers. An augmented job log was used; therefore, the same coefficients used in the previous simulations used an augmented job log.
+큐 조정과 단편화 관리는 작업 대기 큐와 GPU 서버 풀을 직접 다룬다. 따라서 이는 스케줄러 방법론에 구애받지 않는(agnostic) 메커니즘이다. 앞선 평가에서는 most-allocated 스케줄러를 사용했다. 표 \ref{tab:05}는 다른 세 스케줄러에 대해 큐 조정과 단편화 관리가 달성한 성능 향상을 정리한 것이다. 증강 작업 로그를 사용했으므로, 앞선 증강 작업 로그 시뮬레이션에서 사용한 것과 동일한 계수를 사용했다.
 
 \begin{table}[htb!]
 \centering
-\caption{Other Scheduler Methodology Applying Results}
+\caption{다른 스케줄러 방법론 적용 결과}
 \begin{tabular}{@{}p{1cm}ccc@{}}
 \toprule
  & \textbf{Compact} & \textbf{Round robin} & \textbf{MCTS} \\ \toprule
-Normal & 1,700d 11h 01m & 1,588d 18h 01m & 1,605d 08h 01m\\ 
-Optimal & 1,462d 20h 30m & 1,467d 08h 27m & 1,462d 11h 31m \\ 
-Gain$^{\mathrm{a}}$ & 238d (14\%) & 121d (7.6\%) & 143d (8.9\%) \\ \bottomrule
-&&&$^{\mathrm{a}}$Days Count Only
+기본(미적용) & 1,700d 11h 01m & 1,588d 18h 01m & 1,605d 08h 01m\\
+최적 계수 적용 & 1,462d 20h 30m & 1,467d 08h 27m & 1,462d 11h 31m \\
+이득$^{\mathrm{a}}$ & 238d (14\%) & 121d (7.6\%) & 143d (8.9\%) \\ \bottomrule
+&&&$^{\mathrm{a}}$일수만 집계
 \end{tabular}
 \label{tab:05}
 \end{table}
-Compact and round robin scheduling methodologies are simple. The MCTS-Monte Carlo Tree Search\cite{b11} is a search method based on randomness. Recently, several studies have introduced MCTS for resource scheduling, such as Hofmann1 C\cite{b12}. and Kung H\cite{b13}. In the simulations using MCTS in this study, the most allocated method was employed. A comparison of allocation rates for each scheduling methodology is presented in Fig. \ref{fig:14}. As shown in the figure, the optimized coefficients consistently shift the allocation rate distribution toward higher utilization across all three scheduling methodologies—Compact, Round Robin, and MCTS—demonstrating the scheduler-agnostic nature of the queue adjustment and fragmentation curation mechanisms. Table \ref{tab:05} quantitatively confirms this improvement. The wall time was reduced by approximately 14\%, 7.6\%, and 8.9\% for the Compact, Round Robin, and MCTS schedulers, respectively. These results indicate that the proposed optimization not only improves GPU allocation efficiency but also provides stable performance gains, regardless of the underlying scheduling strategy.
+Compact와 라운드 로빈은 단순한 스케줄링 방법론이다. MCTS(Monte Carlo Tree Search)\cite{b11}는 무작위성에 기반한 탐색 방법이다. 최근 Hofmann C\cite{b12}, Kung H\cite{b13} 등 자원 스케줄링에 MCTS를 도입한 연구들이 등장했다. 본 연구의 MCTS 시뮬레이션에서는 most-allocated 방식을 함께 사용했다. 각 스케줄링 방법론의 할당률 비교는 그림 \ref{fig:14}에 제시되어 있다. 그림에서 보듯, 최적화된 계수는 Compact, 라운드 로빈, MCTS 세 스케줄링 방법론 모두에서 할당률 분포를 일관되게 더 높은 활용 쪽으로 이동시키며, 이는 큐 조정과 단편화 관리 메커니즘의 스케줄러 비종속적(scheduler-agnostic) 성질을 입증한다. 표 \ref{tab:05}는 이 개선을 정량적으로 확인해 준다. wall time은 Compact, 라운드 로빈, MCTS 스케줄러에서 각각 약 14\%, 7.6\%, 8.9\% 단축되었다. 이 결과는 제안된 최적화가 GPU 할당 효율을 개선할 뿐 아니라, 기반 스케줄링 전략과 무관하게 안정적인 성능 이득을 제공함을 보여준다.
+
+\subsection{Real-cluster measurement on Kubernetes}\label{eval:k8s}
+앞선 시뮬레이션 결과를 실제 시스템에서 검증하기 위해, 우리는 단일 노드 쿠버네티스 클러스터(NVIDIA B200 8장, k8s v1.31)에서 실제 kube-scheduler로 작업을 스케줄링하고 큐잉 지연을 직접 측정했다. 워크로드는 Philly 트레이스의 층화 표본(seed=42 재현)을 GPU 점유 스텁(holder)으로 재생한 것으로, 점유와 스케줄링은 실제 쿠버네티스가 수행하고 연산만 대체했다. 정책은 게이트(PodSchedulingGates) 계층에서 구현되어 코어 스케줄러를 교체하지 않는다. 비교 대상은 기본 FIFO, SJF, 프로덕션 표준 Kueue, 정보 우위 베이스라인 EASY 백필링, 고정 계수 SFQA, 그리고 무튜닝 sfqa-auto다.
+
+표 \ref{tab:k8s}는 8개 정책의 큐잉 지연 분포를 보여준다. 기본 FIFO는 중앙값(p50)이 가장 작지만 최악 대기(기아)가 2,450초로 가장 크다. SFQA는 이 최악 대기를 782초로 줄여 FIFO 대비 68\%, 순수 정책 효과를 분리하는 게이트-FIFO 통제군(924초) 대비 15\% 개선했다. 무튜닝 sfqa-auto($\tau$=10)는 어떤 사전 탐색도 없이 최악 대기 768초를 달성하여 고정 SFQA(782초)를 능가했고, 프로덕션 표준 Kueue(869초) 대비 12\% 낮았다. 그림 \ref{fig:pareto}는 이 결과가 (p50, max) 평면에서 Pareto 프런티어를 형성함을 보여준다 --- 기본 FIFO에서 Kueue, sfqa-auto, EASY로 갈수록 최악 대기를 줄이는 대신 중앙값을 내주는 구조이며, 이는 \S3에서 논의한 보존 법칙과 일치한다. 다만 EASY는 본 실험에서 duration 라벨이 실제 실행 시간과 정확히 일치(추정 오차 0)하는 정보 우위 조건이므로, 사용자 추정 오차가 존재하는 실제 환경에서는 도달 불가능한 상한선으로 해석해야 한다.
+
+\begin{table}[htb!]
+\centering
+\caption{쿠버네티스 실측 큐잉 지연 (Philly 1000 층화, peak 3.6$\times$, 단위: 초)}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{정책} & \textbf{p50} & \textbf{p90} & \textbf{max(기아)} \\ \toprule
+default-FIFO & \textbf{17} & 275 & 2450 \\
+SJF & 33 & 461 & 2265 \\
+gate-FIFO (통제군) & 189 & 484 & 924 \\
+Kueue & 195 & \textbf{396} & 869 \\
+SFQA (고정 계수) & 243 & 589 & 782 \\
+\textbf{sfqa-auto} ($\tau$=10) & 290 & 612 & \textbf{768} \\
+EASY (완벽 추정 가정$^{\mathrm{a}}$) & 419 & 639 & \textbf{691} \\ \bottomrule
+&&&$^{\mathrm{a}}$도달 불가 상한선
+\end{tabular}
+\label{tab:k8s}
+\end{table}
+
+\begin{figure}[htb!]
+\centerline{\includegraphics[width=10cm]{Pic/Fig_15.png}}
+\caption{쿠버네티스 실측 (p50, max) Pareto 트레이드오프. 최악 대기를 지킬수록 중앙값을 내주는 구조.}
+\label{fig:pareto}
+\end{figure}
+
+정책 효과가 부하 영역에 따라 달라짐도 관측했다. 저부하(peak 약 3.2배)에서는 큐가 깊게 쌓이지 않아 Kueue가 모든 지표에서 앞섰다. 그러나 임계 부하(평균 1.01배, peak 8.9배, Philly 2000 층화)에서는 그림 \ref{fig:c48}와 같이 sfqa-auto가 분포의 약 97\%를 지배했다 --- 중앙값 대기 340초로 EASY(1,201초)의 1/3.5, Kueue(1,838초)의 1/5.4 수준이며, 꼬리는 상위 3\% 부근에서만 EASY와 교차했다. 즉 경합이 깊어질수록 보호 정책의 가치가 커지고, sfqa-auto가 그 균형점을 차지한다.
+
+\begin{figure}[htb!]
+\centerline{\includegraphics[width=10cm]{Pic/Fig_16.png}}
+\caption{임계 부하(Philly-2K, 평균 1.01$\times$) 백분위별 큐잉 지연. sfqa-auto가 분포의 몸통을 지배한다.}
+\label{fig:c48}
+\end{figure}
+
+\subsection{Scale generalization via discrete-event simulation}\label{eval:sim}
+실측은 8 GPU 규모로 제한되므로, 우리는 실측 정책 로직과 동일한 코드 경로를 사용하는 이산 사건 시뮬레이터를 개발하여 Philly 트레이스 전체(약 111k 작업)를 256, 512, 1024 GPU 클러스터(단일·이종 구성)에서 평가했다. 시뮬레이터에는 \S\ref{eval:overhead}에서 실측한 작업당 고정 오버헤드를 주입했다. 비교에는 앞선 정책에 더해 학술 최신 기법인 Lucid와 Sia를 충실히 구현해 포함했다.
+
+그림 \ref{fig:scale}와 표 \ref{tab:sim}이 결과를 요약한다. sfqa-auto는 FIFO 대비 중앙값 대기를 50--61\% 단축하면서 하위 1\% 순서 공정성(p1)을 50--76 수준으로 유지하여, ``빠르면서 공정한''을 동시에 달성하는 유일한 경량 정책이었다. 대조적으로 SJF·Themis·LAS는 중앙값 대기는 최소였으나 이종 클러스터에서 하위 1\% 공정성이 0으로 붕괴했다(완전 기아). Lucid는 작은 작업을 즉시 배치해 중앙값이 극히 작았으나 꼬리 대기가 컸다. Sia는 이종 클러스터에서 처리량 중심 지표가 탁월했으나, ILP 평가가 부하에 비례해 폭증하여 256 GPU 고부하에서 스케줄링 계산이 약 2시간 --- 경량 정책의 200배 이상 --- 에 달했다. 부하·이질성이 심할수록 sfqa-auto의 상대적 이득이 커지는 경향은 실측의 부하 의존성과 일치한다.
+
+특히 배치 베이스라인 FGD는 SQUAD의 SFQA와 직교 축의 대조를 선명하게 보여준다. FGD는 단편화 인지 배치만으로 중앙값 대기를 가장 크게 줄였으나(FIFO 대비 54--92\%, 표 \ref{tab:sim}에서 512 단일 113K로 sfqa-auto의 605K보다도 작음), 큐는 FCFS로 유지하므로 과부하에서 하위 1\% 공정성이 0으로 붕괴했다(512 이종 p1=0). 즉 FGD는 ``빠르지만 굶기는'' 효율 축에, sfqa-auto는 ``빠르면서 공정한'' 균형 축에 위치한다. 이는 단편화라는 동일 문제를 배치(FGD)와 큐 우선순위(SFQA)라는 서로 독립적인 축에서 공격할 수 있음을 실증하며, 두 기법을 결합(단편화 인지 배치 + 기아 방지 큐)하는 것이 자연스러운 후속 방향임을 시사한다. (이종 구성의 노드 타입 혼합은 b200/h100/a100 균등 3분할로 정의했으며, FIFO 기준 다른 베이스라인 측정값과 약 0.8\% 이내로 일치한다.)
+
+\begin{figure}[htb!]
+\centerline{\includegraphics[width=13cm]{Pic/Fig_17.png}}
+\caption{111k 작업 시뮬레이션. (좌) FIFO 대비 sfqa-auto의 중앙값 대기 단축률, (우) 하위 1\% 순서 공정성(0=완전 기아).}
+\label{fig:scale}
+\end{figure}
+
+\begin{table}[htb!]
+\centering
+\caption{512 GPU 시뮬레이션 발췌 (Philly 111k): 중앙값 대기 / 하위 1\% 공정성}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{정책} & \textbf{단일 (1.8$\times$)} & \textbf{이종 (1.8$\times$)} \\ \toprule
+FIFO & 1.22M / 100 & 3.52M / 100 \\
+SJF & \textbf{643} / 64 & 1066 / \textbf{0} \\
+Themis & 1986 / 21 & 3112 / \textbf{0} \\
+FGD & 113K / 31 & 521K / \textbf{0} \\
+\textbf{sfqa-auto} & 605K / \textbf{54} & 1.77M / \textbf{50} \\
+Sia & 1.07M / 63$^{\mathrm{a}}$ & \textbf{200} / 96$^{\mathrm{a}}$ \\ \bottomrule
+&&$^{\mathrm{a}}$계산 비용 200$\times$
+\end{tabular}
+\label{tab:sim}
+\end{table}
+
+\subsection{Measured reallocation and lifecycle overhead}\label{eval:overhead}
+시뮬레이션의 충실도를 보장하고 PTR의 비용을 정량화하기 위해, 우리는 실제 클러스터에서 두 종류의 오버헤드를 측정했다. 첫째, 쿠버네티스 작업 수명 주기 오버헤드는 작업당 약 4--7초로 측정되었다(스케줄링 0.5초 + 기동 1.5--3.5초 + 종료 2.5초). 둘째, PTR 이주 다운타임은 식 \eqref{eq:downtime}의 모델에 따라 모델 크기별로 측정되어, 1B 약 17초, 7B 약 116초, 13B 약 208초였다. 이 측정값들을 \S\ref{eval:sim}의 시뮬레이터에 주입함으로써 실측과 시뮬레이션을 정합시켰으며, 동시에 PTR의 손익 판정(단편화 해소 이득 대 $\sum D$)에 필요한 정량적 근거를 확보했다.
 
 \section{Conclusions and Future Works}\label{conclu}
 
-This study proposes a queue adjustment and fragmentation curation mechanism to maintain a high allocation rate in GPU server pools. Unlike conventional approaches used by general GPU schedulers, this mechanism reduces the occurrence of HOL blocking, which degrades the scheduling efficiency and eliminates fragmentation in GPU server pools, thereby enhancing the efficiency of various schedulers. Comprising the starvation-free algorithm, which addresses HOL blocking, and the preemptive task reallocation algorithm for defragmentation, queue adjustment, and fragmentation curation the wall time was reduced by 7.8\% for the actual job log and 4.9\% for the augmented job log.
+본 연구는 GPU 서버 풀에서 HOL 블로킹으로 인한 기아를 해소하기 위한 전처리 메커니즘 SQUAD를 제안하고, 이를 단일 시뮬레이터가 아닌 세 계층 --- 실제 쿠버네티스 클러스터 실측, 111k 작업 규모 시뮬레이션, 실측 오버헤드 보정 --- 으로 평가했다. 일반적인 GPU 스케줄러가 사용하는 종래의 접근법과 달리, SQUAD는 코어 스케줄링 정책을 그대로 유지한 채 HOL 블로킹과 단편화를 해소하여 다양한 스케줄러의 효율을 높인다. 큐 조정과 단편화 관리는 most-allocated, compact, 라운드 로빈, MCTS 스케줄러와 함께 적용했을 때 각각 약 14.98\%, 14\%, 7.6\%, 8.9\%의 wall time 단축을 보여 스케줄러 비종속성을 입증했다.
 
-In addition, this study precisely defines the trade-offs introduced by these two algorithms and proposes methods to measure them. To balance the trade-offs and performance gains, the coefficients $\alpha$, $\beta$, $\omega$, and $\delta$ were defined and calculated. The coefficients were derived not only for the job logs used in the experiments but also for various probability distributions, demonstrating the versatility of the proposed mechanism. Queue adjustment and fragmentation curation mechanisms demonstrated wall time reductions of 4.9\%, 14\%, 7.6\%, and 8.9\% when applied alongside scheduling methods, such as most-allocated, compact, round robin, and MCTS, respectively. This effectiveness is attributed to the scheduler-neutral operation of the mechanism. This mechanism remains unaffected by the specific scheduling method used, which directly adjusts the job queue and server states.
+기아 방지 알고리즘(SFQA)은 실제 kube-scheduler 환경에서 기본 FIFO 대비 최악 대기 시간(기아)을 68\% 단축했다. 나아가 큐잉 이론에 근거해 계수를 제거한 무튜닝 변형 sfqa-auto는 어떤 사전 탐색도 없이 고정 계수판을 능가했으며($\sigma^*=1/(1-\rho)$로 부하에 적응), 부하가 두 배로 변해도 동일 설정으로 균형점을 유지했다 --- 같은 조건에서 고정 계수판은 균형점을 잃었다. 111k 규모 시뮬레이션에서도 sfqa-auto는 FIFO 대비 중앙값 대기를 50--61\% 단축하면서 공정성을 유지하는 유일한 경량 정책이었다. 또한 선점 작업 재배치(PTR)의 이주 다운타임을 모델 크기별로 실측하여(7B 약 116초), 단편화 해소의 이득과 비용을 정량적으로 비교할 근거를 확보했다.
 
-However, identifying the optimal coefficients relies on a posterior approach involving numerous iterations, similar to hyperparameter tuning in deep learning. Although this method is suitable for research purposes, it has limitations in real-world scenarios, where the coefficients must be precomputed to align with the workload characteristics. To address this limitation, future studies should focus on dynamically calculating the coefficients in real time to determine and apply the most suitable coefficients in the current context. Given that these algorithms enable the precise calculation of costs and rewards, the application of reinforcement learning in real-time scenarios is a promising direction for improvement.
+기존의 SFQA는 최적 계수를 딥러닝의 하이퍼파라미터 튜닝처럼 사후(posterior) 반복 탐색으로 찾아야 한다는 한계가 있었다. 본 연구의 핵심 진전은 바로 이 한계를 sfqa-auto로 해소한 것이다 --- 계수를 사전에 계산해 두는 대신, 측정된 부하로부터 공정성 임계를 실시간으로 유도함으로써 워크로드 변화에 무튜닝으로 적응한다.
+
+다만 sfqa-auto는 큐 순서만을 조정하므로, 백로그가 얕은 일부 상황에서는 기아 작업을 상위로 승급시켜도 작은 작업에 자리를 추월당할 수 있음을 실측에서 관측했다. 이는 향후 연구에서 감지(무튜닝 긴급도)와 자원 예약(EASY식 자리 잠금, 단 duration 추정 불요)을 결합하여 해소할 계획이다. 그 밖의 향후 과제로는 H100 다중 노드 및 이종(B200+H100) 클러스터로의 확장과 실측↔시뮬레이션 교차 검증, 실제 학습 워크로드에서의 PTR 손익 실증이 있다.
 
 \section*{Declarations}
 \begin{itemize}
-\item The authors did not receive support from any organization for the submitted work.
+\item 저자들은 제출된 연구에 대해 어떠한 기관의 지원도 받지 않았다.
 \end{itemize}
 
 %%===========================================================================================%%
