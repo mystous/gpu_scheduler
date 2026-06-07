@@ -230,9 +230,58 @@ class Kueue(Policy):
         return cand_idx                                        # 도착순(engine 배치 루프가 backfill)
 
 
+# ── FGD: Fragmentation Gradient Descent (Weng et al., USENIX ATC '23) ─────────
+class FGD(Policy):
+    """Fragmentation Gradient Descent — 단편화 인지 *배치* 휴리스틱.
+
+    원논문(Weng et al. 2023)은 부분(fractional) GPU 공유 단편화를 대상으로, 노드의
+    통계적 단편화를 '대상 워크로드에서 무작위 추출한 태스크가 쓸 수 없는 기대 GPU량'으로
+    정의하고, 배치 시 단편화 증가(gradient)가 최소인 노드를 고른다. 본 구현은 동일한
+    측도를 통째(whole) GPU gang 스케줄링에 충실히 특수화한 것이다:
+
+      노드 n의 단편화  F_n = free_n · P(task_size > free_n)
+        - P(·)는 트레이스의 GPU-수 분포 M (set_dist로 주입). free_n개 빈 GPU가
+          '들어올 태스크가 못 쓸 확률'만큼 낭비로 계산 — 원논문 정의의 whole-GPU 형태.
+      잡 g 배치의 단편화 기울기  ΔF_n = F(free_n − g) − F(free_n)
+      → 실현 가능 노드 중 ΔF_n 최소(단편화를 가장 적게 늘리는) 노드 선택.
+
+    큐 순서는 원논문(Kubernetes 기본 스케줄러 + FGD 스코어링 플러그인)대로 FCFS이며,
+    부적합 잡은 보류하되 후속 잡 배치는 막지 않는다(kube-scheduler 동작, blocking=False).
+    즉 FGD는 baseline FIFO와 *배치(node_pref)에서만* 다르므로 단편화 인지 배치의 순효과를
+    분리 측정한다. (SQUAD의 SFQA는 큐를, PTR는 실행 중 이주를 다루는 직교 축.)"""
+    name = "fgd"
+
+    def __init__(self, size_dist=None):
+        self.pdist = size_dist or {1: 1.0}
+
+    def set_dist(self, gpu_counts):
+        from collections import Counter
+        c = Counter(int(g) for g in gpu_counts)
+        tot = sum(c.values()) or 1
+        self.pdist = {g: c[g] / tot for g in c}
+
+    def _tail(self, x):                       # P(task_size > x)
+        return sum(p for g, p in self.pdist.items() if g > x)
+
+    def _frag(self, free):                    # F = free · P(size > free)
+        return free * self._tail(free) if free > 0 else 0.0
+
+    def order(self, cand_idx, age, ar, sim):
+        return cand_idx                        # FCFS(도착순), 비차단 backfill
+
+    def node_pref(self, job, nodes):
+        g = job.gpu_count
+        cand = _typed(job, nodes)
+
+        def key(n):
+            dF = (self._frag(n.free - g) - self._frag(n.free)) if n.free >= g else 1e18
+            return (speed_of(n.gpu_type), dF, n.free)  # 빠른타입 우선(이종 정합), 그 안 ΔF 최소
+        return sorted(cand, key=key)
+
+
 # 주의: sfqa-auto-rsv(v3)는 EASY식 예약이 duration(사후값)에 의존해 SQUAD 철학 위반 → 제거.
 # SQUAD에서 자리 비우기는 PTR(디프래그)이 담당. SFQA 라인은 duration-free만 유지.
-POLICIES = {p.name: p for p in [FIFO, SJF, LAS, Themis, SFQA, SFQAAuto, EASY, Kueue]}
+POLICIES = {p.name: p for p in [FIFO, SJF, LAS, Themis, SFQA, SFQAAuto, EASY, Kueue, FGD]}
 
 
 def make(name, **kw):
@@ -240,6 +289,8 @@ def make(name, **kw):
         return SFQA(**kw)
     if name in ("sfqa-auto",):
         return SFQAAuto(**kw)
+    if name == "fgd":
+        return FGD(**kw)
     cls = {p.name: p for p in [FIFO, SJF, LAS, Themis, EASY, Kueue]}.get(name)
     if cls is None:
         raise ValueError(f"unknown policy: {name}")

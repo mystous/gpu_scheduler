@@ -15,13 +15,15 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, "/home/mystous/gpu_scheduler/sim")
 from order_fairness import per_job_score
 
-A = "/raid/squad/analysis"
-OUT = "/home/mystous/gpu_scheduler/sim/sweep_results"
+_HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(_HERE, "sweep_results")
+A = os.path.join(OUT, "raw")          # per-job/alloc 덤프 루트(gitignore)
+SUM = OUT                              # summary.csv 루트(커밋)
 GPUS = [256, 512, 1024]
 KINDS = ["single", "hetero"]
-POLS = ["fifo", "sjf", "las", "kueue", "easy", "themis", "sfqa", "sfqa-auto", "lucid", "sia"]
+POLS = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid", "sia"]
 COL = {"fifo": "#888", "sjf": "tab:orange", "las": "tab:green", "kueue": "tab:olive",
-       "easy": "tab:brown", "themis": "tab:purple", "sfqa": "tab:cyan",
+       "easy": "tab:brown", "themis": "tab:purple", "fgd": "tab:gray", "sfqa": "tab:cyan",
        "sfqa-auto": "tab:red", "lucid": "tab:blue", "sia": "tab:pink"}
 
 
@@ -64,7 +66,7 @@ for g in GPUS:
     for k in KINDS:
         d = dname(g, k)
         smap = {}
-        sf = f"{A}/{d}/summary.csv"
+        sf = f"{SUM}/{d}/summary.csv"
         if os.path.exists(sf):
             for r in csv.DictReader(open(sf)):
                 smap[r["policy"]] = r
