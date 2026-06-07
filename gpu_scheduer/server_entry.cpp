@@ -125,15 +125,15 @@ int server_entry::get_avaliable_accelator_count() {
 
 accelator_type server_entry::get_accelerator_type(string accelerator) {
   for_each(accelerator.begin(), accelerator.end(), [](char& c) { c = tolower(c); });
-  if ("a100" == accelerator) {
-    return accelator_type::a100;
-  }
-  else if ("a30" == accelerator) {
-    return accelator_type::a30;
-  }
-  else if ("cpu" == accelerator) {
-    return accelator_type::cpu;
-  }
+  if ("v100" == accelerator) { return accelator_type::v100; }
+  else if ("a30" == accelerator) { return accelator_type::a30; }
+  else if ("a100" == accelerator) { return accelator_type::a100; }
+  else if ("h100" == accelerator) { return accelator_type::h100; }
+  else if ("h200" == accelerator) { return accelator_type::h200; }
+  else if ("l4" == accelerator) { return accelator_type::l4; }
+  else if ("l40" == accelerator) { return accelator_type::l40; }
+  else if ("b200" == accelerator) { return accelator_type::b200; }
+  else if ("cpu" == accelerator) { return accelator_type::cpu; }
 
   return accelator_type::cpu;
 }

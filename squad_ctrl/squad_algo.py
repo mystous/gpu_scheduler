@@ -67,19 +67,19 @@ class RunningJob:
 
 # ── SFQA (C++ job_emulator.cpp::adjust_wait_queue 410-478) ──────────────────
 def compute_r_table(servers, gpu_type):
-    """자원 적합도 R[0..7] (요청 k → R[k-1]). flavor-aware: 같은 타입 server만."""
+    """Resource suitability index R (저자 정의 — 서버마다 비교, 최댓값):
+    서버 free ≥ req 면 1, 1개 부족할 때마다 0.1 감소(부족분 k → 1−0.1k). R[req-1]=max over servers."""
     R = [0.0] * ACCEL_PER_SERVER_MAX
     for s in servers:
         if gpu_type != ANY and s.gpu_type != gpu_type:
             continue
-        avail = s.available()
-        for i in range(ACCEL_PER_SERVER_MAX):
-            if avail - i <= 0:
-                continue
-            suit = 1 - (avail - i - 1) * 0.1
-            if suit > R[i]:
-                R[i] = suit
-    return R
+        free = s.available()
+        for req in range(1, ACCEL_PER_SERVER_MAX + 1):
+            short = req - free
+            suit = 1.0 if short <= 0 else 1.0 - 0.1 * short
+            if suit > R[req - 1]:
+                R[req - 1] = suit
+    return [x if x > 0 else 0.0 for x in R]
 
 
 def pstar(pos, age, gpu_count, alpha, R):
@@ -89,16 +89,18 @@ def pstar(pos, age, gpu_count, alpha, R):
 
 
 def reorder_queue(jobs, servers, gpu_type, params: Params, allocation_rate_pct):
-    """flavor 대기큐를 P* 내림차순으로 재정렬(트리거 AR≤β). 미트리거면 원순서."""
+    """Algorithm 1: P* 최댓값 잡 1개만 맨 앞으로(단일 승급, line 20-25). 전체 정렬 아님.
+    트리거 β > AR(미트리거=AR≥β면 원순서)."""
     out = [replace(j) for j in jobs]
-    active = params.prevent_starv and allocation_rate_pct <= params.beta
-    R = compute_r_table(servers, gpu_type) if active else [0.0] * ACCEL_PER_SERVER_MAX
-    for i, j in enumerate(out):
-        j.pstar = pstar(i, j.age, j.gpu_count, params.alpha, R) if active else 1.0 / (2 ** i)
-    if not active:
+    active = params.prevent_starv and allocation_rate_pct < params.beta
+    if not active or len(out) < 2:
         return out
-    out.sort(key=lambda x: x.pstar, reverse=True)  # stable
-    return out
+    R = compute_r_table(servers, gpu_type)
+    pvals = [pstar(i, j.age, j.gpu_count, params.alpha, R) for i, j in enumerate(out)]
+    imax = max(range(len(pvals)), key=lambda k: pvals[k])   # P* 최댓값 1개
+    if imax == 0:
+        return out
+    return [out[imax]] + out[:imax] + out[imax + 1:]         # 그 잡만 front, 나머지 shift
 
 
 # ── PTR (C++ adjusting_server.cpp DP 146-191) ───────────────────────────────
