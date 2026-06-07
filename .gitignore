@@ -415,3 +415,6 @@ holder_img/holder
 # 세션/빌드 산출물
 .claude/
 experiment_gpu
+
+# 시뮬 스윕 raw 압축 해제본 (tar.gz에서 복원 가능)
+sim/sweep_results/raw/

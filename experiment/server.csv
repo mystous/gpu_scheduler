@@ -1,0 +1,14 @@
+gpu_server01,8,a100
+gpu_server02,8,a100
+gpu_server03,8,a100
+gpu_server04,8,a100
+gpu_server05,8,a100
+gpu_server06,8,a100
+gpu_server07,8,a100
+gpu_server10,4,a30
+gpu_server11,4,a30
+gpu_server12,4,a30
+gpu_server13,4,a30
+gpu_server14,4,a30
+gpu_server15,4,a30
+gpu_server16,4,a30
