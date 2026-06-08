@@ -301,107 +301,139 @@ def plot_cdf(out):
         ax.set_title(f"512 GPU, {kind} (1.8$\\times$)")
         ax.grid(alpha=.3, which="both")
     axes[0].set_ylabel("CDF (fraction of jobs)")
-    axes[1].legend(ncol=2, fontsize=9, loc="lower right")
+    h, lab = axes[1].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.06),
+               ncol=len(lab), fontsize=10, frameon=True)
     fig.suptitle("Queueing-delay CDF (Philly 111k): full distribution, all policies", fontsize=14)
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.08, 1, 1])
     _save(fig, out, "report_cdf")
 
 
+ORDER_ALL = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd",
+             "sfqa", "sfqa-auto", "lucid", "sia"]
+
+
 def plot_loadcurve(out):
-    """부하곡선: 클러스터 크기(부하)에 따른 q_p50 / q_max / 공정성 p1, 전 정책.
-    부하·이질성이 깊을수록 sfqa-auto의 균형 우위가 커짐을 한 눈에."""
+    """종합 부하곡선: 클러스터 크기(부하)에 따른 중앙값(q_p50)·최악대기(q_max)·공정성(p1)을
+    단일·이종 두 행으로, 전 11정책(FGD 포함) 라인으로 한 눈에.
+    부하·이질성이 깊을수록 sfqa-auto만 '빠름+공정'을 동시에 유지함을 보인다."""
     rows = load_sweep()
     gpus = ["256", "512", "1024"]
     xg = [256, 512, 1024]
-    order = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid", "sia"]
     panels = [("q_p50", "median queue delay p50 (s)", True),
               ("q_max", "worst-case max (s)", True),
               ("fair_p1", "order-fairness p1 (100=fair)", False)]
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.6))
-    for ax, (key, ylab, logy) in zip(axes, panels):
-        for pol in order:
-            ys = []
-            for g in gpus:
-                r = rows.get((g, "hetero", pol))
-                ys.append(float(r[key]) if r else np.nan)
-            if all(np.isnan(ys)):
-                continue
-            c, ls = POL_STYLE[pol]
-            lw = 2.4 if pol == "sfqa-auto" else 1.3
-            a = 1.0 if pol in ("sfqa-auto", "fifo") else 0.7
-            ax.plot(xg, ys, ls, marker="o", ms=4, color=c, lw=lw, alpha=a, label=pol)
-        from matplotlib.ticker import NullFormatter, FixedLocator
-        ax.set_xscale("log")
-        ax.xaxis.set_major_locator(FixedLocator(xg)); ax.set_xticklabels(xg)
-        ax.xaxis.set_minor_formatter(NullFormatter())   # 로그 보조눈금 라벨 제거
-        if logy:
-            ax.set_yscale("log")
-        ax.set_xlabel("cluster GPUs (256=3.6$\\times$, 512=1.8$\\times$, 1024=0.9$\\times$ load)")
-        ax.set_ylabel(ylab); ax.grid(alpha=.3, which="both")
-    axes[2].legend(ncol=2, fontsize=8.5, loc="lower left")
-    fig.suptitle("Load dependence on heterogeneous clusters (Philly 111k, all policies)", fontsize=14)
-    fig.tight_layout()
+    from matplotlib.ticker import NullFormatter, FixedLocator
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8.4))
+    for ri, kind in enumerate(["single", "hetero"]):
+        for ci, (key, ylab, logy) in enumerate(panels):
+            ax = axes[ri][ci]
+            for pol in ORDER_ALL:
+                ys = []
+                for g in gpus:
+                    r = rows.get((g, kind, pol))
+                    ys.append(float(r[key]) if r else np.nan)
+                if all(np.isnan(ys)):
+                    continue
+                c, ls = POL_STYLE[pol]
+                lw = 2.6 if pol == "sfqa-auto" else 1.3
+                a = 1.0 if pol in ("sfqa-auto", "fifo") else 0.7
+                ax.plot(xg, ys, ls, marker="o", ms=4, color=c, lw=lw, alpha=a, label=pol)
+            ax.set_xscale("log")
+            ax.xaxis.set_major_locator(FixedLocator(xg)); ax.set_xticklabels(xg)
+            ax.xaxis.set_minor_formatter(NullFormatter())
+            if logy:
+                ax.set_yscale("log")
+            if ri == 1:
+                ax.set_xlabel("cluster GPUs (256=3.6$\\times$, 512=1.8$\\times$, 1024=0.9$\\times$ load)")
+            ax.set_ylabel(ylab)
+            ax.set_title(f"{kind} — {['median','worst-case','fairness'][ci]}", fontsize=12)
+            ax.grid(alpha=.3, which="both")
+    h, lab = axes[0][0].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.045),
+               ncol=len(lab), fontsize=11, frameon=True)
+    fig.suptitle("Load dependence, all 11 policies (Philly 111k): single (top) vs heterogeneous (bottom)",
+                 fontsize=14)
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
     _save(fig, out, "report_loadcurve")
 
 
-def plot_scale(out):
+def plot_tradeoff(out):
+    """q–공정성 trade-off 산점도: 6구성(단일·이종 × 256/512/1024)을 패널로,
+    각 점이 한 정책. 좌상단(빠르고 공정)이 이상적 — sfqa-auto만 그 영역을 차지함을 보인다."""
     rows = load_sweep()
-    # 1024 single은 전 정책 q_p50≈2s(저부하, 스케줄러 무의미)라 제외
-    configs = [("256", "single", "3.6x"), ("256", "hetero", "3.6x"),
-               ("512", "single", "1.8x"), ("512", "hetero", "1.8x"),
-               ("1024", "hetero", "0.9x")]
-    labels = [f"{g}\n{k}\n({ld})" for g, k, ld in configs]
+    gpus = ["256", "512", "1024"]
+    ld = {"256": "3.6$\\times$", "512": "1.8$\\times$", "1024": "0.9$\\times$"}
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8.6))
+    for ri, kind in enumerate(["single", "hetero"]):
+        for ci, g in enumerate(gpus):
+            ax = axes[ri][ci]
+            for pol in ORDER_ALL:
+                r = rows.get((g, kind, pol))
+                if not r:
+                    continue
+                x = max(float(r["q_p50"]), 1.0)
+                y = float(r["fair_p1"])
+                c, _ = POL_STYLE[pol]
+                big = pol == "sfqa-auto"
+                ax.scatter(x, y, s=150 if big else 70, color=c, zorder=3,
+                           edgecolor="k", linewidths=0.9 if big else 0.4)
+                ax.annotate(pol, (x, y), fontsize=8, xytext=(4, 3),
+                            textcoords="offset points")
+            ax.set_xscale("log")
+            ax.set_ylim(-5, 108)
+            if ri == 1:
+                ax.set_xlabel("median queue delay p50 (s, log) — faster $\\leftarrow$")
+            if ci == 0:
+                ax.set_ylabel("order-fairness p1 (100=fair) $\\uparrow$")
+            ax.set_title(f"{g} GPU {kind} ({ld[g]})", fontsize=12)
+            ax.grid(alpha=.3, which="both")
+    fig.suptitle("Queue-delay vs fairness trade-off, all 11 policies (Philly 111k): "
+                 "top-left = fast & fair (sfqa-auto's target region)", fontsize=14)
+    fig.tight_layout()
+    _save(fig, out, "report_tradeoff")
 
-    def q50(g, k, p):
-        return float(rows[(g, k, p)]["q_p50"])
 
-    def p1(g, k, p):
-        return float(rows[(g, k, p)]["fair_p1"])
+def plot_scale(out):
+    """전 11정책(FGD 포함) 정면 비교 — 대표 과부하 구성(512 GPU 이종, 1.8x):
+    (좌) 중앙값 q_p50 (낮을수록 빠름), (우) 공정성 p1 (높을수록 공정).
+    정책을 x축에 두어 11개를 모두 표시 — '빠름'과 '공정'을 동시에 가진 정책은 sfqa-auto뿐."""
+    rows = load_sweep()
+    g, k = "512", "hetero"
+    pols = [p for p in ORDER_ALL if (g, k, p) in rows]
+    q50 = [max(float(rows[(g, k, p)]["q_p50"]), 1.0) for p in pols]
+    p1 = [float(rows[(g, k, p)]["fair_p1"]) for p in pols]
+    cols = [POL_STYLE[p][0] for p in pols]
+    x = np.arange(len(pols))
 
-    red_auto = [round((1 - q50(g, k, "sfqa-auto") / q50(g, k, "fifo")) * 100)
-                for g, k, _ in configs]
-    red_fgd = [round((1 - q50(g, k, "fgd") / q50(g, k, "fifo")) * 100)
-               for g, k, _ in configs]
-    p1_auto = [p1(g, k, "sfqa-auto") for g, k, _ in configs]
-    p1_fgd = [p1(g, k, "fgd") for g, k, _ in configs]
-    p1_sjf = [p1(g, k, "sjf") for g, k, _ in configs]
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.0))
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
-    x = np.arange(len(configs))
-
-    # 좌: 중앙값 단축 — FGD(배치)도 sfqa-auto(큐)만큼/더 줄인다
+    # 좌: 중앙값 (로그) — 낮을수록 빠름
     ax = axes[0]
-    w = .38
-    ax.bar(x - w / 2, red_auto, w, label="sfqa-auto (queue)", color="tab:red")
-    ax.bar(x + w / 2, red_fgd, w, label="FGD (placement)", color="tab:gray")
-    for i, v in enumerate(red_auto):
-        ax.text(i - w / 2, v + 1, f"{v}", ha="center", fontsize=9)
-    for i, v in enumerate(red_fgd):
-        ax.text(i + w / 2, v + 1, f"{v}", ha="center", fontsize=9)
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylabel("q_p50 reduction vs FIFO (%)")
-    ax.set_ylim(0, 100)
-    ax.set_title("Both cut median vs FIFO\n(simulator, Philly 111k jobs)")
+    ax.bar(x, q50, 0.7, color=cols, edgecolor="k", linewidth=0.4)
+    ax.set_yscale("log")
+    ax.set_xticks(x); ax.set_xticklabels(pols, rotation=30, ha="right", fontsize=10)
+    ax.set_ylabel("median queue delay p50 (s, log)")
+    ax.set_title("(a) Speed: median queue delay (lower = faster)")
+    ax.grid(alpha=.3, axis="y", which="both")
+
+    # 우: 공정성 p1 — 높을수록 공정, 0=완전 기아
+    ax = axes[1]
+    bars = ax.bar(x, p1, 0.7, color=cols, edgecolor="k", linewidth=0.4)
+    for b, v in zip(bars, p1):
+        ax.text(b.get_x() + b.get_width() / 2, v + 1.5, f"{v:.0f}", ha="center", fontsize=9)
+    ax.axhline(100, ls="--", c="gray", lw=1)
+    ax.text(len(pols) - 0.5, 101, "FIFO=100", fontsize=9, color="gray", ha="right")
+    ax.set_ylim(0, 112)
+    ax.set_xticks(x); ax.set_xticklabels(pols, rotation=30, ha="right", fontsize=10)
+    ax.set_ylabel("order-fairness p1 (worst 1%, 100=fair)")
+    ax.set_title("(b) Fairness: worst-1% order-fairness (0 = starvation)")
     ax.grid(alpha=.3, axis="y")
 
-    # 우: 공정성 — FGD는 배치만 하므로 과부하서 p1 붕괴, sfqa-auto만 유지
-    ax = axes[1]
-    w = .27
-    ax.bar(x - w, p1_auto, w, label="sfqa-auto (queue)", color="tab:red")
-    ax.bar(x, p1_fgd, w, label="FGD (placement)", color="tab:gray")
-    ax.bar(x + w, p1_sjf, w, label="SJF", color="tab:orange")
-    ax.axhline(100, ls="--", c="gray", lw=1)
-    ax.text(len(configs) - .6, 101, "FIFO=100", fontsize=9, color="gray")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylabel("order-fairness p1 (worst 1%, 100=fair)")
-    ax.set_title("...but only the queue axis keeps fairness\n(0 = complete starvation)")
-    ax.grid(alpha=.3, axis="y")
-    h, lab = ax.get_legend_handles_labels()        # 3개 항목(sfqa-auto/FGD/SJF)
-    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.05),
-               ncol=len(lab), fontsize=11, frameon=True)
-    fig.tight_layout(rect=[0, 0.08, 1, 1])         # 하단 범례 공간
+    fig.suptitle("All 11 policies at peak overload (Philly 111k, 512 GPU heterogeneous, 1.8$\\times$): "
+                 "lightweight fast policies collapse fairness; only sfqa-auto keeps it (Sia matches but at 200$\\times$ compute)",
+                 fontsize=12)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
     _save(fig, out, "report_scale")
 
 
@@ -419,9 +451,10 @@ def main():
     plot_sensitivity(args.out)
     plot_cdf(args.out)
     plot_loadcurve(args.out)
+    plot_tradeoff(args.out)
     plot_scale(args.out)
     plot_alloc(args.out)
-    print(f"10개 그래프 저장 완료: {args.out}/report_*.{{pdf,png}}")
+    print(f"11개 그래프 저장 완료: {args.out}/report_*.{{pdf,png}}")
 
 
 if __name__ == "__main__":
