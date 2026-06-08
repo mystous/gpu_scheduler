@@ -288,6 +288,40 @@ W^*_i(t) = \sigma^*(t)\cdot\max(s_i,\tau) - s_i, \qquad u_i(t) = \frac{A_i}{W^*_
 \subsection{Scale generalization via discrete-event simulation}\label{eval:sim}
 \S\ref{sfqa-auto}의 $\alpha$ 탐색에 쓴 이산 시간 C++ 시뮬레이터는 8개 분포별 합성 트레이스에 한정되므로, 우리는 Philly 트레이스 전체(약 111k 작업)를 256, 512, 1024 GPU 클러스터(단일·이종 구성)에서 평가하는 이산 사건 시뮬레이터를 개발했다. 시뮬레이터에는 \S\ref{eval:overhead}의 작업당 고정 오버헤드를 주입했다. 비교에는 FIFO·SJF·LAS·Kueue·EASY·Themis·SFQA·sfqa-auto에 더해, 단편화 인지 배치 휴리스틱 FGD와 학술 최신 기법 Lucid·Sia를 충실히 구현해 포함했다.
 
+\paragraph{시뮬레이터 동작}
+시뮬레이터는 이산 사건(discrete-event) 구동이다(Algorithm \ref{alg:des}). 작업 도착(ARRIVE)과 완료(FINISH)를 시각 순 이벤트 큐로 처리하되, \textit{같은 시각의 이벤트를 모두 소진한 뒤} 매 시점 단 한 번 스케줄링 패스를 실행한다 --- 동시 도착·완료가 한 번의 결정에 정확히 반영된다. 한 패스에서는 (i) 도착·미배치 작업을 정책의 \textsc{order}로 재정렬하고(SFQA·sfqa-auto는 바로 이 단계에서 큐를 조정), (ii) most-allocated 배치(잔여 GPU가 적은 노드를 우선)로 멀티노드 gang을 잠정 점유하며, (iii) blocking 정책(FIFO·예약류)은 큐 선두가 들어가지 못하면 그 패스를 중단해 HOL 블로킹을 그대로 재현한다. 각 작업의 종료 시각은 배치 시각 $+$ 명목 실행시간 $\times$ 타입 속도계수 $+$ 종료 오버헤드로 정해지며, 정책 결정은 작업당 $O(n)$(단일 승급)에서 라운드별 ILP(Sia)까지 정책별 비용이 다르다.
+
+\begin{algorithm}[htb!]
+\caption{이산 사건 스케줄링 루프(시뮬레이터 코어)}
+\label{alg:des}
+\begin{algorithmic}[1]
+\STATE 이벤트 큐 $E \gets \{(\text{도착시각}, \text{ARRIVE}, j)\}$ for all $j$
+\WHILE{$E \neq \emptyset$}
+  \STATE $(t,\text{type},j) \gets$ pop-min$(E)$;~ $now \gets t$
+  \IF{type $=$ ARRIVE}
+    \STATE 도착 카운터$\,{+}{=}\,1$;~ $j$를 대기 큐에 표시
+  \ELSIF{type $=$ FINISH}
+    \STATE $j$의 점유 GPU 반환;~ 완료 목록에 추가
+  \ENDIF
+  \IF{$E$의 다음 이벤트 시각 $=t$}
+    \STATE \textbf{continue} \COMMENT{동시 이벤트 모두 처리 후 1회만 스케줄}
+  \ENDIF
+  \STATE $C \gets$ 도착·미배치 작업(도착순);~ $\rho \gets$ 점유 GPU 비율
+  \STATE $C' \gets \textsc{Policy.order}(C, \text{age}, \rho)$ \COMMENT{정책별 큐 재정렬(SFQA/auto 등)}
+  \FOR{각 $j \in C'$ (순서대로)}
+    \STATE $P \gets \textsc{NodePref}(j)$ \COMMENT{most-allocated: 잔여 적은 노드 우선}
+    \IF{$j$의 gang을 $P$에 배치 가능}
+      \STATE 잠정 점유;~ place $\gets now + \text{place\_cost}$
+      \STATE finish $\gets$ place $+\, \text{dur}_j\cdot\textsc{speed}(\text{type}) + \text{teardown}$
+      \STATE $E \gets E \cup \{(\text{finish},\text{FINISH},j)\}$
+    \ELSIF{정책이 blocking}
+      \STATE \textbf{break} \COMMENT{선두 차단 시 중단 → HOL 블로킹 재현}
+    \ENDIF
+  \ENDFOR
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
 \paragraph{전체 구도: 효율--공정성 위치}
 평가의 중심 질문은 \textit{어떤 정책이 ``빠르면서 공정한'' 영역을 차지하는가}이며, 표 \ref{tab:sim-single}·\ref{tab:sim}과 그림 \ref{fig:tradeoff}가 그 답을 요약한다. sfqa-auto는 FIFO 대비 중앙값 대기를 50--61\% 단축하면서 하위 1\% 순서 공정성(p1)을 50--76 수준으로 유지하여, 이 영역을 차지하는 유일한 경량 정책이었다. 나머지 베이스라인은 각자 구별되는 실패 모드로 한쪽 축을 포기한다. FIFO는 완벽한 순서 공정성(p1=100)을 유지하지만 큐 선두의 큰 작업이 후속을 모두 막아 가장 느리다. SJF·Themis·LAS는 짧은 작업을 먼저 빼내 중앙값을 최소화하지만, 바로 그 때문에 큰 작업이 선두에 적체되어 이종 과부하에서 p1이 0으로 붕괴한다(완전 기아) --- 평균-최적 정책이 최악 사례를 희생한다는 큐잉 이론의 고전적 결과\cite{wierman2003classifying}와 일치한다. Lucid는 collocation으로 작은 작업을 즉시 흘려보내 중앙값은 극히 작지만 큰 작업의 꼬리를 방치한다. Sia는 goodput 최적화로 이종에서 큐잉 지연이 가장 짧지만, 라운드마다 활성 작업 전체에 정수 계획법을 풀어 256 GPU 고부하에서 스케줄링 계산이 경량 정책의 200배를 넘고(SFQA의 단일 승급 $O(n)$과 대비) 탄력 재구성을 위해 GPU의 27--35\%를 비워 둔다(표 \ref{tab:sim}). 그림 \ref{fig:tradeoff}은 이 구도를 6개 구성(단일·이종 $\times$ 256/512/1024)에서 한 눈에 보여준다: SJF·Themis·LAS·FGD·Lucid는 우하단(빠르지만 공정성 0)에, FIFO는 좌상단의 공정성 축 끝(공정하지만 느림)에 위치하며, 좌상단의 ``빠르고 공정한'' 영역을 차지하는 경량 정책은 sfqa-auto뿐이다. Sia만이 이종에서 그 영역에 도달하나, 앞서의 계산·유휴 비용이 대가다.
 
@@ -365,7 +399,9 @@ Sia$^{\mathrm{a}}$ & \textbf{200} & \textbf{0.47M} & \textbf{96} & 73\% \\
 종합하면, 이 실측 경향은 sfqa-auto의 이론적 설계와 일관된다. \eqref{eq:sigma}의 $\sigma^*(t)=1/(1-\rho)$가 측정된 부하에서 공정성 목표를 유도하므로, 부하가 0.9$\times$에서 3.6$\times$로, 또 단일에서 이종으로 바뀌어도 sfqa-auto는 동일한 코드와 설정으로 하위 1\% 공정성을 50--76 수준으로 유지한다 --- 다른 어떤 빠른 정책도 보이지 못한 안정성이다. 운영 관점에서 sfqa-auto는 (i) 워크로드별 계수 튜닝이 불필요하고, (ii) 단일 승급 $O(n)$ 연산으로 부하와 무관하게 경량이며, (iii) 약 99\%의 GPU 할당률을 유지하면서 효율과 공정성의 균형을 달성한다. 따라서 기존 클러스터 스케줄러를 교체하지 않고 그 위에 부담 없이 통합될 수 있는, 본 평가에서 유일한 실용적 후보다.
 
 \subsection{Lifecycle overhead model}\label{eval:overhead}
-이산 사건 시뮬레이터는 작업당 고정 오버헤드(스케줄링·기동·종료)를 주입하여 충실도를 높인다. 본 연구는 전형적인 쿠버네티스 작업 수명 주기 비용에 맞춰 이 값을 약 4--7초(스케줄링 0.5초 + 기동 1.5--3.5초 + 종료 2.5초)로 설정했다. \S\ref{sfqa-auto}의 민감도 분석이 보였듯 결과는 이 보정값의 넓은 범위에 둔감하다.
+이산 사건 시뮬레이터는 작업당 고정 오버헤드(스케줄링·기동·종료)를 주입하여 충실도를 높인다. 본 연구는 전형적인 쿠버네티스 작업 수명 주기 비용에 맞춰 이 값을 약 4--7초(스케줄링 0.5초 + 기동 1.5--3.5초 + 종료 2.5초)로 설정했다. 기동 비용은 단독 배치(1.5초)와 혼잡 배치(동시 2개 이상, 3.5초)를 구분하여, 공유 노드에 여러 gang이 동시에 올라올 때의 컨테이너 초기화 경합을 반영한다.
+
+\textbf{B200 기준 오버헤드 고려.} 본 평가의 기준(reference) 가속기는 NVIDIA B200이다. 작업의 명목 실행시간은 배치된 GPU 타입의 속도계수로 스케일하며($\textsc{speed}$: B200 $=1.0$ 기준, H100 $\approx1.4$, A100 $\approx2.0$, A30 $\approx2.8$), gang이 타입을 혼합하면 가장 느린 타입을 기준으로 한다(동기 학습의 straggler 제약). 따라서 단일 클러스터(전부 B200)에서는 옛 트레이스의 실측 실행시간이 그대로 쓰이고, 이종 클러스터에서는 느린 타입에 놓인 작업이 비례적으로 길어진다 --- 이것이 이종 환경에서 베이스라인의 HOL 블로킹이 더 심해지는 한 원인이다. 한편 위 4--7초의 수명 주기 오버헤드는 B200급 노드의 컨테이너 기동·체크포인트 적재 비용에 맞춘 값으로, 일(day) 단위에 이르는 작업 실행시간에 비하면 작지만, 과부하에서 누적되는 짧은 작업의 큐잉 지연에는 유의미하게 기여한다. \S\ref{sfqa-auto}의 민감도 분석이 보였듯 최종 결과는 이 보정값의 넓은 범위에 둔감하다.
 
 \FloatBarrier
 
@@ -382,6 +418,8 @@ Sia$^{\mathrm{a}}$ & \textbf{200} & \textbf{0.47M} & \textbf{96} & 73\% \\
 \FloatBarrier
 \section*{Acknowledgment}
 저자들은 본 연구에 대해 어떠한 기관의 재정 지원도 받지 않았다.
+
+\textbf{생성형 AI 활용 고지.} IEEE의 권고에 따라, 본 논문 준비 과정에서 저자들은 생성형 AI 도구를 보조적으로 활용하였음을 고지한다. AI는 문장 다듬기·언어 교정, 그림 생성 및 실험 재현용 스크립트 작성, 결과 정리 보조에 한해 사용되었으며, 연구의 착상·알고리즘 설계·실험 수행 및 해석은 저자들이 직접 수행하였다. 저자들은 AI 도구 사용 후 모든 내용을 검토·수정하였고, 출판물의 내용에 대한 전적인 책임은 저자들에게 있다.
 
 %%===========================================================================================%%
 %% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
