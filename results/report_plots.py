@@ -324,7 +324,7 @@ def plot_loadcurve(out):
               ("q_max", "worst-case max (s)", True),
               ("fair_p1", "order-fairness p1 (100=fair)", False)]
     from matplotlib.ticker import NullFormatter, FixedLocator
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8.4))
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 6.4))
     for ri, kind in enumerate(["single", "hetero"]):
         for ci, (key, ylab, logy) in enumerate(panels):
             ax = axes[ri][ci]
@@ -364,7 +364,7 @@ def plot_tradeoff(out):
     rows = load_sweep()
     gpus = ["256", "512", "1024"]
     ld = {"256": "3.6$\\times$", "512": "1.8$\\times$", "1024": "0.9$\\times$"}
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8.6))
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 6.6))
     for ri, kind in enumerate(["single", "hetero"]):
         for ci, g in enumerate(gpus):
             ax = axes[ri][ci]
