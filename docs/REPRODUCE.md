@@ -69,6 +69,23 @@ cp results/report_sensitivity.pdf paper/Pic/Fig_22.pdf
 column -t -s, sim/sweep_results/sweep_table.csv | grep -E '^gpu|512'
 ```
 
+### 2-0. 스케줄러(정책) 단위 실험
+
+정책별로 따로 돌릴 수 있고, **기존 결과를 보존하며 병합**한다(`run_sweep.py`가 기존
+`summary.csv`를 읽어 이번에 안 돌린 정책은 그대로 두고 돌린 정책만 갱신). 따라서 정책을
+하나씩 누적해 실험해도 종합표가 깨지지 않는다. 유효 정책명:
+`fifo, sjf, las, kueue, easy, themis, sfqa, sfqa-auto, fgd, lucid, sia`.
+
+```bash
+python3 sim/run_sweep.py --policies fgd                          # FGD만, 전 구성(256/512/1024×단일/이종)
+python3 sim/run_sweep.py --gpus 512 --kinds hetero --policies sfqa-auto   # 한 정책·한 구성
+python3 sim/run_sweep.py --policies sjf,las,themis               # 여러 정책 한 번에
+python3 sim/analyze_sweep.py                                     # 누적된 summary → sweep_table.csv 갱신
+```
+
+> sia는 한 정책으로 따로 돌릴 때도 256-단일에서 ~2h. 급하지 않으면 커밋된 결과를 쓰고
+> 제외한다(3절). lucid/sia는 `run_all.py` 경로가 더 적합(2-2절).
+
 ### 2-1. C++ α 탐색·민감도(Fig_18·Fig_22 원천)
 
 `report_plots.py`는 현재 C++ 실험의 **요약 상수**(`ALPHA_BY_DIST`, `SENS`)로 그림을 그린다.
