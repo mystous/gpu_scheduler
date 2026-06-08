@@ -126,12 +126,8 @@ DRIFT = {  # cond: (fixed_p50, fixed_p90, auto_p50, auto_p90)
 
 
 def plot_motivation(out):
-    """auto를 만든 이유: (좌) 최적 α가 워크로드마다 다름, (우) 고정 α는 부하 변하면
-    드리프트하나 auto는 유지 — 실측 근거."""
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
-
-    # 좌: 최적 α의 워크로드 의존성 (단일 α가 없음)
-    ax = axes[0]
+    """auto를 만든 이유: 최적 α가 워크로드마다 7배 달라져 단일 값이 없음(C++ 시뮬, 표2)."""
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
     names = list(ALPHA_BY_DIST); vals = [ALPHA_BY_DIST[n] for n in names]
     x = np.arange(len(names))
     bars = ax.bar(x, vals, .62, color="tab:purple")
@@ -139,31 +135,13 @@ def plot_motivation(out):
     ax.axhline(amin, ls=":", c="gray", lw=1); ax.axhline(amax, ls=":", c="gray", lw=1)
     ax.annotate(f"{amax/amin:.0f}x spread\n(no single $\\alpha$)", (len(names)-1, amax),
                 xytext=(-4, -8), textcoords="offset points", ha="right", va="top",
-                fontsize=11, color="tab:purple", fontweight="bold")
+                fontsize=12, color="tab:purple", fontweight="bold")
     for b, v in zip(bars, vals):
-        ax.text(b.get_x()+b.get_width()/2, v+0.03, f"{v}", ha="center", fontsize=9)
-    ax.set_xticks(x); ax.set_xticklabels(names, rotation=30, ha="right", fontsize=10)
+        ax.text(b.get_x()+b.get_width()/2, v+0.03, f"{v}", ha="center", fontsize=9.5)
+    ax.set_xticks(x); ax.set_xticklabels(names, rotation=30, ha="right", fontsize=11)
     ax.set_ylabel("optimal fixed $\\alpha$"); ax.set_ylim(0, 1.8)
-    ax.set_title("(a) Optimal $\\alpha$ varies 7x across workloads\n(grid search must be redone per workload)")
+    ax.set_title("Optimal $\\alpha$ varies 7x across workloads\n(grid search must be redone per workload)")
     ax.grid(alpha=.3, axis="y")
-
-    # 우: 부하 변화 시 고정 α 드리프트 vs auto 적응 (p50)
-    ax = axes[1]
-    conds = list(DRIFT); xc = np.arange(len(conds)); w = .36
-    fixed_p50 = [DRIFT[c][0] for c in conds]; auto_p50 = [DRIFT[c][2] for c in conds]
-    ax.bar(xc - w/2, fixed_p50, w, label="fixed $\\alpha$ (tuned at $\\kappa$=3000)", color="tab:gray")
-    ax.bar(xc + w/2, auto_p50, w, label="sfqa-auto (zero-knob)", color="tab:red")
-    for i, c in enumerate(conds):
-        ax.text(i - w/2, fixed_p50[i]+12, f"{fixed_p50[i]}", ha="center", fontsize=9)
-        ax.text(i + w/2, auto_p50[i]+12, f"{auto_p50[i]}", ha="center", fontsize=9)
-    # 드리프트 배수 표기
-    for i, c in enumerate(conds):
-        ax.annotate(f"{fixed_p50[i]/auto_p50[i]:.2f}x", (i, max(fixed_p50[i], auto_p50[i])+70),
-                    ha="center", fontsize=10, color="black")
-    ax.set_xticks(xc); ax.set_xticklabels(conds, fontsize=10)
-    ax.set_ylabel("median queueing delay p50 (s)"); ax.set_ylim(0, 1250)
-    ax.set_title("(b) Fixed $\\alpha$ drifts under load change; auto holds\n(measured; same code & setting for auto)")
-    ax.grid(alpha=.3, axis="y"); ax.legend(fontsize=10, loc="upper left")
     fig.tight_layout()
     _save(fig, out, "report_motivation")
 
@@ -406,7 +384,6 @@ def plot_scale(out):
     ax.set_ylim(0, 100)
     ax.set_title("Both cut median vs FIFO\n(simulator, Philly 111k jobs)")
     ax.grid(alpha=.3, axis="y")
-    ax.legend(fontsize=10)
 
     # 우: 공정성 — FGD는 배치만 하므로 과부하서 p1 붕괴, sfqa-auto만 유지
     ax = axes[1]
@@ -421,8 +398,10 @@ def plot_scale(out):
     ax.set_ylabel("order-fairness p1 (worst 1%, 100=fair)")
     ax.set_title("...but only the queue axis keeps fairness\n(0 = complete starvation)")
     ax.grid(alpha=.3, axis="y")
-    ax.legend(fontsize=10)
-    fig.tight_layout()
+    h, lab = ax.get_legend_handles_labels()        # 3개 항목(sfqa-auto/FGD/SJF)
+    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.05),
+               ncol=len(lab), fontsize=11, frameon=True)
+    fig.tight_layout(rect=[0, 0.08, 1, 1])         # 하단 범례 공간
     _save(fig, out, "report_scale")
 
 
