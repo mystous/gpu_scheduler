@@ -105,11 +105,49 @@ Kueue\cite{kueue2024}는 쿠버네티스 네이티브 작업 큐잉 시스템으
 \subsection{Baseline selection rationale}\label{baseline-rationale}
 베이스라인 비교가 의미를 가지려면 두 시스템이 (i) 같은 결정 변수(같은 스케줄링 객체)를, (ii) 같은 계층에서, (iii) 비교 가능한 정보·인프라 가정 아래 내려야 한다. 이 조건 중 하나라도 어긋나면 그 비교는 스케줄링 로직이 아니라 문제 정의나 인프라를 비교하는 것이 되어 방법론적으로 부당하다. 이 기준에 따라 본 논문은 세 축으로 베이스라인을 선정한다. (1) 같은 계층·같은 정보: FIFO, gate-FIFO 통제군, Kueue --- 순수 정책 효과를 분리한다. (2) 같은 계층·정보 우위: SJF, LAS(Tiresias)\cite{gu2019tiresias}, EASY 백필링(완벽 추정 가정), Themis --- 정보가 유리한 정책에 대해서도 QUELL가 경쟁함을 보인다. (3) 같은 계층·최신 기법: FGD(배치), Lucid, Sia --- 동일 계층의 가장 강한 학술 스케줄러를 망라한다.
 
-반면 다음 세 시스템은 위 (i)--(iii) 중 하나 이상을 위반하므로 실험 비교에서 제외하며, 이는 누락이 아니라 비교의 타당성을 위한 의도적 선택이다. 각 시스템의 전이 가능한 스케줄링 원리는 이미 위 베이스라인으로 대표된다.
-\begin{itemize}
-\item \textbf{Learning-to-Rank\cite{fu2024efficient} (계층 불일치):} LLM 서빙 엔진 내부에서 생성 \textit{요청}을 iteration 단위로 재정렬하는 기법으로, 결정 객체(밀리초 단위·매 iteration 자유 선점되는 요청)와 시간 스케일이 클러스터 갱 \textit{작업}(분--일 단위·자유 선점 불가)과 근본적으로 다르다. 학습 작업에는 ``출력 길이''가 없고 iteration 단위 선점도 불가능하여 클러스터 트레이스에 적용하는 것 자체가 정의되지 않는다. 다만 그 본질인 ``예측 순위 기반 SJF + 기아 방지''는 sfqa-auto의 기아 방지 승급과 목적을 공유하며, 완벽 예측 극한인 SJF가 이미 베이스라인으로 포함되어 그 원리를 대표한다.
-\item \textbf{Optimus\cite{peng2018optimus} (가정·정보 불일치):} 핵심 메커니즘인 워커/파라미터 서버의 \textit{탄력적} 재조정은 고정 요청 갱 작업(본 트레이스)에서 조정 대상이 없어 퇴화하며, 기존 배치·정렬 휴리스틱과 구분되지 않는다. 또한 작업별 온라인 수렴 성능 모델과 앱 수준 계측을 요구하는데, 이는 정보 최소 전처리기인 QUELL와의 직접 비교를 스케줄링 로직이 아닌 인프라 우위 비교로 만든다. 그 목표(duration 인지 평균 JCT 최소화)는 SJF·Themis로, 적응성 축은 이종 탄력 스케줄링 SOTA인 Sia로 실험에 대표된다.
-\end{itemize}
+이 기준의 반대편에서, 최근의 여러 동적 스케줄러는 위 (i)--(iii) 중 하나 이상을 위반하므로 실험 비교에서 제외하고 관련 연구로만 위치시킨다 --- 이는 누락이 아니라 비교의 타당성을 위한 의도적 선택이며, 각 기법의 전이 가능한 원리는 표 \ref{tab:related}처럼 이미 실험에 포함된 대표 베이스라인으로 평가된다. 제외 사유는 세 부류로 나뉜다.
+
+\textbf{(a) 계층 불일치.} Learning-to-Rank\cite{fu2024efficient}는 LLM 서빙 엔진 내부에서 생성 \textit{요청}을 밀리초·iteration 단위로 재정렬하므로, 결정 객체와 시간 스케일이 클러스터 갱 \textit{작업}(분--일, 자유 선점 불가)과 근본적으로 다르다. NotebookOS\cite{notebookos2026}는 대화형 노트북의 온디맨드 복제 스케줄링으로 워크로드 자체가 배치 학습과 다르다. 두 경우 모두 클러스터 트레이스에 적용하는 것이 정의되지 않으며, 전자의 ``예측 순위 기반 SJF + 기아 방지'' 원리는 완벽 예측 극한인 SJF가 대표한다.
+
+\textbf{(b) 탄력·재구성(결정 변수 불일치).} Optimus\cite{peng2018optimus}(탄력 worker/PS), Pollux(탄력 goodput), Arena\cite{arena2026}(적응 병렬화 AP 공동설계), Rubick\cite{rubick2025}(실행 계획 재구성)는 모두 \textit{작업 내부의 병렬도·자원을 재구성}한다. 우리의 고정 요청 갱 트레이스에서는 재구성 대상이 없어 이들이 기존 배치·정렬 휴리스틱으로 퇴화하며, 더욱이 disaggregated 프로파일링·온라인 성능 추정 같은 인프라를 요구한다. 이 탄력 축은 이종 goodput 최적 SOTA인 Sia\cite{b4}가 실험에서 대표한다.
+
+\textbf{(c) 학습·솔버 의존(정보·인프라 불일치).} RLTune\cite{rltune2025}은 RL로 학습한 우선순위화와 MILP 노드 매핑을, FFT\cite{fft2025}는 라운드별 비용 최소화 최적화와 finish-time-fairness를 사용한다. 둘 다 학습된 모델 또는 라운드 솔버를, FFT의 경우 추가로 epoch 추정을 전제하는데, 이는 예측을 전혀 쓰지 않는 단일 승급 $O(n)$ 전처리기인 QUELL와 정보·인프라 계층이 다르다. 특히 FFT는 \textit{이종 클러스터에서 JCT와 공정성}을 정면으로 다루는 가장 직접적인 경쟁자이나, 그 finish-time-fairness 목표와 솔버 기반 최적화 축은 같은 정보·계산 가정 아래 동작하는 Themis\cite{mahajan2020themis}(라운드 경매·finish-time-fairness)가 실험에서 대표하며, 무침습 학습 기반 축은 Lucid\cite{b5}가 대표한다.
+
+요컨대 우리는 \textit{같은 결정 객체를 같은 계층에서 비교 가능한 정보로 내리는} 정책만 실험에 포함했다. 탄력 재구성·학습 모델·라운드 솔버·다른 워크로드 계층에 속하는 최신 기법을 같은 표에 올리면 스케줄링 로직이 아니라 문제 정의와 인프라를 비교하게 되므로, 이들은 표 \ref{tab:related}에서 ``관련 연구''로 분리하고 각 축의 대표 베이스라인으로 그 원리를 평가한다.
+
+\begin{table*}[htb!]
+\centering
+\caption{관련 스케줄러의 성격별 분류와 실험 포함 여부. 본 평가는 (i) 같은 결정 변수, (ii) 같은 계층, (iii) 비교 가능한 정보·인프라 가정을 만족하는 정책만 실험에 포함하고($\checkmark$), 그 밖의 최신 기법은 각 축의 대표 베이스라인으로 그 원리를 평가한다.}
+\label{tab:related}
+\footnotesize
+\begin{tabular}{@{}lllcl@{}}
+\toprule
+\textbf{시스템} & \textbf{발표} & \textbf{결정 축(정보 가정)} & \textbf{실험} & \textbf{사유 / 대표 베이스라인} \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{실험 베이스라인 --- 같은 계층·비교 가능 정보}}\\
+FIFO / gate-FIFO & --- & 큐 순서(없음) & $\checkmark$ & 통제군(순수 정책 효과)\\
+SJF & 고전 & 큐 순서(duration) & $\checkmark$ & 평균-최적 기준\\
+LAS (Tiresias)\cite{gu2019tiresias} & NSDI'19 & 큐 순서(누적 서비스) & $\checkmark$ & least-attained\\
+Kueue\cite{kueue2024} & k8s & 쿼타 게이트 & $\checkmark$ & 프로덕션 표준\\
+EASY\cite{mualem2001backfilling} & HPC & 예약+백필(duration 추정) & $\checkmark$ & 정보 우위 상한\\
+Themis\cite{mahajan2020themis} & NSDI'20 & 라운드 경매(finish-time-fair) & $\checkmark$ & 공정성·솔버 축\\
+FGD\cite{weng2023beware} & ATC'23 & 배치(단편화) & $\checkmark$ & 직교 배치 축\\
+Lucid\cite{b5} & ASPLOS'23 & 프로파일 패킹 & $\checkmark$ & 무침습 SOTA\\
+Sia\cite{b4} & SOSP'23 & 탄력 할당(ILP goodput) & $\checkmark$ & 탄력 SOTA\\
+\textbf{sfqa-auto (제안)} & --- & 큐 순서(나이, 예측 0) & $\checkmark$ & 본 연구\\
+\midrule
+\multicolumn{5}{@{}l}{\textit{관련 연구 --- 계층·결정·정보 불일치로 실험 제외}}\\
+Learning-to-Rank\cite{fu2024efficient} & OSDI'24 & LLM 요청 순서(ms) & --- & 계층 불일치; SJF 대표\\
+NotebookOS\cite{notebookos2026} & ASPLOS'26 & 대화형 복제 & --- & 워크로드 상이(범위 밖)\\
+Optimus\cite{peng2018optimus} & EuroSys'18 & 탄력 worker/PS(성능 모델) & --- & 재구성·앱; Sia 대표\\
+Pollux & OSDI'21 & 탄력 goodput(프로파일) & --- & 재구성; Sia 대표\\
+Arena\cite{arena2026} & EuroSys'26 & 적응 병렬화(프로파일+추정) & --- & 재구성; Sia 대표\\
+Rubick\cite{rubick2025} & MLSys'25 & 실행 계획 재구성 & --- & 재구성; Sia 대표\\
+RLTune\cite{rltune2025} & SoCC'25 & RL 순서+MILP(학습 모델) & --- & 학습+솔버; Lucid·Themis 대표\\
+FFT\cite{fft2025} & ICS'25 & 라운드 cost-min(epoch 추정) & --- & 솔버+추정; Themis(FTF) 대표\\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \section{Motivation}
 흥미롭게도, 크게 발전한 딥러닝 기술은 GPU 서버 풀의 비효율 또한 초래했다. Docker Hub\cite{b8}, Hugging Face\cite{b9} 같은 서비스가 가능하게 한 컨테이너\cite{b7} 기반의 재현 가능하고 공유 가능한 학습 환경은 전 세계 딥러닝 연구를 크게 가속했다. 딥러닝을 위한 다양한 ML 프레임워크, 라이브러리, 기본 신경망 아키텍처가 널리 공유되면서 재현성 확보에 들이는 불필요한 시간이 최소화되었다. 그 결과 대부분의 연구자는 일관된 환경에서 알고리즘을 다듬는 데 집중하게 되었고, 모델 아키텍처의 GPU 의존적 구성 요소는 추상화되거나 감추어지는 경우가 많다.
