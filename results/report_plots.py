@@ -437,6 +437,57 @@ def plot_scale(out):
     _save(fig, out, "report_scale")
 
 
+def _bigjob_queue(cmpdir, pol, gpu=8):
+    """raw _jobs.csv에서 요청 GPU=gpu(최대) 작업의 큐 지연(queue_sec) 리스트."""
+    p = os.path.join(RAW, cmpdir, pol + "_jobs.csv")
+    if not os.path.exists(p):
+        return None
+    q = []
+    with open(p) as f:
+        for r in csv.DictReader(f):
+            if int(r["gpu_count"]) == gpu:
+                q.append(float(r["queue_sec"]))
+    return sorted(q) if q else None
+
+
+def plot_bigjob(out):
+    """최대(8-GPU) 작업의 큐 지연: 중앙값 vs 최악 꼬리(p99). sfqa-auto는 중앙값은
+    FIFO보다 크지만 p99(영구 적체 꼬리)는 SJF보다 낮춰 SJF식 starvation tail을 끊는다."""
+    pols = ["fifo", "sjf", "themis", "sfqa-auto"]
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharey=True)
+    for ax, kind in zip(axes, ["single", "hetero"]):
+        med, p99 = [], []
+        for pol in pols:
+            q = _bigjob_queue(f"cmp512_{kind}", pol)
+            if not q:
+                med.append(0); p99.append(0); continue
+            med.append(q[len(q) // 2])
+            p99.append(q[min(len(q) - 1, int(len(q) * 0.99))])
+        x = np.arange(len(pols)); w = 0.38
+        b1 = ax.bar(x - w / 2, med, w, label="median", color="tab:blue")
+        b2 = ax.bar(x + w / 2, p99, w, label="p99 (starvation tail)", color="tab:red")
+        # sfqa-auto p99 vs sjf p99 강조(꼬리 절단)
+        ax.set_yscale("log")
+        ax.set_xticks(x)
+        ax.set_xticklabels(["FIFO", "SJF", "Themis", "sfqa-auto"], fontsize=10)
+        ax.set_title(f"512 GPU, {kind} (1.8$\\times$)")
+        ax.grid(alpha=.3, axis="y", which="both")
+        for bars in (b1, b2):
+            for b in bars:
+                v = b.get_height()
+                if v > 0:
+                    ax.text(b.get_x() + b.get_width() / 2, v * 1.05,
+                            f"{v/1e6:.2f}M", ha="center", fontsize=8)
+    axes[0].set_ylabel("8-GPU job queue delay (s, log)")
+    h, lab = axes[0].get_legend_handles_labels()
+    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.06),
+               ncol=2, fontsize=10, frameon=True)
+    fig.suptitle("Largest (8-GPU) jobs: sfqa-auto raises the median but bounds the worst-case "
+                 "tail (p99) below SJF --- breaking SJF's permanent starvation", fontsize=12)
+    fig.tight_layout(rect=[0, 0.08, 1, 1])
+    _save(fig, out, "report_bigjob")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.dirname(os.path.abspath(__file__)),
@@ -454,6 +505,7 @@ def main():
     plot_tradeoff(args.out)
     plot_scale(args.out)
     plot_alloc(args.out)
+    plot_bigjob(args.out)
     print(f"11개 그래프 저장 완료: {args.out}/report_*.{{pdf,png}}")
 
 

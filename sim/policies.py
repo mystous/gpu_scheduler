@@ -156,8 +156,8 @@ class SFQA(Policy):
 
 
 class SFQAAuto(Policy):
-    """SFQA(논문) 식·동작 그대로, 계수 α·β만 적응적으로 결정. **duration(사후값) 미사용.**
-    P*(j)=1/base^pos + α·A·R, 단일 승급, 트리거 β>AR. (age=신규 도착마다 +1.)
+    """SFQA(논문) 식·동작 그대로, 계수 α만 적응적으로 결정. **duration(사후값) 미사용.**
+    P*(j)=1/base^pos + α·A·R, 단일 승급, 무조건 발동(트리거 없음). (age=신규 도착마다 +1.)
 
     적응(관측 가능값만 — age 통계·부하, 외부 상수 0개):
       **age는 절대 누적(engine 유지). order에서 큐 상대화**: age_rel = age − min(큐 age).
@@ -169,11 +169,10 @@ class SFQAAuto(Policy):
     원리: 절대 age는 맨앞이 최대라 항상 no-op. 큐-상대 + R_min 정규화로 자리 맞는 잡의
       보너스를 증폭해 큐를 막는 큰 잡을 추월(starvation-free). 상수 0개, duration-free."""
     name = "sfqa-auto"; blocking = True
-    def __init__(self, base=2.0, beta=101.0):
+    def __init__(self, base=2.0):
         self.base = base
-        self.beta = beta           # 트리거 임계(AR≥β면 미발동). 101=항상 발동(포화에서도)
     def order(self, cand_idx, age, ar, sim):
-        if cand_idx.size == 0 or ar >= self.beta:             # 트리거(β=101이면 항상 통과)
+        if cand_idx.size == 0:                                # 무조건 발동(트리거 없음)
             return cand_idx
         Rr = np.array(_r_table_fast(sim.nodes)); Rr[Rr <= 0] = 0.5
         gidx = np.clip(sim._arr_gpu[cand_idx].astype(int) - 1, 0, 7)

@@ -52,6 +52,25 @@ def fairness_p1(rows):
     return sum(sc) / n, sc[int(n * .01)], 100 * sum(1 for x in sc if x < 50) / n
 
 
+BSLD_TAU = 10.0   # 초단기 작업 퇴화 방지 임계(논문 §V-D)
+
+
+def bsld_stats(rows):
+    """작업별 bounded slowdown = (queue+service)/max(service, τ). 낮을수록 공정."""
+    b = []
+    for r in rows:
+        q = float(r["queue_sec"]); s = float(r["service_sec"])
+        b.append((q + s) / max(s, BSLD_TAU))
+    return pctl(b, .5), pctl(b, .99), max(b)
+
+
+def makespan_days(rows):
+    """makespan = max(start_s+service_sec) − min(arrival_s), 일(day) 단위."""
+    ends = [float(r["start_s"]) + float(r["service_sec"]) for r in rows]
+    arr = [float(r["arrival_s"]) for r in rows]
+    return (max(ends) - min(arr)) / 86400.0
+
+
 def alloc_avg(d, pol):
     f = f"{A}/{d}/{pol}_alloc.csv"
     if not os.path.exists(f):
@@ -84,6 +103,8 @@ for g in GPUS:
                 continue
             if rows:
                 rec["fmean"], rec["fp1"], rec["flo"] = fairness_p1(rows)
+                rec["bsld_p50"], rec["bsld_p99"], rec["bsld_max"] = bsld_stats(rows)
+                rec["makespan_days"] = makespan_days(rows)
             data[(g, k, pol)] = rec
         print(f"  {d}: {[p for p in POLS if (g,k,p) in data]}", flush=True)
 
@@ -148,7 +169,7 @@ print(f"→ {OUT}/tradeoff_scatter.png")
 # ── 3) 종합 표 CSV ──────────────────────────────────────────────────────────
 with open(f"{OUT}/sweep_table.csv", "w", newline="") as f:
     w = csv.writer(f)
-    w.writerow(["gpu", "kind", "policy", "q_p50", "q_max", "alloc_avg", "fair_mean", "fair_p1", "lt50_pct"])
+    w.writerow(["gpu", "kind", "policy", "q_p50", "q_max", "alloc_avg", "fair_mean", "fair_p1", "lt50_pct", "makespan_days"])
     for g in GPUS:
         for k in KINDS:
             for pol in POLS:
@@ -156,6 +177,38 @@ with open(f"{OUT}/sweep_table.csv", "w", newline="") as f:
                 if rec:
                     w.writerow([g, k, pol, round(rec.get("q_p50", 0)), round(rec.get("q_max", 0)),
                                 round(rec.get("alloc", 0), 1), round(rec.get("fmean", 0), 1),
-                                round(rec.get("fp1", 0), 1), round(rec.get("flo", 0), 2)])
+                                round(rec.get("fp1", 0), 1), round(rec.get("flo", 0), 2),
+                                round(rec.get("makespan_days", 0), 2)])
 print(f"→ {OUT}/sweep_table.csv")
+
+# ── 4) BSLD(slowdown 공정성) 표 CSV + 512 콘솔 출력 ─────────────────────────
+with open(f"{OUT}/bsld_table.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["gpu", "kind", "policy", "bsld_p50", "bsld_p99", "bsld_max"])
+    for g in GPUS:
+        for k in KINDS:
+            for pol in POLS:
+                rec = data.get((g, k, pol))
+                if rec and "bsld_p50" in rec:
+                    w.writerow([g, k, pol, round(rec["bsld_p50"], 2),
+                                round(rec["bsld_p99"], 2), round(rec["bsld_max"], 2)])
+print(f"→ {OUT}/bsld_table.csv")
+
+# 512 단일/이종 BSLD 표 콘솔 출력(논문용 숫자)
+for k in KINDS:
+    print(f"\n=== BSLD @ 512 GPU / {k} (낮을수록 slowdown 공정) ===")
+    print(f"{'policy':<11}{'p50':>9}{'p99':>11}{'max':>13}")
+    for pol in POLS:
+        rec = data.get((512, k, pol))
+        if rec and "bsld_p50" in rec:
+            print(f"{pol:<11}{rec['bsld_p50']:>9.2f}{rec['bsld_p99']:>11.2f}{rec['bsld_max']:>13.2f}")
+
+# 512 단일/이종 makespan(wall time) 표 콘솔 출력(논문용 숫자)
+for k in KINDS:
+    print(f"\n=== makespan @ 512 GPU / {k} (days, 낮을수록 효율) ===")
+    print(f"{'policy':<11}{'makespan_days':>15}")
+    for pol in POLS:
+        rec = data.get((512, k, pol))
+        if rec and "makespan_days" in rec:
+            print(f"{pol:<11}{rec['makespan_days']:>15.2f}")
 print("DONE")
