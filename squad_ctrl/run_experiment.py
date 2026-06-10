@@ -130,7 +130,7 @@ def main():
     ap.add_argument("--gpu-types", default="NVIDIA-B200")
     ap.add_argument("--total-gpu", type=int, default=8)
     ap.add_argument("--policy", default="none",
-                    choices=["none", "fifo", "sjf", "priority", "las", "sfqa", "sfqa-auto",
+                    choices=["none", "fifo", "sjf", "priority", "las", "themis", "sfqa", "sfqa-auto",
                              "easy", "kueue"],
                     help="none=gate 없음(순수 default FIFO). kueue=Kueue LocalQueue 제출"
                          "(gate·컨트롤러 없음). 나머지는 gate+policy_controller 필요")
