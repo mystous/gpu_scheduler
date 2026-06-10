@@ -264,7 +264,7 @@ def plot_easy_noise(out):
 def plot_alloc(out):
     """GPU 할당률 평균 (512 단일·이종, 전 정책) — Sia만 탄력 비용으로 낮음."""
     rows = load_sweep()
-    order = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid", "sia"]
+    order = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid"]
     x = np.arange(len(order)); w = 0.38
     fig, ax = plt.subplots(figsize=(11, 4.6))
     for j, (kind, col) in enumerate([("single", "tab:blue"), ("hetero", "tab:cyan")]):
@@ -275,7 +275,7 @@ def plot_alloc(out):
     ax.set_xticks(x); ax.set_xticklabels(order, rotation=20, ha="right", fontsize=10)
     ax.set_ylabel("avg GPU allocation (%)")
     ax.set_title("Average GPU allocation (Philly 111k, 512 GPU): "
-                 "all near 99% except Sia (elastic ILP leaves GPUs idle)")
+                 "all policies near 99% (queue/placement effects, not resource idling)")
     ax.grid(alpha=.3, axis="y"); ax.legend()
     fig.tight_layout()
     _save(fig, out, "report_alloc")
@@ -285,7 +285,7 @@ def plot_cdf(out):
     """큐잉 지연 전체 분포 CDF (512 GPU 단일·이종, 전 정책). 백분위 표가 못 보여주는
     분포 형태를 드러냄 — sfqa-auto는 몸통을 왼쪽(빠름)으로 당기면서 꼬리도 억제."""
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True)
-    order = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid", "sia"]
+    order = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd", "sfqa", "sfqa-auto", "lucid"]
     for ax, kind in zip(axes, ["single", "hetero"]):
         for pol in order:
             q = _read_queue(f"cmp512_{kind}", pol)
@@ -310,12 +310,12 @@ def plot_cdf(out):
 
 
 ORDER_ALL = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd",
-             "sfqa", "sfqa-auto", "lucid", "sia"]
+             "sfqa", "sfqa-auto", "lucid"]   # Sia는 동일엔진 비교에서 제외(related work) — 프로파일 결정변수 트레이스에 부재
 
 
 def plot_loadcurve(out):
     """종합 부하곡선: 클러스터 크기(부하)에 따른 중앙값(q_p50)·최악대기(q_max)·공정성(p1)을
-    단일·이종 두 행으로, 전 11정책(FGD 포함) 라인으로 한 눈에.
+    단일·이종 두 행으로, 전 10정책(FGD 포함; Sia는 동일엔진 제외) 라인으로 한 눈에.
     부하·이질성이 깊을수록 sfqa-auto만 '빠름+공정'을 동시에 유지함을 보인다."""
     rows = load_sweep()
     gpus = ["256", "512", "1024"]
@@ -344,7 +344,7 @@ def plot_loadcurve(out):
             ax.xaxis.set_minor_formatter(NullFormatter())
             if logy:
                 ax.set_yscale("log")
-            if ri == 1:
+            if ri == 1 and ci == 1:   # 가운데 하단 패널에만 한 번(좌우 중복 라벨이 겹쳐 뭉개지던 문제 해소)
                 ax.set_xlabel("cluster GPUs (256=3.6$\\times$, 512=1.8$\\times$, 1024=0.9$\\times$ load)")
             ax.set_ylabel(ylab)
             ax.set_title(f"{kind} — {['median','worst-case','fairness'][ci]}", fontsize=12)
@@ -352,7 +352,7 @@ def plot_loadcurve(out):
     h, lab = axes[0][0].get_legend_handles_labels()
     fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.045),
                ncol=len(lab), fontsize=11, frameon=True)
-    fig.suptitle("Load dependence, all 11 policies (Philly 111k): single (top) vs heterogeneous (bottom)",
+    fig.suptitle("Load dependence, all 10 policies (Philly 111k): single (top) vs heterogeneous (bottom)",
                  fontsize=14)
     fig.tight_layout(rect=[0, 0.06, 1, 1])
     _save(fig, out, "report_loadcurve")
@@ -388,7 +388,7 @@ def plot_tradeoff(out):
                 ax.set_ylabel("order-fairness p1 (100=fair) $\\uparrow$")
             ax.set_title(f"{g} GPU {kind} ({ld[g]})", fontsize=12)
             ax.grid(alpha=.3, which="both")
-    fig.suptitle("Queue-delay vs fairness trade-off, all 11 policies (Philly 111k): "
+    fig.suptitle("Queue-delay vs fairness trade-off, all 10 policies (Philly 111k): "
                  "top-left = fast & fair (sfqa-auto's target region)", fontsize=14)
     fig.tight_layout()
     _save(fig, out, "report_tradeoff")
@@ -430,8 +430,8 @@ def plot_scale(out):
     ax.set_title("(b) Fairness: worst-1% order-fairness (0 = starvation)")
     ax.grid(alpha=.3, axis="y")
 
-    fig.suptitle("All 11 policies at peak overload (Philly 111k, 512 GPU heterogeneous, 1.8$\\times$): "
-                 "lightweight fast policies collapse fairness; only sfqa-auto keeps it (Sia matches but at 200$\\times$ compute)",
+    fig.suptitle("All policies at peak overload (Philly 111k, 512 GPU heterogeneous, 1.8$\\times$): "
+                 "lightweight fast policies collapse fairness; only sfqa-auto keeps it without prior information",
                  fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     _save(fig, out, "report_scale")
