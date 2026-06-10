@@ -38,6 +38,27 @@
 
 → **B200 단일노드 실측 = 큐-축 8정책**(FIFO·SJF·LAS·Kueue·EASY·Themis·SFQA·sfqa-auto). 이게 QUELL의 기여 축(HOL 블로킹·기아)과 정확히 일치. FGD·Lucid는 직교 축(배치·collocation)이라 단일노드 큐 검증의 범위 밖임을 논문에 명시.
 
+### 3.1 FGD·Lucid 제외 사유 (상세)
+
+두 정책의 제외는 "강한 베이스라인 회피"가 아니라, **단일노드라는 물리 조건에서 그 정책의 결정 변수가 정의되지 않거나(FGD) 측정 인프라가 부재(Lucid)** 하기 때문이다. 둘 다 QUELL의 기여 축(큐 순서)이 아닌 **직교 축**(노드 간 배치 / GPU 공유 collocation)이며, 이 축은 시뮬레이터가 256–1024 GPU 다중노드 규모에서 이미 평가한다.
+
+**FGD — 단일노드엔 결정 변수가 존재하지 않음 (FIFO로 퇴화).**
+- FGD의 결정 변수는 **노드 선택**이다: 단편화 증가 $\Delta F$가 최소인 노드에 배치. 측도는 $F_n = \text{free}_n \cdot P(\text{size} > \text{free}_n)$ — 노드 $n$의 기대 미할당 GPU(노드 간 stranding).
+- **B200 단일노드 = 노드가 1개** → 노드 선택 결정 자체가 없다. 모든 잡이 유일한 노드로 가고, $\Delta F$ 비교·최소점유 노드 통합 같은 FGD 메커니즘은 전부 null이 된다.
+- FGD가 줄이려는 "단편화"는 **노드 간 stranding**(여러 서버에 7장씩 흩어진 빈 GPU로 8-GPU 잡을 못 넣는 상황)이다. 8개 GPU가 한 노드에 연속으로 있는 단일노드엔 이 stranding이 **원리적으로 없다**(잡 큐는 FCFS, 배치는 강제).
+- 결과: 단일노드에서 FGD는 **FIFO와 거동이 동일**하다. 따로 실측해도 FIFO 행을 복제할 뿐 새 정보가 0이다.
+- FGD의 가치는 **클러스터 규모(다중 노드)**에서만 발현한다(원 FGD 논문도 6,200+ GPU 클러스터로 평가). → 우리 시뮬의 256–1024 GPU(다중노드)가 이 축을 담당. 실측은 H100 3노드 합류 시 의미가 생긴다.
+
+**Lucid — collocation 측정 인프라가 단일노드 whole-GPU 설정에 부재.**
+- Lucid의 결정 변수는 **collocation**(호환되는 두 잡을 같은 GPU 집합에 packing)이다. 프로파일러(Primo EBM)로 공유 안전성·간섭(슬로다운)을 예측해 GPU 공유 이득을 얻는다.
+- 실 K8s에서 이를 측정하려면 **GPU 공유 인프라**가 필요하다: MPS(Multi-Process Service) / MIG / time-slicing + 분수 GPU device-plugin 설정. 그런데 기존 캠페인의 GPU-holder 스텁은 **whole-GPU 점유**(1 pod = N개 통GPU, `nvidia.com/gpu` limit)로, collocation의 정반대다.
+- 충실한 Lucid 실측엔 세 가지가 선행돼야 한다 — (a) B200에 MPS/MIG 활성 + 분수 GPU 플러그인, (b) 어떤 잡을 colocate할지·그 슬로다운(SS score)을 정할 **프로파일/간섭 모델**, (c) 실제 co-run 슬로다운(메모리 대역폭·SM 경합) **측정**. (c)는 그 자체가 별도 연구 측정이며, 설정 플래그가 아니라 상당한 인프라 빌드다.
+- 게다가 holder 스텁의 연산은 sleep이라 **colocate해도 측정할 실제 간섭이 없다** — Lucid의 packing 이득/손실을 보려면 진짜 워크로드를 돌려야 하고, 이는 "빠르고 결정적인 큐 측정"이라는 holder-스텁 설계를 무력화한다.
+- 또한 Lucid는 잡별 utilization/throughput 프로파일을 전제하는데 트레이스엔 없다(시뮬에선 합성으로 대체). 실측에선 이 이상화가 **실 프로파일링 필요**로 더 무거워진다.
+- 결론: 단일노드 whole-GPU holder 설정의 **범위 밖**. GPU 공유 인프라 + 실 워크로드 + 간섭 측정이 선행돼야 하며, 이는 별도 연구 규모의 작업이다.
+
+**정리.** FGD는 *결정 변수가 단일노드에 정의되지 않아 FIFO 중복*이고, Lucid는 *collocation 측정 인프라(GPU 공유+실 워크로드+간섭 측정)가 부재*하다. 둘 다 직교 축이라 시뮬이 규모에서 커버하므로, 단일노드 실측은 **결정 변수가 단일노드에 정의되는 큐-축 정책**에 한정한다 — 이것이 "convenient exclusion"이 아닌 원리적 한정이다.
+
 ## 4. 실행 절차 (정책당 1 run)
 ```bash
 cd /home/mystous/gpu_scheduler/squad_ctrl

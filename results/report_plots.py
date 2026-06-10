@@ -312,6 +312,11 @@ def plot_cdf(out):
 ORDER_ALL = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd",
              "sfqa", "sfqa-auto", "lucid"]   # Sia는 동일엔진 비교에서 제외(related work) — 프로파일 결정변수 트레이스에 부재
 
+# 그림 범례 표시명(데이터 키는 그대로, 표시만 논문 명칭으로). sfqa→AQA, sfqa-auto→LAQA.
+POL_DISPLAY = {"fifo": "FIFO", "sjf": "SJF", "las": "LAS", "kueue": "Kueue",
+               "easy": "EASY", "themis": "Themis", "fgd": "FGD",
+               "sfqa": "AQA", "sfqa-auto": "LAQA", "lucid": "Lucid"}
+
 
 def plot_loadcurve(out):
     """종합 부하곡선: 클러스터 크기(부하)에 따른 중앙값(q_p50)·최악대기(q_max)·공정성(p1)을
@@ -338,7 +343,7 @@ def plot_loadcurve(out):
                 c, ls = POL_STYLE[pol]
                 lw = 2.6 if pol == "sfqa-auto" else 1.3
                 a = 1.0 if pol in ("sfqa-auto", "fifo") else 0.7
-                ax.plot(xg, ys, ls, marker="o", ms=4, color=c, lw=lw, alpha=a, label=pol)
+                ax.plot(xg, ys, ls, marker="o", ms=4, color=c, lw=lw, alpha=a, label=POL_DISPLAY.get(pol, pol))
             ax.set_xscale("log")
             ax.xaxis.set_major_locator(FixedLocator(xg)); ax.set_xticklabels(xg)
             ax.xaxis.set_minor_formatter(NullFormatter())
@@ -378,7 +383,7 @@ def plot_tradeoff(out):
                 big = pol == "sfqa-auto"
                 ax.scatter(x, y, s=150 if big else 70, color=c, zorder=3,
                            edgecolor="k", linewidths=0.9 if big else 0.4)
-                ax.annotate(pol, (x, y), fontsize=8, xytext=(4, 3),
+                ax.annotate(POL_DISPLAY.get(pol, pol), (x, y), fontsize=8, xytext=(4, 3),
                             textcoords="offset points")
             ax.set_xscale("log")
             ax.set_ylim(-5, 108)
@@ -469,7 +474,7 @@ def plot_bigjob(out):
         # sfqa-auto p99 vs sjf p99 강조(꼬리 절단)
         ax.set_yscale("log")
         ax.set_xticks(x)
-        ax.set_xticklabels(["FIFO", "SJF", "Themis", "sfqa-auto"], fontsize=10)
+        ax.set_xticklabels(["FIFO", "SJF", "Themis", "LAQA"], fontsize=10)
         ax.set_title(f"512 GPU, {kind} (1.8$\\times$)")
         ax.grid(alpha=.3, axis="y", which="both")
         for bars in (b1, b2):
