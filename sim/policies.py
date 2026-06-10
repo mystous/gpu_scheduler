@@ -222,11 +222,56 @@ class EASY(Policy):
 
 
 class Kueue(Policy):
-    """BestEffortFIFO admission: 도착순, 들어갈 수 있는 잡 먼저(관대한 backfill).
-    예약 없음 — blocking=False."""
+    """충실 Kueue: per-VC(테넌트) 쿼타 기반 공정 공유 + 유휴 시 빌려쓰기(borrowing).
+
+    실제 Kueue는 ClusterQueue를 VC(virtual cluster)별로 두고 nominalQuota를 정해, 각 VC가
+    자기 몫을 보장받되 유휴 용량은 다른 VC가 빌려 쓴다(BestEffortFIFO admission + cohort
+    borrowing). 본 구현은 이를 SoA 트레이스에 충실히 특수화한다:
+
+      쿼타: VC v의 nominalQuota = (VC v의 총 GPU-수요 비율)×클러스터 총 GPU.
+            = clusterGPU · Σ_{j∈v} gpu_j / Σ_all gpu_j.  전 잡 vc·gpu로 한 번 계산해 캐시.
+      공정 공유 순서: 매 패스에서 (a) 실행 중 잡의 VC별 GPU 사용량 집계,
+            (b) usage/quota(쿼타 대비 사용률)가 낮은 under-served VC의 잡 우선,
+            (c) 같은 VC 내에선 도착순. 쿼타 초과 VC 잡도 유휴 용량 있으면 배치(borrowing)
+                — blocking=False라 후순위로 backfill 허용.
+      VC 정보가 전부 'default'면 단일 VC → usage/quota가 모두 동률이라 도착순으로 graceful
+      degrade(기존 BestEffortFIFO와 동일).
+
+    주의: 쿼타 공정 공유는 다중 VC가 용량을 경합할 때 발현된다. 단일/동종이라도 VC가 여럿이면
+    효과가 나타난다(테넌트별 보장). VC가 1개뿐인 트레이스에선 LAS/FIFO와 사실상 동치다."""
     name = "kueue"
+
+    def __init__(self):
+        self._quota = None          # {vc: nominalQuota(GPU)} 캐시
+
+    def _ensure_quota(self, sim):
+        if self._quota is not None:
+            return
+        # 전 잡 VC별 총 GPU-수요 → 비례 배분. SoA(_arr_vc/_arr_gpu)로 일괄 합산.
+        vcs = sim._arr_vc
+        gpus = sim._arr_gpu.astype(float)
+        demand = {}
+        for v, g in zip(vcs, gpus):
+            demand[v] = demand.get(v, 0.0) + g
+        total_demand = sum(demand.values()) or 1.0
+        cap = float(sim.total_gpu)
+        # 각 VC 쿼타 = 수요 비율 × 클러스터 용량(최소 1로 floor → 0-나눗셈 방지).
+        self._quota = {v: max(1.0, cap * d / total_demand) for v, d in demand.items()}
+
     def order(self, cand_idx, age, ar, sim):
-        return cand_idx                                        # 도착순(engine 배치 루프가 backfill)
+        if cand_idx.size == 0:
+            return cand_idx
+        self._ensure_quota(sim)
+        # (a) 실행 중 잡의 VC별 GPU 사용량 집계.
+        usage = {}
+        for j in sim.running.values():
+            usage[j.vc] = usage.get(j.vc, 0.0) + j.gpu_count
+        # (b) 후보별 usage/quota(쿼타 대비 사용률) 키. under-served(낮은 값) 우선.
+        cand_vc = sim._arr_vc[cand_idx]
+        ratio = np.array([usage.get(v, 0.0) / self._quota.get(v, 1.0) for v in cand_vc], dtype=float)
+        # 단일 VC면 ratio 전부 동률 → argsort stable이 도착순(cand_idx) 보존(graceful degrade).
+        # (c) 같은 VC 내 도착순: cand_idx가 이미 도착순이라 stable 정렬로 자동 보장.
+        return cand_idx[np.argsort(ratio, kind="stable")]
 
 
 # ── FGD: Fragmentation Gradient Descent (Weng et al., USENIX ATC '23) ─────────

@@ -38,10 +38,13 @@ FAST_POLS = ["fifo", "sjf", "las", "kueue", "easy", "themis", "sfqa", "sfqa-auto
 
 
 def load_trace(path):
+    """트레이스 로드. vc 컬럼이 있으면 읽고, 없으면 'default'(하위호환).
+    반환: (job_id, arrival_s, service_sec, gpu_count, vc) 5-튜플."""
     out = []
     for r in csv.DictReader(open(path)):
+        vc = r.get("vc") or "default"
         out.append((r["job_id"], float(r["arrival_s"]), max(1.0, float(r["service_sec"])),
-                    int(r["gpu_count"])))
+                    int(r["gpu_count"]), vc))
     return out
 
 
@@ -79,7 +82,7 @@ def run_policy(name, trace, nodes_proto, ovh):
         import random
         rng = random.Random(42)
         jobs = [LJob(id=i, arrival=a, duration=d, gpu_count=g,
-                     util=min(0.99, max(0.05, rng.gauss(0.6, 0.2)))) for i, a, d, g in trace]
+                     util=min(0.99, max(0.05, rng.gauss(0.6, 0.2)))) for i, a, d, g, vc in trace]
         sim = LucidSim(jobs, nodes, ovh, gss=2); r = sim.run()
         jr = [(j.id, j.arrival, j.place_time, j.place_time - j.arrival,
                max(j.finish_time - j.place_time, 0.1), j.gpu_count)
@@ -88,8 +91,9 @@ def run_policy(name, trace, nodes_proto, ovh):
     else:
         pol = P.make(name)
         if name == "fgd":
-            pol.set_dist([g for _, _, _, g in trace])
-        jobs = [Job(id=i, arrival=a, duration=d, gpu_count=g, gpu_type="any") for i, a, d, g in trace]
+            pol.set_dist([g for _, _, _, g, _ in trace])
+        jobs = [Job(id=i, arrival=a, duration=d, gpu_count=g, gpu_type="any", vc=vc)
+                for i, a, d, g, vc in trace]
         sim = Simulator(jobs, nodes, pol, overheads=ovh); r = sim.run()
         jr = [(j.id, j.arrival, j.place_time, j.queue_delay, j.duration, j.gpu_count)
               for j in sim.finished if j.queue_delay is not None]
@@ -114,7 +118,10 @@ def dump(outdir, name, jr, alloc):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--trace", default=os.path.join(HERE, "sweep_trace.csv"))
+    # 기본 트레이스: vc 버전이 있으면 사용(Kueue per-VC 쿼타), 없으면 4컬럼 트레이스(하위호환).
+    _vc_trace = os.path.join(HERE, "sweep_trace_vc.csv")
+    _def_trace = _vc_trace if os.path.exists(_vc_trace) else os.path.join(HERE, "sweep_trace.csv")
+    ap.add_argument("--trace", default=_def_trace)
     ap.add_argument("--out", default=os.path.join(HERE, "sweep_results", "raw"))
     ap.add_argument("--summary-out", default=os.path.join(HERE, "sweep_results"))
     ap.add_argument("--gpus", default="256,512,1024")

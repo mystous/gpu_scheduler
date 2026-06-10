@@ -27,6 +27,7 @@ class Job:
     gpu_count: int
     gpu_type: str = "any"
     preemptible: bool = False
+    vc: str = "default"     # 테넌트/virtual cluster (Kueue per-VC 쿼타 공정 공유용)
     # 동역학 상태
     place_time: float = -1.0
     finish_time: float = -1.0
@@ -142,6 +143,7 @@ class Simulator:
         self._arr_arrival = np.array([j.arrival for j in self.idx2job], dtype=float)
         self._arr_dur = np.array([j.duration for j in self.idx2job], dtype=float)
         self._arr_gpu = np.array([j.gpu_count for j in self.idx2job], dtype=np.int32)
+        self._arr_vc = np.array([j.vc for j in self.idx2job], dtype=object)   # 잡별 VC(Kueue 쿼타용)
         self._arr_seq = np.zeros(n, dtype=float)        # 도착 시점의 전역 도착 카운트
         self._arrived = np.zeros(n, dtype=bool)         # 도착(큐 진입)했는가
         self._placed_arr = np.zeros(n, dtype=bool)      # 배치(running/완료)됐는가
