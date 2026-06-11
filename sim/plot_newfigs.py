@@ -54,8 +54,7 @@ def fig_ablation_grid():
     for ax in axes[:, 0]:
         ax.set_ylabel("order-fairness $p_1$")
     axes[0, 0].legend(fontsize=7, loc="center right", framealpha=0.9)
-    fig.suptitle("No fixed $\\alpha$ reaches tuning-free SAFA's fairness (any workload)", fontsize=9)
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.tight_layout()
     fig.savefig(os.path.join(OUT, "fig_ablation_grid.pdf"))
     plt.close(fig)
     print("wrote fig_ablation_grid.pdf")
@@ -80,29 +79,39 @@ def fig_sensitivity():
            capsize=2, ecolor="#d9534f", error_kw={"lw": 0.8})
     ax.set_xticks(list(xs)); ax.set_xticklabels([DISP[p] for p in pols], rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("order-fairness $p_1$"); ax.set_ylim(0, 105)
-    ax.set_title("512 hetero: $\\pm$50% coeff. perturbation\n(whisker=min/max; baselines stay $\\approx$0)", fontsize=8)
+    ax.set_title("512 hetero", fontsize=8)
     fig.savefig(os.path.join(OUT, "fig_sensitivity.pdf"))
     plt.close(fig)
     print("wrote fig_sensitivity.pdf")
 
 
-# ── Fig 3: Helios — starvation rate (lt50%) per policy, overload hetero ───────
+# ── Fig 3: Helios — speed (q_p50) vs starvation (lt50%) trade-off, overload ────
 def fig_helios():
     rows = [r for r in load(os.path.join(SR, "helios", "sweep_table.csv"))
             if r["kind"] == "hetero" and int(r["gpu"]) == 80 and r["policy"] in DISP]
-    rows = sorted(rows, key=lambda r: float(r["lt50_pct"]), reverse=True)
-    pols = [r["policy"] for r in rows]
-    vals = [float(r["lt50_pct"]) for r in rows]
-    colors = ["#2c7fb8" if p == "sfqa-auto" else "#7bccc4" if p == "sfqa"
-              else "#9ecae1" if p == "fifo" else "#bdbdbd" for p in pols]
-    fig, ax = plt.subplots(figsize=(3.4, 2.6))
-    ax.barh(range(len(pols)), vals, color=colors)
-    ax.set_yticks(range(len(pols))); ax.set_yticklabels([DISP[p] for p in pols], fontsize=7)
-    ax.set_xlabel("starvation rate lt50\\% (lower = fairer)")
-    ax.set_title("Helios (Venus, 125k jobs) overload hetero\nSAFA starves $\\approx$1/3 of greedy baselines", fontsize=8)
-    for i, v in enumerate(vals):
-        ax.text(v+0.3, i, f"{v:.1f}", va="center", fontsize=6.5)
-    ax.set_xlim(0, max(vals)*1.18)
+    fig, ax = plt.subplots(figsize=(3.4, 2.8))
+    # 동일 (q_p50, lt50) 점은 라벨을 묶는다(LAS·Kueue·FGD가 동일).
+    groups = {}
+    for r in rows:
+        key = (round(float(r["q_p50"]), 1), round(float(r["lt50_pct"]), 2))
+        groups.setdefault(key, []).append(r["policy"])
+    for (x, y), pols_here in groups.items():
+        lead = "sfqa-auto" if "sfqa-auto" in pols_here else ("fifo" if "fifo" in pols_here else pols_here[0])
+        col = ("#2c7fb8" if lead == "sfqa-auto" else "#7bccc4" if lead == "sfqa"
+               else "#9ecae1" if lead == "fifo" else "#969696")
+        sz = 70 if lead in ("sfqa-auto", "fifo") else 36
+        ax.scatter(x, y, s=sz, color=col, zorder=3, edgecolor="k", linewidth=0.4)
+        lab = "/".join(DISP[p] for p in pols_here)
+        right = lead in ("fifo", "sfqa-auto", "sfqa")
+        ax.annotate(lab, (x, y), xytext=(x*(0.72 if right else 1.25), y+0.7),
+                    fontsize=6.6, ha=("right" if right else "left"))
+    ax.set_xscale("log")
+    ax.set_xlabel("median queue delay $q_{p50}$ (s, log)\n$\\rightarrow$ HOL-wait starvation")
+    ax.set_ylabel("order-unfairness lt50\\% (overtaken)\n$\\rightarrow$ less order-fair")
+    ax.set_ylim(-2, 26)
+    ax.annotate("low wait \\&\norder-fair\n(ideal)", (0.03, 0.10), xycoords="axes fraction",
+                fontsize=6.3, color="green", ha="left", va="center")
+    pass  # title은 본문/캡션으로
     fig.savefig(os.path.join(OUT, "fig_helios.pdf"))
     plt.close(fig)
     print("wrote fig_helios.pdf")
@@ -130,7 +139,7 @@ def fig_placement():
     ax.set_xticks([j + w for j in range(len(placements))])
     ax.set_xticklabels([plabel[p] for p in placements], rotation=20, ha="right", fontsize=7)
     ax.set_ylabel("SAFA order-fairness $p_1$"); ax.set_ylim(0, 70)
-    ax.set_title("SAFA $p_1$ across core placements\n(SJF/LAS = 0 at hetero, any placement)", fontsize=8)
+    ax.set_title("SAFA $p_1$ by core placement", fontsize=8)
     ax.legend(fontsize=6.5, ncol=3, loc="upper center", columnspacing=1.0)
     fig.savefig(os.path.join(OUT, "fig_placement.pdf"))
     plt.close(fig)
