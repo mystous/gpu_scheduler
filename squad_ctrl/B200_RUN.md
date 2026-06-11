@@ -1,7 +1,9 @@
 # B200 단일노드 K8s — 현 비교 실험 실행 가이드
 
-> 목적: 논문(QUELL)의 **큐-축 비교 정책**을 실제 NVIDIA B200×8 단일노드 K8s에서 실측해
-> 리젝 ①(시뮬-only)을 정면으로 메운다. 2026-06-04/05 캠페인 인프라를 현 10정책 기준으로 재점검·확장한 결과.
+> 목적: 논문(SAFA)의 **큐-축 비교 정책**을 실제 NVIDIA B200×8 단일노드 K8s에서 실측해
+> 리젝 ①(시뮬-only)을 정면으로 메운다. 2026-06-04/05 캠페인 인프라를 현 정책·실험 구성으로 재점검·확장한 결과.
+>
+> **본 개정의 핵심**: 시뮬에 추가된 실험들(고정 α vs 무튜닝 ablation, 합성계수 민감도, 독립 트레이스 일반화, 배치 축, 충실도)을 점검해 **B200 단일노드에서 실측이 의미 있는 것만** 추려 실행 대상으로 확정한다(§3.2 적용 매트릭스).
 
 ## 1. 환경 전제 (실험 서버 = `/home/mystous/gpu_scheduler`, `/raid/squad`)
 - 노드: NVIDIA **B200×8 단일노드**, k8s v1.31 (기존 캠페인은 kind `llmd`).
@@ -31,12 +33,12 @@
 | Kueue | ✅ | 네이티브 LocalQueue 제출(`--policy kueue`) |
 | EASY backfill | ✅ | 예약+백필(완벽 추정 상한) |
 | **Themis** | ✅ **(본 점검에서 추가)** | ρ=(대기+잔여)/ideal 정렬. `policy_controller.py`·`run_experiment.py` choices에 추가 |
-| SFQA (고정) | ✅ | |
-| sfqa-auto | ✅ | zero-knob(σ* 2-tier). 제안 정책 |
+| SAFA(고정 α) (키 `sfqa`) | ✅ | $P^*=P+\alpha A R$, 고정 노브. ablation의 고정군 |
+| SAFA (키 `sfqa-auto`) | ✅ | zero-knob 무튜닝. **제안 정책**, ablation의 무튜닝군 |
 | **FGD** | ❌ **범위 밖** | 노드 간 단편화 배치 정책 — **단일노드엔 노드 간 단편화가 없어 무의미**. 다중노드(H100 3노드) 시 또는 시뮬 전담. |
 | **Lucid** | ❌ **범위 밖** | collocation(GPU 공유) 필요 — holder 스텁은 whole-GPU. MPS/타임슬라이싱 인프라 추가 필요(큰 작업). |
 
-→ **B200 단일노드 실측 = 큐-축 8정책**(FIFO·SJF·LAS·Kueue·EASY·Themis·SFQA·sfqa-auto). 이게 QUELL의 기여 축(HOL 블로킹·기아)과 정확히 일치. FGD·Lucid는 직교 축(배치·collocation)이라 단일노드 큐 검증의 범위 밖임을 논문에 명시.
+→ **B200 단일노드 실측 = 큐-축 8정책**(FIFO·SJF·LAS·Kueue·EASY·Themis·SAFA(고정 α)·SAFA). 이게 SAFA의 기여 축(HOL 블로킹·기아)과 정확히 일치. FGD·Lucid는 직교 축(배치·collocation)이라 단일노드 큐 검증의 범위 밖임을 논문에 명시.
 
 ### 3.1 FGD·Lucid 제외 사유 (상세)
 
@@ -59,6 +61,21 @@
 
 **정리.** FGD는 *결정 변수가 단일노드에 정의되지 않아 FIFO 중복*이고, Lucid는 *collocation 측정 인프라(GPU 공유+실 워크로드+간섭 측정)가 부재*하다. 둘 다 직교 축이라 시뮬이 규모에서 커버하므로, 단일노드 실측은 **결정 변수가 단일노드에 정의되는 큐-축 정책**에 한정한다 — 이것이 "convenient exclusion"이 아닌 원리적 한정이다.
 
+### 3.2 현 실험 변경분의 B200 적용 매트릭스 (★본 개정 핵심)
+
+시뮬에 추가·변경된 실험을 단일노드 B200 실측에 매핑한다. **단일노드라는 물리 조건**과 **gate 기반 holder 하니스**(큐 순서만 제어, 배치는 kube-scheduler가 binding)가 적용 가능 여부를 가른다.
+
+| 시뮬 실험 (현행) | B200 단일노드 | 사유 / 조치 |
+|---|---|---|
+| **큐-축 8정책 비교** | ✅ **실행** | SAFA 기여 축(HOL·기아)과 정확히 일치. §4 스크립트 |
+| **Ablation: SAFA(고정 α) vs SAFA** | ✅ **실행(자동 포함)** | `sfqa`·`sfqa-auto` 두 run이 곧 ablation. §5에서 두 run의 p50·max·BSLD를 직접 대비 → 무튜닝의 실측 순효과 |
+| **독립 트레이스 일반화** | ⚠️ **선택 실행** | 큐-축 8정책을 **2번째 테스트셋**(Philly-2K-C48 또는 별도 트레이스)으로 1회 더 → 실 클러스터 일반화 보강. 비용 있으니 1순위 8정책 완료 후 |
+| **합성 계수 민감도(±50%)** | ❌ **부적용** | 타입 속도계수·오버헤드·Lucid SS는 \textit{시뮬 모델 파라미터}. 실 클러스터는 그 자체가 ground truth라 흔들 대상이 없음(오히려 B200 실측이 오버헤드 모델의 \textit{원천}) |
+| **시뮬레이터 충실도(toy 대조)** | ❌ **부적용** | 이산사건 엔진 내부 정확성 검증 — 실 클러스터엔 해석해 대조 개념이 없음 |
+| **배치 축(most-alloc/compact/round_robin/mcts)** | ❌ **단일노드 부적용** | 배치 = \textbf{노드 선택}인데 단일노드엔 노드가 1개. holder 하니스는 큐 게이트만 제어하고 GPU binding은 kube-scheduler가 수행 → 우리 배치 정책을 주입할 지점이 없음. **FGD와 동일 사유**, 다중노드(H100 3노드) 합류 시 의미 |
+
+**정리**: B200 단일노드에서 **필요·가능한 실측은 (1) 큐-축 8정책, (2) 그 안에 포함된 고정 vs 무튜닝 ablation, (3) 선택적 2번째 트레이스 일반화** 셋이다. 민감도·충실도·배치 축은 단일노드에 정의되지 않거나(배치) 실 클러스터에 대응 개념이 없어(민감도·충실도) 시뮬 전담이며, 이를 논문에 명시한다(\S\ref{eval:robust}의 강건성 검증은 시뮬 한정, 실측은 큐-축 정책 비교가 담당).
+
 ## 4. 실행 절차 (정책당 1 run)
 ```bash
 cd /home/mystous/gpu_scheduler/squad_ctrl
@@ -69,9 +86,9 @@ cd /home/mystous/gpu_scheduler/squad_ctrl
 ./run_one.sh las       m_las       ""              ""
 ./run_one.sh kueue     m_kueue     ""              ""
 ./run_one.sh easy      m_easy      ""              ""
-./run_one.sh themis    m_themis    ""              ""           # ← 신규
-./run_one.sh sfqa      m_sfqa      "--beta 80"     ""
-./run_one.sh sfqa-auto m_auto      ""              ""           # 제안
+./run_one.sh themis    m_themis    ""              ""
+./run_one.sh sfqa      m_sfqa      "--beta 80"     ""           # SAFA(고정 α) — ablation 고정군
+./run_one.sh sfqa-auto m_auto      ""              ""           # SAFA(무튜닝) — 제안 + ablation 무튜닝군
 ```
 - 공통 워크로드는 `run_one.sh`에 박힌 `--sample 1000 --seed 42 --kappa 3000 --min-dur 6 --max-dur 8`.
 - **duration 이질성을 살리려면**(BSLD 독립 신호) Philly-2K-C48 또는 충실 체인 설정으로 `EXP_EXTRA` 교체 — 예: `"--sample 500 --kappa 360 --min-dur 5 --max-dur 20 --clamp-over 172800"` (기존 S=360 체인과 동일 취지).
@@ -84,6 +101,8 @@ $VENV distributions.py      # → CDF(큐잉지연·BSLD)
 ```
 논문 §VI 실측 표(기존 SUMMARY.md의 8정책 표)에 LAS·Themis 행을 추가해 큐-축 8정책 완성.
 
+**Ablation(실측):** 위 8정책 표의 `sfqa`(고정 α) 행과 `sfqa-auto`(무튜닝) 행을 직접 대비하면, 시뮬 §VI-D의 "무튜닝 순효과" ablation을 \textit{실 클러스터}에서 재확인하는 것이 된다 --- 두 run의 p50·max 큐잉지연·BSLD 차이를 별도 소표로 뽑아 시뮬 경향(무튜닝이 공정성↑·중앙값 소폭 양보)과 일치하는지 보고.
+
 ## 6. 갭·주의 (실행 전 확인)
 1. **FGD/Lucid 범위 밖** — 위 §3. 논문 실측 절에 "단일노드 큐-축 검증"으로 한정 명시.
 2. **선점 없음** — 전 정책 비선점(holder 스텁 whole-GPU). 리젝 ②(GPU 선점 비현실성)는 **비선점 설계로 회피**했음을 강점으로 서술.
@@ -93,4 +112,4 @@ $VENV distributions.py      # → CDF(큐잉지연·BSLD)
 6. **오버헤드 실측** — `measure_overheads.py`로 스케줄링·기동·종료 구간 계측(논문 B200 오버헤드 모델의 원천). 이미 `results/overheads/`에 1차 결과 보존.
 
 ## 7. 한 줄 요약
-인프라·테스트셋·컨트롤러 모두 준비됨. **현 점검으로 Themis를 추가**해 B200 단일노드에서 **큐-축 8정책 실측**이 가능. 서버에서 §4 스크립트만 돌리면 논문 §VI에 실 클러스터 비교를 채울 수 있다. FGD·Lucid는 다중노드/collocation 인프라가 필요해 단일노드 범위 밖(논문에 명시).
+인프라·테스트셋·컨트롤러 모두 준비됨. B200 단일노드에서 **필요·가능한 실측 = 큐-축 8정책(FIFO·SJF·LAS·Kueue·EASY·Themis·SAFA(고정 α)·SAFA) + 그 안의 고정 vs 무튜닝 ablation + 선택적 2번째 트레이스**(§3.2 매트릭스). 서버에서 §4 스크립트를 돌리면 논문 §VI에 실 클러스터 비교를 채워 리젝①(시뮬-only)을 정면 해소한다. **배치 축·민감도·충실도는 단일노드에 정의되지 않거나 실 클러스터 대응 개념이 없어 시뮬 전담**이며(배치 축은 FGD와 같은 사유로 다중노드 향후), FGD·Lucid도 다중노드/collocation 인프라가 필요해 범위 밖 --- 모두 논문에 명시.

@@ -315,7 +315,7 @@ ORDER_ALL = ["fifo", "sjf", "las", "kueue", "easy", "themis", "fgd",
 # 그림 범례 표시명(데이터 키는 그대로, 표시만 논문 명칭으로). sfqa→AQA, sfqa-auto→LAQA.
 POL_DISPLAY = {"fifo": "FIFO", "sjf": "SJF", "las": "LAS", "kueue": "Kueue",
                "easy": "EASY", "themis": "Themis", "fgd": "FGD",
-               "sfqa": "AQA", "sfqa-auto": "LAQA", "lucid": "Lucid"}
+               "sfqa": "SAFA-fix", "sfqa-auto": "SAFA", "lucid": "Lucid"}
 
 
 def plot_loadcurve(out):
@@ -474,7 +474,7 @@ def plot_bigjob(out):
         # sfqa-auto p99 vs sjf p99 강조(꼬리 절단)
         ax.set_yscale("log")
         ax.set_xticks(x)
-        ax.set_xticklabels(["FIFO", "SJF", "Themis", "LAQA"], fontsize=10)
+        ax.set_xticklabels(["FIFO", "SJF", "Themis", "SAFA"], fontsize=10)
         ax.set_title(f"512 GPU, {kind} (1.8$\\times$)")
         ax.grid(alpha=.3, axis="y", which="both")
         for bars in (b1, b2):

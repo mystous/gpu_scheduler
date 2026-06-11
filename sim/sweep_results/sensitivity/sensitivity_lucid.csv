@@ -1,0 +1,7 @@
+scenario,gpu,kind,policy,q_p50,fair_p1
+baseline,512,hetero,lucid,182,0.71
+baseline,512,single,lucid,88,72.98
+lucidSS+50,512,hetero,lucid,168,0.6
+lucidSS+50,512,single,lucid,81,69.8
+lucidSS-50,512,hetero,lucid,132,0.75
+lucidSS-50,512,single,lucid,89,85.22
