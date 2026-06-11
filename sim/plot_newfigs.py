@@ -53,8 +53,10 @@ def fig_ablation_grid():
         ax.set_xlabel("fixed age-weight $\\alpha$ (log)")
     for ax in axes[:, 0]:
         ax.set_ylabel("order-fairness $p_1$")
-    axes[0, 0].legend(fontsize=7, loc="center right", framealpha=0.9)
+    h, l = axes[0, 0].get_legend_handles_labels()
     fig.tight_layout()
+    fig.legend(h, l, loc="lower center", bbox_to_anchor=(0.5, 1.0),
+               ncol=2, fontsize=8, frameon=False)
     fig.savefig(os.path.join(OUT, "fig_ablation_grid.pdf"))
     plt.close(fig)
     print("wrote fig_ablation_grid.pdf")
@@ -90,10 +92,10 @@ def fig_helios():
     rows = [r for r in load(os.path.join(SR, "helios", "sweep_table.csv"))
             if r["kind"] == "hetero" and int(r["gpu"]) == 80 and r["policy"] in DISP]
     fig, ax = plt.subplots(figsize=(3.4, 2.8))
-    # 동일 (q_p50, lt50) 점은 라벨을 묶는다(LAS·Kueue·FGD가 동일).
+    # x = lt50(굶주린 작업 비율 = 전체 starvation, 낮을수록 적음), y = fair_mean(평균 순서 공정성).
     groups = {}
     for r in rows:
-        key = (round(float(r["q_p50"]), 1), round(float(r["lt50_pct"]), 2))
+        key = (round(float(r["lt50_pct"]), 2), round(float(r["fair_mean"]), 1))
         groups.setdefault(key, []).append(r["policy"])
     for (x, y), pols_here in groups.items():
         lead = "sfqa-auto" if "sfqa-auto" in pols_here else ("fifo" if "fifo" in pols_here else pols_here[0])
@@ -102,16 +104,12 @@ def fig_helios():
         sz = 70 if lead in ("sfqa-auto", "fifo") else 36
         ax.scatter(x, y, s=sz, color=col, zorder=3, edgecolor="k", linewidth=0.4)
         lab = "/".join(DISP[p] for p in pols_here)
-        right = lead in ("fifo", "sfqa-auto", "sfqa")
-        ax.annotate(lab, (x, y), xytext=(x*(0.72 if right else 1.25), y+0.7),
-                    fontsize=6.6, ha=("right" if right else "left"))
-    ax.set_xscale("log")
-    ax.set_xlabel("median queue delay $q_{p50}$ (s, log)\n$\\rightarrow$ HOL-wait starvation")
-    ax.set_ylabel("order-unfairness lt50\\% (overtaken)\n$\\rightarrow$ less order-fair")
-    ax.set_ylim(-2, 26)
-    ax.annotate("low wait \\&\norder-fair\n(ideal)", (0.03, 0.10), xycoords="axes fraction",
-                fontsize=6.3, color="green", ha="left", va="center")
-    pass  # title은 본문/캡션으로
+        ax.annotate(lab, (x, y), xytext=(x+0.5, y+0.6), fontsize=6.6, ha="left")
+    ax.set_xlabel("starvation: jobs below fairness 50, lt50\\% (\\%)\n$\\rightarrow$ more jobs starved")
+    ax.set_ylabel("mean order-fairness\n$\\rightarrow$ fairer")
+    ax.set_xlim(-1.5, 24)
+    ax.annotate("few starved \\&\nfair (ideal)", (0.03, 0.90), xycoords="axes fraction",
+                fontsize=6.3, color="green", ha="left", va="top")
     fig.savefig(os.path.join(OUT, "fig_helios.pdf"))
     plt.close(fig)
     print("wrote fig_helios.pdf")
