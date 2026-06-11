@@ -1,0 +1,12 @@
+[00:01:22] policy=none run=m_ht_fifo extra='--trace csv --input /home/mystous/gpu_scheduler/results/philly_sample500_jct2h_window.csv --sample 0 --kappa 30 --min-dur 2 --max-dur 0 --submit-clamp 2.0'
+[run:m_ht_fifo] 500 jobs, peak 24 GPU (3.0× capacity)
+[metrics] → /raid/squad/runs/m_ht_fifo/metrics.csv (period 3.0s)
+[run:m_ht_fifo] 500 jobs 제출 완료, 완료 대기...
+[run:m_ht_fifo] 완료. JCT/큐잉 추출...
+
+===== m_ht_fifo (policy=none) =====
+  jobs=500 완료=500
+  큐잉지연(s) p50=857.0 p90=2041.0 max=3855.0
+  JCT(s)      p50=893.0 p90=2090.0 max=4007.0
+  결과: /raid/squad/runs/m_ht_fifo/
+[01:09:39] DONE rc=0

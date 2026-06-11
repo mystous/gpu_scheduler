@@ -1,0 +1,12 @@
+[06:36:18] policy=sfqa run=m_ht_sfqa extra='--trace csv --input /home/mystous/gpu_scheduler/results/philly_sample500_jct2h_window.csv --sample 0 --kappa 30 --min-dur 2 --max-dur 0 --submit-clamp 2.0'
+[run:m_ht_sfqa] 500 jobs, peak 24 GPU (3.0× capacity)
+[metrics] → /raid/squad/runs/m_ht_sfqa/metrics.csv (period 3.0s)
+[run:m_ht_sfqa] 500 jobs 제출 완료, 완료 대기...
+[run:m_ht_sfqa] 완료. JCT/큐잉 추출...
+
+===== m_ht_sfqa (policy=sfqa) =====
+  jobs=500 완료=500
+  큐잉지연(s) p50=424.0 p90=660.0 max=2207.0
+  JCT(s)      p50=433.0 p90=681.0 max=2224.0
+  결과: /raid/squad/runs/m_ht_sfqa/
+[07:28:15] DONE rc=0

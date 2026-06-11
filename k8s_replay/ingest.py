@@ -205,9 +205,34 @@ def ingest_philly(job_log_json: str, limit: int | None = None) -> list[CommonJob
     return out
 
 
+# ── 사전 추출 CSV (arrival_time_s, duration_s, gpu_count[, gpu_type, preemptible]) ──
+# sim 트레이스 포맷(results/philly_sample*.csv)을 K8s 하니스가 직접 소비하기 위한 로더.
+# 원본 duration(초)을 그대로 보존 → normalize의 κ·min/max-dur가 스케일을 결정.
+def ingest_csv(path: str, limit: int | None = None) -> list[CommonJob]:
+    out = []
+    with open(path, newline="") as f:
+        for i, r in enumerate(csv.DictReader(f)):
+            if limit and len(out) >= limit:
+                break
+            dur = _f(r.get("duration_s") or r.get("duration"))
+            if dur <= 0:
+                continue
+            gc = int(_f(r.get("gpu_count", 1)) or 1)
+            out.append(CommonJob(
+                job_id=str(r.get("job_id", f"csv-{i}")),
+                arrival_time=_f(r.get("arrival_time_s") or r.get("arrival_time")),
+                duration=dur, gpu_count=max(1, min(8, gc)),
+                gpu_type=(r.get("gpu_type") or "any").strip() or "any",
+                preemptible=str(r.get("preemptible", "")).strip().lower() in ("1", "true", "yes"),
+                workload_kind=classify_kind(dur, gc), priority=0, source_trace="csv",
+            ))
+    return out
+
+
 INGESTERS = {
     "alibaba2020": ingest_alibaba2020,
     "alibaba2023": ingest_alibaba2023,
     "inhouse": ingest_inhouse,
     "philly": ingest_philly,
+    "csv": ingest_csv,
 }
