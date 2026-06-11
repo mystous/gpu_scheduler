@@ -1,7 +1,7 @@
 # B200×8 단일노드 실 클러스터 실측 — 큐-축 9정책 (논문 §VI fig:b200용)
 
 > 생성: 2026-06-11. 분석기 `squad_ctrl/analyze_b200.py` (시뮬 `sim/order_fairness.py`·BSLD 정의 재사용 → 시뮬 표와 직접 비교 가능).
-> 원본 로그·CSV: `results/b200_runs/<run_id>/`. **이 문서는 독립 기록이며 `paper/sn-article.tex`는 수정하지 않음.**
+> 실행 로그(run/ctrl): `results/b200_runs/<run_id>/` (repo). 원본 raw 데이터(jct·metrics·submit_log CSV): `/raid/squad/b200_campaign_20260611/<run_id>/` (저장소 외부 — K8S 캠페인 컨벤션). **이 문서는 독립 기록이며 `paper/sn-article.tex`는 수정하지 않음.**
 
 ## 1. 실험 구성
 
@@ -71,4 +71,4 @@ for p in none:m_fifo fifo:m_gatefifo sjf:m_sjf las:m_las kueue:m_kueue easy:m_ea
 ./run_one.sh sfqa-auto m_auto "" ""
 /raid/squad/venv/bin/python analyze_b200.py   # → results/b200_summary.csv, b200_table.md
 ```
-원본 로그·CSV: `results/b200_runs/`. walltime(로그 start→DONE)은 makespan과 ±0.2분 일치.
+로그: `results/b200_runs/`(repo). raw CSV: `/raid/squad/b200_campaign_20260611/`(외부). walltime(로그 start→DONE)은 makespan과 ±0.2분 일치.
