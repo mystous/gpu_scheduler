@@ -142,21 +142,39 @@ class PolicyCtrl:
     def order(self, gated, servers, ar, flavor):
         """정책별 gate 해제 순서(앞이 먼저)."""
         if self.policy == "sfqa-auto":
-            sigma = self.sigma_star(flavor)
+            # 논문 알고리즘(sim SFQAAuto)의 충실 이식 — zero-knob 단일 승격.
+            # α_eff = g/(A_ref·R_min), age_rel=age−min(age)(큐 상대, 스케일 불변),
+            # P*=P+α_eff·age_rel·R. duration·σ*·SJF 전혀 쓰지 않음(부차 정보 無).
+            # 이전 σ*-2-tier 구현은 tier2가 SJF라 불공정했음 → 폐기(B200 lt50 28.6 회귀).
+            base = 2.0
             R = compute_r_table(servers, flavor)
             now = datetime.now(timezone.utc)
-            tier1, tier2 = [], []
-            for p in gated:
-                s = max(1.0, float(lbl(p, DUR_LBL, "1")))
-                wait = (now - p.metadata.creation_timestamp).total_seconds()
-                wstar = max(self.tau, sigma * max(s, self.tau) - s)  # BSLD≤σ* ⇔ W≤W*
-                u = wait / wstar                                     # 공정성 예산 소진율
+            # FIFO 기준(오래된 것이 position 0 = 기저 우선) 위에서 1건만 승격.
+            fifo = sorted(gated, key=lambda p: p.metadata.creation_timestamp)
+            n = len(fifo)
+            if n <= 1:
+                return fifo
+            ages = [(now - p.metadata.creation_timestamp).total_seconds() for p in fifo]
+            rq = []
+            for p in fifo:
                 k = max(1, min(8, pod_gpu(p)))
                 r = R[k - 1] if R[k - 1] > 0 else 0.5
-                (tier1 if u >= 1.0 else tier2).append((u * r, s, p))
-            tier1.sort(key=lambda t: -t[0])   # 제약 위반: u·R 내림차순(공정성 복구)
-            tier2.sort(key=lambda t: t[1])    # 제약 충족: SJF(평균 최적)
-            return [t[2] for t in tier1] + [t[2] for t in tier2]
+                rq.append(r)
+            amin = min(ages)
+            age_rel = [a - amin for a in ages]
+            aref = max(1.0, sum(age_rel) / n)
+            rmin = max(0.1, min(rq))
+            g = min(1.0, max(age_rel) / aref)
+            alpha_eff = g / (aref * rmin)
+            best_i, best_v = 0, None
+            for i in range(n):
+                P = 1.0 / (base ** i) if i < 60 else 0.0
+                v = P + alpha_eff * age_rel[i] * rq[i]
+                if best_v is None or v > best_v:
+                    best_v, best_i = v, i
+            if best_i == 0:
+                return fifo
+            return [fifo[best_i]] + fifo[:best_i] + fifo[best_i + 1:]
         if self.policy == "easy":
             # EASY-backfilling: FIFO 순서, 선두 예약 시점 T를 침해하지 않는 잡만 통과.
             # 반환 = ungate 허용 집합(순서 포함) — reconcile 의 capacity 루프가 그대로 적용.
