@@ -1,0 +1,5 @@
+policy,p1,lt50,q_p50,config
+auto-wall,39.3,3.74,1218960,512_hetero
+bskip-8,99.4,0.01,3584257,512_hetero
+bskip-64,82.2,0.5,3459133,512_hetero
+bskip-512,0.0,6.8,839220,512_hetero

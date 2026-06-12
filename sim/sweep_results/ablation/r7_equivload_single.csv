@@ -1,0 +1,7 @@
+policy,p1,lt50,q_p50,note
+fifo,100.0,0.0,2502962,single512_dur_x1.355_eff2.4x
+sjf,0.7,1.73,978,single512_dur_x1.355_eff2.4x
+las,0.0,6.67,240239,single512_dur_x1.355_eff2.4x
+easy,0.0,3.68,2270705,single512_dur_x1.355_eff2.4x
+sfqa,37.4,3.66,1155907,single512_dur_x1.355_eff2.4x
+sfqa-auto,49.6,1.08,1385518,single512_dur_x1.355_eff2.4x
