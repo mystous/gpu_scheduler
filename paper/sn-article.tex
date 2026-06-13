@@ -3,7 +3,7 @@
 % For the OFFICIAL IEEE Access class (ieeeaccess.cls): obtain it from Overleaf's
 % "IEEE Access" template, then switch to the ieeeaccess front matter preserved
 % in git commit f4aea99 (\documentclass{ieeeaccess} + \history/\doi/\address/\corresp).
-\documentclass[journal]{IEEEtran}
+\documentclass{ieeetj}
 
 \usepackage{kotex}            % Korean (XeLaTeX)
 \usepackage{graphicx}
@@ -23,6 +23,10 @@
 \usepackage{placeins}         % \FloatBarrier — 그림이 절(섹션)·참고문헌 경계를 넘지 않게
 \usepackage{subcaption}       % 2x2 개념 도식(서브그림)
 \usepackage[hidelinks]{hyperref}
+\AtBeginDocument{\definecolor{tmlcncolor}{cmyk}{0.93,0.59,0.15,0.02}\definecolor{NavyBlue}{RGB}{0,86,125}}
+\def\OJlogo{\vspace{-4pt}}
+\def\seclogo{\vspace{10pt}}
+\def\authorrefmark#1{\ensuremath{^{\textbf{#1}}}}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
@@ -31,17 +35,22 @@
 
 \begin{document}
 
+\receiveddate{XX Month, XXXX}
+\reviseddate{XX Month, XXXX}
+\accepteddate{XX Month, XXXX}
+\publisheddate{XX Month, XXXX}
+\currentdate{XX Month, XXXX}
+\doiinfo{XXXX.XXXX.0000000}
+
+\markboth{Cho \textit{et al.}: SAFA: Lightweight Queue-Only Reordering for GPU Gang Scheduling}{Cho \textit{et al.}: SAFA: Lightweight Queue-Only Reordering for GPU Gang Scheduling}
+
 \title{SAFA: Keeping the Efficiency--Fairness Balance with Lightweight, Queue-Only Reordering}
 
-\author{Kyunam~Cho,
-        YoungHwan~Jin,
-        and~Heonchang~Yu%
-\thanks{K. Cho and H. Yu are with the Department of Computer Science and Engineering, Korea University, Seoul, Republic of Korea (e-mail: mystous@korea.ac.kr; yuhc@korea.ac.kr).}%
-\thanks{K. Cho is also with LG Uplus Corp., Seoul, Republic of Korea, and the School of Business, Ewha Womans University, Seoul, Republic of Korea.}%
-\thanks{Y. Jin is with LG Uplus Corp., Seoul, Republic of Korea (e-mail: yhjin@korea.ac.kr).}%
-\thanks{Corresponding author: Heonchang Yu.}}
-
-\maketitle
+\author{Kyunam~Cho\authorrefmark{1}\authorrefmark{2}, YoungHwan~Jin\authorrefmark{2}, and Heonchang~Yu\authorrefmark{1}}
+\affil{Department of Computer Science and Engineering, Korea University, Seoul, Republic of Korea}
+\affil{LG Uplus Corp., Seoul, Republic of Korea}
+\corresp{Corresponding author: Heonchang Yu (e-mail: yuhc@korea.ac.kr).}
+\authornote{K. Cho is also with the School of Business, Ewha Womans University, Seoul, Republic of Korea (e-mail: mystous@korea.ac.kr). Y. Jin e-mail: yhjin@korea.ac.kr.}
 
 \begin{abstract}
 데이터센터 GPU에서 학습 작업은 전부-아니면-전무로 할당되는 갱(gang) 단위로 제출되며, 노드 경계의 불가분 자원 단편화는 작업 대기 큐 선두에서 HOL 블로킹(head-of-line blocking)과 기아(starvation)를 일으킨다 --- 이는 배치 정책의 선택만으로 제거되지 않는다. 본 연구는 스케줄링을 두 단계로 가른다: ① 어떤 작업을 먼저 들일 것인가(어드미션 순서), ② 그 작업을 어디에 놓을 것인가(배치). SAFA(Starvation-Aware Fair Aging)는 ①만을 다루는 배치-전 어드미션 순서 계층으로, 작업의 대기 시간·자원 요구량·상대 나이라는 큐에서 직접 관측되는 신호만으로 큐를 재정렬해 단편화의 피해 작업에 우선권을 준다 --- 실행시간 추정도, 잡별 성능 프로파일도, 솔버도 쓰지 않으며, ②의 배치 정책은 그대로 둔다. 나아가 나이 가중 계수를 큐의 나이 통계로 정규화해 마지막 정책 계수 노브를 제거함으로써(잔여 내부 상수는 효율--공정 균형점을 한 번 정하는 설계 상수로 워크로드와 무관하다), 작업의 시간 스케일이 바뀌어도 재튜닝이 필요 없다. Philly 트레이스 111k 작업 규모의 이산 사건 시뮬레이터(256--1024 GPU, 단일·이종 클러스터)에서 SAFA를 무개입 기준선 FIFO 및 동일 층위의 어드미션 순서 정책 6종(SJF·LAS·Kueue·EASY·Themis·Lucid)과 동일 엔진으로 비교했다. 경합이 깊은 과부하 이종 구성에서 빠른 베이스라인들의 하위 1\% 순서 공정성이 0으로 붕괴하는 동안 SAFA는 이를 50 이상으로 유지하면서 중앙값 큐 대기를 FIFO 대비 50--61\% 단축했고, 평균 GPU 할당률 99\%와 makespan을 해치지 않았다(단일·저경합 구성에서는 Lucid 같은 collocation 정책이 더 빠르고 공정할 수 있으며, 우위는 깊은 경합 구간의 순서 공정성 지표에 한정된다). 두 독립 대규모 트레이스(Helios·Alibaba)에서도 같은 경향이 재현됐고, NVIDIA B200$\times$8 단일 노드 쿠버네티스 실측으로 큐-축 정책들의 거동을 교차 확인했다. 단 이 이득은 백로그가 형성되는 깊은 경합 레짐에서 발생하며(어드미션 컨트롤이 큐를 자르면 개입 대상이 없다), 주 결과의 순서 공정성은 단일 테넌트(또는 VC 내부) 큐에 적용된다. SAFA는 배치 정책을 바꾸지 않으므로 기존 GPU 클러스터 관리자에 안정성을 해치지 않고 통합될 수 있다.
@@ -50,6 +59,8 @@
 \begin{IEEEkeywords}
 Head-of-line blocking, GPU gang scheduling, admission ordering, order fairness, tuning-free (zero-knob) scheduling, placement-agnostic admission layer, heterogeneous GPU clusters, datacenter GPU.
 \end{IEEEkeywords}
+
+\maketitle
 
 \section{Introduction}\label{sec1}
 GPU 서버에서 학습 또는 추론 작업을 스케줄링하는 일은 시스템 수준 최적화의 핵심 요소다. 서버의 GPU 할당률과 사용률은 운영 비용과 연구 비용에 직접적인 영향을 미치는 중요한 운영 지표다. 더욱이 GPU 자원은 연구·사업 조직에 본질적으로 한정되어 있어, 최적의 작업 스케줄링을 위한 연구가 활발히 이루어져 왔다. 일부 조직은 고대역폭 인터커넥트로 연결된 수백~수천 장 GPU의 전용 클러스터인 ``하이퍼클러스터''를 구성한다. 이 접근은 비용을 끌어올릴 뿐 아니라 확장성의 한계를 부과하고 클러스터 간 자원 단편화(fragmentation)를 유발한다\cite{athlur2022varuna}. 마찬가지로, 프로덕션 트레이스 분석에 따르면 공유 환경에서의 부분(fractional) GPU 할당은 심각한 단편화를 초래하여 수백 장의 GPU가 유휴 상태로 남아 신규 작업에 할당되지 못하게 만든다\cite{weng2023beware}. 이러한 발견들은 모델 규모의 증가와 다양한 워크로드 속에서도 GPU 자원을 효과적으로 관리할 수 있는 스케줄링 메커니즘 설계의 중요성을 잘 보여준다. 그러나 대부분의 연구가 특정 조건이나 고도로 이상화된 시나리오에 기반하기 때문에 보편적인 해법은 존재하지 않는다. 완료 시간을 알 수 없는 작업들을 큐에 배정하는 문제는 잘 알려진 NP-hard 조합 최적화 문제이기 때문이다\cite{ullman1975np}. 대부분의 작업 스케줄링 문제는 flow shop, job shop, 단일 기계, open shop, k-기계 병렬 스케줄링의 조합으로 구성되며\cite{b1}, 따라서 대부분 근사 알고리즘으로 다루어진다\cite{b2}.
