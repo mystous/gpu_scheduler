@@ -89,27 +89,38 @@ def fig_sensitivity():
 
 # ── Fig 3: Helios — speed (q_p50) vs starvation (lt50%) trade-off, overload ────
 def fig_helios():
-    rows = [r for r in load(os.path.join(SR, "helios", "sweep_table.csv"))
-            if r["kind"] == "hetero" and int(r["gpu"]) == 80 and r["policy"] in DISP]
-    fig, ax = plt.subplots(figsize=(3.4, 2.8))
-    # x = lt50(굶주린 작업 비율 = 전체 starvation, 낮을수록 적음), y = fair_mean(평균 순서 공정성).
+    # 동일 모집단(62,069) 정정 후 데이터 — 표 tab:helios와 일치(모집단 버그 정정 전 helios/는 쓰지 않음).
+    rows = [r for r in load(os.path.join(SR, "helios_le80", "sweep_table.csv"))
+            if r["policy"] in DISP]
+    fig, ax = plt.subplots(figsize=(3.7, 3.0))
+    # x = lt50(추월당한 작업 비율, 낮을수록 공정 ←), y = fair(평균 순서 공정성, 높을수록 공정 ↑).
     groups = {}
     for r in rows:
-        key = (round(float(r["lt50_pct"]), 2), round(float(r["fair_mean"]), 1))
+        key = (round(float(r["lt50"]), 2), round(float(r["fair"]), 1))
         groups.setdefault(key, []).append(r["policy"])
     for (x, y), pols_here in groups.items():
         lead = "sfqa-auto" if "sfqa-auto" in pols_here else ("fifo" if "fifo" in pols_here else pols_here[0])
-        col = ("#2c7fb8" if lead == "sfqa-auto" else "#7bccc4" if lead == "sfqa"
-               else "#9ecae1" if lead == "fifo" else "#969696")
-        sz = 70 if lead in ("sfqa-auto", "fifo") else 36
-        ax.scatter(x, y, s=sz, color=col, zorder=3, edgecolor="k", linewidth=0.4)
+        col = ("tab:blue" if lead == "sfqa-auto" else "tab:cyan" if lead == "sfqa"
+               else "black" if lead == "fifo" else "0.55")
+        mk = "*" if lead == "sfqa-auto" else ("s" if lead == "fifo" else "D" if lead == "sfqa" else "o")
+        sz = 240 if lead == "sfqa-auto" else (90 if lead in ("fifo", "sfqa") else 45)
+        ax.scatter(x, y, s=sz, marker=mk, color=col, zorder=3, edgecolor="k", linewidth=0.6)
         lab = "/".join(DISP[p] for p in pols_here)
-        ax.annotate(lab, (x, y), xytext=(x+0.5, y+0.6), fontsize=6.6, ha="left")
-    ax.set_xlabel("starvation: jobs below fairness 50, lt50\\% (\\%)\n$\\rightarrow$ more jobs starved")
-    ax.set_ylabel("mean order-fairness\n$\\rightarrow$ fairer")
-    ax.set_xlim(-1.5, 24)
-    ax.annotate("few starved \\&\nfair (ideal)", (0.03, 0.90), xycoords="axes fraction",
-                fontsize=6.3, color="green", ha="left", va="top")
+        # 라벨 겹침 해소: 우측 점(추월 많은 정책)은 라벨을 왼쪽 위로, SAFA/FIFO는 오른쪽
+        if x > 15:
+            ax.annotate(lab, (x, y), xytext=(x-0.6, y+1.4), fontsize=6.8, ha="right")
+        elif lead in ("fifo", "sfqa-auto"):
+            ax.annotate(lab, (x, y), xytext=(x+0.6, y-0.2), fontsize=7.2, ha="left", fontweight="bold")
+        else:
+            ax.annotate(lab, (x, y), xytext=(x+0.6, y+0.5), fontsize=6.8, ha="left")
+    ax.set_xlabel("overtaken-jobs share (\\%) $-$ fairer $\\leftarrow$", fontsize=8)
+    ax.set_ylabel("mean order-fairness $-$ fairer $\\uparrow$", fontsize=8)
+    ax.set_title("Helios (independent trace): top-left $=$ fairest", fontsize=8.5)
+    ax.set_xlim(-2.5, 25); ax.set_ylim(73, 103)
+    ax.grid(alpha=0.3)
+    ax.axhspan(96, 103, xmin=0.0, xmax=0.16, color="green", alpha=0.07, zorder=0)
+    ax.annotate("ideal", (-1.5, 102), fontsize=7, color="green", ha="left", va="top")
+    fig.tight_layout()
     fig.savefig(os.path.join(OUT, "fig_helios.pdf"))
     plt.close(fig)
     print("wrote fig_helios.pdf")
