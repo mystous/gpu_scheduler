@@ -88,12 +88,18 @@ def build_servers(nodes, pods, flavor):
 
 
 class PolicyCtrl:
-    def __init__(self, v1, policy, params, period, age_unit, tau=10.0):
+    def __init__(self, v1, policy, params, period, age_unit, tau=10.0,
+                 release="blocking", age_mode="counter"):
         self.v1 = v1
         self.policy = policy
         self.params = params
         self.period = period
         self.age_unit = age_unit  # age 1 증가에 필요한 대기 초(실측 스케일에 맞춤)
+        # 해제 규율: blocking(권장 — 선두 fit 불가 시 패스 중단, p1 보존) | greedy(기존 재현용)
+        self.release = release
+        # 나이 의미론: counter(권장 — 도착 순번 기반, 시뮬과 동일) | wall(기존 재현용)
+        self.age_mode = age_mode
+        self.seen_pods = {}       # key -> 도착 순번(creationTimestamp 순위로 결정적 재구성)
         self.attained = {}  # LAS: job_key -> 누적 GPU-second
         # sfqa-auto(v2) 상태 — 전부 측정값에서 유도, 튜닝 노브 없음
         self.tau = tau            # BSLD floor(Feitelson 관례 10s) — 노브 아닌 문헌 상수
@@ -154,7 +160,17 @@ class PolicyCtrl:
             n = len(fifo)
             if n <= 1:
                 return fifo
-            ages = [(now - p.metadata.creation_timestamp).total_seconds() for p in fifo]
+            if self.age_mode == "counter":
+                # 도착-카운터 나이(시뮬 의미론): age_i = (지금까지 도착한 총 잡 수) - (자기 순번).
+                # 순번은 creationTimestamp 순위에서 유도 → 컨트롤러 재시작에도 결정적.
+                for p in fifo:
+                    k = key(p)
+                    if k not in self.seen_pods:
+                        self.seen_pods[k] = len(self.seen_pods)
+                total_seen = len(self.seen_pods)
+                ages = [float(total_seen - self.seen_pods[key(p)]) for p in fifo]
+            else:
+                ages = [(now - p.metadata.creation_timestamp).total_seconds() for p in fifo]
             rq = []
             for p in fifo:
                 k = max(1, min(8, pod_gpu(p)))
@@ -287,11 +303,14 @@ class PolicyCtrl:
             servers = build_servers(nodes, pods, f)
             ordered = self.order(gated, servers, ar, f)
             free = max(0, total - used.get(f, 0))
+            blocking = (self.release == "blocking" and self.policy in ("sfqa", "sfqa-auto", "fifo"))
             for p in ordered:
                 g = pod_gpu(p)
                 if g <= free:
                     self.ungate(p)
                     free -= g
+                elif blocking:
+                    break  # 선두 보존: greedy 스킵은 p1 붕괴(논문 §SAFA:k8s 측정). wedge는 정적 검사로 사전 격리 전제.
 
 
 def main():
@@ -305,10 +324,15 @@ def main():
                     help="age 1 증가에 필요한 대기 초. 실측 큐잉 스케일에 맞춤(기본 10s)")
     ap.add_argument("--tau", type=float, default=10.0,
                     help="sfqa-auto BSLD floor(초). Feitelson 관례 10s — 노브 아닌 문헌 상수")
+    ap.add_argument("--release", default="blocking", choices=["blocking", "greedy"],
+                    help="게이트 해제 규율. blocking=선두 보존(권장, p1 유지), greedy=기존 재현")
+    ap.add_argument("--age-mode", default="counter", choices=["counter", "wall"],
+                    help="나이 의미론. counter=도착 순번(권장, 시뮬 동일), wall=기존 재현")
     args = ap.parse_args()
     v1 = load()
     ctrl = PolicyCtrl(v1, args.policy, Params(alpha=args.alpha, beta=args.beta, prevent_starv=True),
-                      args.period, args.age_unit, tau=args.tau)
+                      args.period, args.age_unit, tau=args.tau,
+                      release=args.release, age_mode=args.age_mode)
     print(f"[policy:{args.policy}] start period={args.period}s", flush=True)
     while True:
         try:
