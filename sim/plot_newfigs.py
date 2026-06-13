@@ -118,9 +118,9 @@ def fig_helios():
 # ── Fig 4: placement-agnostic — SAFA p1 across 4 core placements ──────────────
 def fig_placement():
     rows = load(os.path.join(SR, "placement", "placement_table.csv"))
-    placements = ["mostallocated", "compact", "round_robin", "mcts"]
+    placements = ["mostallocated", "compact", "round_robin", "mcts", "fgd"]
     plabel = {"mostallocated": "most-alloc", "compact": "compact",
-              "round_robin": "round-robin", "mcts": "MCTS"}
+              "round_robin": "round-robin", "mcts": "MCTS", "fgd": "FGD"}
     configs = [("256:hetero", "256 het"), ("512:hetero", "512 het"), ("512:single", "512 sgl")]
     fig, ax = plt.subplots(figsize=(3.4, 2.6))
     w = 0.2

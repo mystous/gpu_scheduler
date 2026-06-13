@@ -79,3 +79,6 @@ full,256:single,compact,sjf,256,single,111586,1766.5,11389621.5,93.45,0.0,99.4,3
 full,256:single,mcts,sjf,256,single,111586,1766.5,11389621.5,93.45,0.0,99.4,35.43,111586,214464,
 full,256:single,mostallocated,sjf,256,single,111586,1766.5,11389621.5,93.45,0.0,99.4,35.08,0,0,
 full,256:single,round_robin,sjf,256,single,111586,1766.5,11389621.5,93.45,0.0,99.4,35.26,0,0,
+full,256:hetero,fgd,sfqa-auto,256,hetero,111586,3927692,,,54.6,,,0,0,
+full,512:hetero,fgd,sfqa-auto,512,hetero,111586,1786504,,,50.1,,,0,0,
+full,512:single,fgd,sfqa-auto,512,single,111586,621411,,,53.5,,,0,0,

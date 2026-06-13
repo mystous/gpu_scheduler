@@ -140,7 +140,7 @@ def plot_motivation(out):
         ax.text(b.get_x()+b.get_width()/2, v+0.03, f"{v}", ha="center", fontsize=9.5)
     ax.set_xticks(x); ax.set_xticklabels(names, rotation=30, ha="right", fontsize=11)
     ax.set_ylabel("optimal fixed $\\alpha$"); ax.set_ylim(0, 1.8)
-    ax.set_title("Optimal $\\alpha$ varies 7x across workloads\n(grid search must be redone per workload)")
+    ax.set_title("Best-fit $\\alpha$ by workload distribution")
     ax.grid(alpha=.3, axis="y")
     fig.tight_layout()
     _save(fig, out, "report_motivation")
@@ -230,7 +230,7 @@ def plot_sensitivity(out):
         ax.grid(alpha=.3, axis="y")
     axes[0].set_ylabel("makespan change vs base (%)")
     fig.suptitle("Sensitivity of remaining internal constants (C++ sim): "
-                 "only window $m$=1 is sensitive; all others within $\\pm$2%", fontsize=13)
+                 "Sensitivity of residual constants $R$, $P$, $m$", fontsize=13)
     fig.tight_layout()
     _save(fig, out, "report_sensitivity")
 
@@ -330,10 +330,11 @@ def plot_loadcurve(out):
               ("fair_p1", "order-fairness p1 (100=fair)", False)]
     from matplotlib.ticker import NullFormatter, FixedLocator
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 6.4))
+    cmp_pols = [p for p in ORDER_ALL if p != "fgd"]   # 비교군만(FGD는 배치 축 → fig_placement)
     for ri, kind in enumerate(["single", "hetero"]):
         for ci, (key, ylab, logy) in enumerate(panels):
             ax = axes[ri][ci]
-            for pol in ORDER_ALL:
+            for pol in cmp_pols:
                 ys = []
                 for g in gpus:
                     r = rows.get((g, kind, pol))
@@ -357,7 +358,7 @@ def plot_loadcurve(out):
     h, lab = axes[0][0].get_legend_handles_labels()
     fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.045),
                ncol=len(lab), fontsize=11, frameon=True)
-    fig.suptitle("Load dependence, all 10 policies (Philly 111k): single (top) vs heterogeneous (bottom)",
+    fig.suptitle("Load dependence, comparison policies (Philly 111k): single (top) vs heterogeneous (bottom)",
                  fontsize=14)
     fig.tight_layout(rect=[0, 0.06, 1, 1])
     _save(fig, out, "report_loadcurve")
@@ -369,22 +370,28 @@ def plot_tradeoff(out):
     rows = load_sweep()
     gpus = ["256", "512", "1024"]
     ld = {"256": "3.6$\\times$", "512": "1.8$\\times$", "1024": "0.9$\\times$"}
+    # 층위 구획 marker scheme: FIFO 기준선(검정 사각)/어드미션 순서 6종(회색, 마커로 구별)/SAFA(청색).
+    # FGD(배치 축)는 비교군이 아니므로 제외 — 배치 무관성은 fig_placement가 담당.
+    MARKER = {
+        "fifo": ("s", "black", 130),
+        "sjf": ("o", "0.55", 55), "las": ("^", "0.55", 55), "kueue": ("v", "0.55", 55),
+        "easy": ("P", "0.55", 70), "themis": ("<", "0.55", 55), "lucid": ("X", "0.55", 70),
+        "sfqa": ("D", "tab:cyan", 80), "sfqa-auto": ("*", "tab:blue", 230),
+    }
+    cmp_pols = [p for p in ORDER_ALL if p in MARKER]   # FGD 제외, marker 정의 순
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 6.6))
     for ri, kind in enumerate(["single", "hetero"]):
         for ci, g in enumerate(gpus):
             ax = axes[ri][ci]
-            for pol in ORDER_ALL:
+            for pol in cmp_pols:
                 r = rows.get((g, kind, pol))
                 if not r:
                     continue
                 x = max(float(r["q_p50"]), 1.0)
                 y = float(r["fair_p1"])
-                c, _ = POL_STYLE[pol]
-                big = pol == "sfqa-auto"
-                ax.scatter(x, y, s=150 if big else 70, color=c, zorder=3,
-                           edgecolor="k", linewidths=0.9 if big else 0.4)
-                ax.annotate(POL_DISPLAY.get(pol, pol), (x, y), fontsize=8, xytext=(4, 3),
-                            textcoords="offset points")
+                mk, c, sz = MARKER[pol]
+                ax.scatter(x, y, marker=mk, s=sz, color=c, zorder=3,
+                           edgecolor="k", linewidths=0.9 if pol == "sfqa-auto" else 0.4)
             ax.set_xscale("log")
             ax.set_ylim(-5, 108)
             if ri == 1:
@@ -393,9 +400,16 @@ def plot_tradeoff(out):
                 ax.set_ylabel("order-fairness p1 (100=fair) $\\uparrow$")
             ax.set_title(f"{g} GPU {kind} ({ld[g]})", fontsize=12)
             ax.grid(alpha=.3, which="both")
-    fig.suptitle("Queue-delay vs fairness trade-off, all 10 policies (Philly 111k): "
-                 "top-left = fast & fair (sfqa-auto's target region)", fontsize=14)
-    fig.tight_layout()
+    from matplotlib.lines import Line2D
+    handles = [Line2D([0], [0], marker=MARKER[p][0], color="w",
+                          markerfacecolor=MARKER[p][1], markeredgecolor="k",
+                          markersize=11 if p == "sfqa-auto" else 8, label=POL_DISPLAY.get(p, p))
+               for p in cmp_pols]
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.045),
+               ncol=len(handles), fontsize=10, frameon=True)
+    fig.suptitle("Queue-delay vs fairness trade-off, comparison policies (Philly 111k): "
+                 "top-left = fast & fair (SAFA's target region)", fontsize=14)
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
     _save(fig, out, "report_tradeoff")
 
 
@@ -487,8 +501,7 @@ def plot_bigjob(out):
     h, lab = axes[0].get_legend_handles_labels()
     fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.06),
                ncol=2, fontsize=10, frameon=True)
-    fig.suptitle("Largest (8-GPU) jobs: sfqa-auto raises the median but bounds the worst-case "
-                 "tail (p99) below SJF --- breaking SJF's permanent starvation", fontsize=12)
+    fig.suptitle("Largest (8-GPU) jobs: median vs worst-case tail (p99)", fontsize=12)
     fig.tight_layout(rect=[0, 0.08, 1, 1])
     _save(fig, out, "report_bigjob")
 

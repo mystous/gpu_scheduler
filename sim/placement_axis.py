@@ -68,7 +68,7 @@ def build_nodes(gpu, kind):
     return nodes
 
 
-def make_pref(placement):
+def make_pref(placement, trace=None):
     """배치 이름 → (pref_fn 콜러블, mcts_instance 또는 None)."""
     if placement == "mostallocated":
         return P.pref_mostallocated, None
@@ -79,6 +79,11 @@ def make_pref(placement):
     if placement == "mcts":
         m = PP.MCTSPref()
         return m, m
+    if placement == "fgd":                    # 단편화 인지 배치(ΔF 최소 노드) 위에 SAFA 순서
+        f = P.FGD()
+        if trace is not None:
+            f.set_dist([g for _, _, _, g, _ in trace])
+        return f.node_pref, None
     raise ValueError(placement)
 
 
@@ -95,7 +100,7 @@ def fair_p1(jr):
 def run_one(placement, policy, gpu, kind, trace, no_overhead):
     nodes = build_nodes(gpu, kind)
     pol = P.make(policy)
-    pref, mcts_inst = make_pref(placement)
+    pref, mcts_inst = make_pref(placement, trace)
     pol.pref_fn = pref                          # 배치 주입(인스턴스 속성)
     if policy == "fgd":
         pol.set_dist([g for _, _, _, g, _ in trace])
