@@ -169,17 +169,21 @@ FFT\cite{fft2025} & ICS'25 & 라운드 cost-min(epoch 추정) & --- & 솔버+추
 
 GPU 접근이 추상화되어 있기 때문에 컨테이너는 일반적으로 카드 단위로 GPU와 상호작용한다. 그 결과, 하드웨어가 GPU 할당률을 높이는 타임 슬라이싱을 지원하더라도 모델 학습이나 GPU 서버 풀 관리 과정에서 이 기능을 유연하게 활용할 수 없다. 더욱이 딥러닝 모델의 규모가 커지면서 여러 GPU를 동시에 사용하는 일이 보편화되었다. GPU 서버 풀을 운영하는 동안 완료 시간과 GPU 수가 제각각인 작업들이 끊임없이 제출된다. 그 결과 GPU 서버 풀 내부에 단편화가 발생하여 비효율로 이어진다. 단편화는 다음과 같은 상황에서 발생한다.
 
-\begin{figure*}[htb!]
+\begin{figure}[htb!]
 \centering
-\begin{subfigure}{0.47\textwidth}\includegraphics[width=\linewidth]{Pic/Fig_01.png}\caption{스케줄링 전 서버 풀(단편화)}\label{fig:concept-a}\end{subfigure}\hfill
-\begin{subfigure}{0.47\textwidth}\includegraphics[width=\linewidth]{Pic/Fig_02.png}\caption{동일 시점의 대기 큐}\label{fig:concept-b}\end{subfigure}
+\begin{subfigure}{0.8\columnwidth}\includegraphics[width=\linewidth]{Pic/Fig_01.png}\caption{스케줄링 전 서버 풀(단편화)}\label{fig:concept-a}\end{subfigure}
 
 \medskip
-\begin{subfigure}{0.47\textwidth}\includegraphics[width=\linewidth]{Pic/Fig_03.png}\caption{스케줄링 후 --- $t_2$의 HOL 블로킹}\label{fig:concept-c}\end{subfigure}\hfill
-\begin{subfigure}{0.47\textwidth}\includegraphics[width=\linewidth]{Pic/Fig_04.png}\caption{잔여 대기 큐($t_2$--$t_5$ 적체)}\label{fig:concept-d}\end{subfigure}
+\begin{subfigure}{0.8\columnwidth}\includegraphics[width=\linewidth]{Pic/Fig_02.png}\caption{동일 시점의 대기 큐}\label{fig:concept-b}\end{subfigure}
+
+\medskip
+\begin{subfigure}{0.8\columnwidth}\includegraphics[width=\linewidth]{Pic/Fig_03.png}\caption{스케줄링 후 --- $t_2$의 HOL 블로킹}\label{fig:concept-c}\end{subfigure}
+
+\medskip
+\begin{subfigure}{0.8\columnwidth}\includegraphics[width=\linewidth]{Pic/Fig_04.png}\caption{잔여 대기 큐($t_2$--$t_5$ 적체)}\label{fig:concept-d}\end{subfigure}
 \caption{단편화와 HOL 블로킹 (\S\ref{motivation})}
 \label{fig:concept}
-\end{figure*}
+\end{figure}
 
 그림 \ref{fig:concept}(a)와 (b)는 각각 GPU 서버 풀과 작업 대기 큐의 상태를 보여준다. most-allocated 방식을 사용하는 스케줄러는 작업 $\textit{t}_{0}$과 $\textit{t}_{1}$을 할당할 수 있다. 그러나 $\textit{t}_{2}$는 다른 작업들이 완료되어 GPU 슬롯이 비워지기를 기다려야 하므로 스케줄링할 수 없다. 이는 작업 $\textit{t}_{3}$, $\textit{t}_{4}$, $\textit{t}_{5}$가 그 이후에야 스케줄링될 수 있음을 의미한다(그림 \ref{fig:concept}(c)).
 
