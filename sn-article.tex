@@ -899,7 +899,7 @@ SAFA(고정 $\alpha$) & 4.9  & 0.05 & 0.0 \\
 모든 결과가 자체 이산 사건 시뮬레이터에 의존하므로, 엔진이 큐잉 동역학을 정확히 계산하는지를 \textit{해석해를 손계산할 수 있는} 세 가지 toy 사례와 대조했다: (i) 포화 D/D/1 FIFO 큐(잡 $k$의 큐 지연 $=k(S-I)$), (ii) 다중 GPU 노드의 gang 동시 스케줄링, (iii) 수명주기 오버헤드 회계(place\,$=$\,arrival\,$+$\,sched\_lat\,$+$\,startup, finish\,$=$\,place\,$+S+$\,teardown). 엔진은 세 사례의 손계산 큐 지연·완료 시각을 \textbf{모두 부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 재현했다. 즉 본 평가의 ``실측의 제한된 범위''(\S\ref{eval:threats})는 절대값의 운영적 대표성에 대한 한계일 뿐, 큐잉 동역학 계산의 정확성 문제는 아니다.
 
 \subsubsection{배치 무관성: 어떤 배치 정책 위에서도}\label{eval:robust:placement}
-SAFA는 ``어떤 작업을 먼저''만 정하고 배치는 다음 단계에 맡기므로, 그 이점이 특정 배치에 의존해서는 안 된다. 이를 확인하기 위해, 동일한 SAFA 큐 전처리를 \textbf{5개 코어 배치}(most-allocated·compact·round-robin·MCTS·단편화 인지 FGD) 위에 얹어 재실험했다(표 \ref{tab:placement}, 그림 \ref{fig:placement}). 그 결과 \textbf{SAFA의 $p1$이 5개 배치 전부$\times$과부하 4구성에서 50--70으로 유지}되며, 배치가 절대 큐 지연에 주는 영향은 작아(SAFA $q_{p50}$ 변동 5--15\%) 순위를 바꾸지 않는다. 즉 배치에 불변인 것은 SAFA 자신의 안정성이다. 특히 FGD 행(SAFA$\oplus$FGD)은 어드미션 순서와 배치 축의 \textit{결합 방향}을 검증한다. 단편화 인지 배치 위에 얹어도 p1이 50.1--61.0(다른 배치와 같은 대역)으로 유지되어, 두 층위가 간섭 없이 결합됨이 확인된다(collocation 모델의 Lucid 결합은 향후 과제다). 요컨대 SAFA의 기여는 배치 휴리스틱과 직교하며 어떤 배치 위에서도 작동한다(MCTS 비용은 most-allocated 대비 1.0--1.9$\times$로 현실적이며, most-allocated 결과는 표 \ref{tab:sim-single}의 해당 셀과 정확히 일치한다).
+SAFA는 ``어떤 작업을 먼저''만 정하고 배치는 다음 단계에 맡기므로, 그 이점이 특정 배치에 의존해서는 안 된다. 이를 확인하기 위해, 동일한 SAFA 큐 전처리를 \textbf{7개 배치}(코어 4종 most-allocated·compact·round-robin·MCTS, 단편화 인지 FGD, 그리고 프로덕션 스케줄러 KAI의 두 전략 binpack·spread) 위에 얹어 재실험했다(표 \ref{tab:placement}, 그림 \ref{fig:placement}). 그 결과 \textbf{SAFA의 $p1$이 7개 배치 전부$\times$과부하 4구성에서 50--70으로 유지}되며, 배치가 절대 큐 지연에 주는 영향은 작아(SAFA $q_{p50}$ 변동 5--15\%) 순위를 바꾸지 않는다. 즉 배치에 불변인 것은 SAFA 자신의 안정성이다. 특히 FGD 행(SAFA$\oplus$FGD)은 어드미션 순서와 배치 축의 \textit{결합 방향}을 검증하며(p1 50.1--61.0, 다른 배치와 같은 대역), 운영 스케줄러 행(SAFA$\oplus$KAI)도 binpack은 most-allocated와 사실상 동일(consolidate=최소 free 선택으로 수렴), spread는 분산이라 round-robin과 같은 소폭 상향 대역(58--68)을 보여, SAFA가 연구 프로토타입뿐 아니라 \textit{프로덕션 배치 스케줄러와도 간섭 없이 합성}됨이 확인된다(collocation 모델의 Lucid 결합은 향후 과제다). 요컨대 SAFA의 기여는 배치 휴리스틱과 직교하며 어떤 배치 위에서도 작동한다(MCTS 비용은 most-allocated 대비 1.0--1.9$\times$로 현실적이며, most-allocated 결과는 표 \ref{tab:sim-single}의 해당 셀과 정확히 일치한다). 한편 이종 타입-인지 best-fit 배치는 본 트레이스의 작업이 GPU 타입을 명시하지 않아(type-agnostic) 후보 노드 집합이 비어 퇴화하므로 제외했고, Volcano·YuniKorn 등 외부 운영 스케줄러와 부분(fractional) GPU 공유 레짐에서의 결합은 본 whole-GPU 엔진 범위 밖의 향후 과제다.
 
 \begin{table}[htb!]
 \centering
@@ -915,6 +915,8 @@ compact        & 55.6 & 54.0 & 54.2 & 52.2 \\
 round-robin    & \textbf{69.7} & \textbf{59.5} & \textbf{62.1} & \textbf{53.7} \\
 MCTS           & 56.6 & 53.4 & 55.0 & 50.6 \\
 FGD(단편화 인지) & 61.0 & 54.6 & 53.5 & 50.1 \\
+KAI binpack    & 54.3 & 54.5 & 53.1 & 50.5 \\
+KAI spread     & 67.7 & 68.5 & 58.2 & 58.5 \\
 \midrule
 \textit{(참고) SJF} & 0 & 0 & 64.1 & 0 \\
 \textit{(참고) LAS} & 0 & 0 & 30.9 & 0 \\
