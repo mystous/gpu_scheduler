@@ -188,3 +188,31 @@ placement, the most expensive, completes the full 111k-job trace in at most $87$
 > SAFA의 공정성 기여는 코어 배치 스케줄러와 직교한다. most-allocated·compact·round-robin·MCTS
 > 네 배치 어디에서도 과부하·이종 환경에서 SJF/LAS가 $p_1=0$으로 붕괴하는 반면 SAFA는
 > $p_1\approx50$--$59$를 유지하며, 정책 간 $p_1$ 순위가 네 배치에서 동일하다(배치 무관).
+
+---
+
+## 5. 신규 배치 추가 — KAI binpack/spread, bestfit_type (2026-06-19)
+
+미테스트였던 placement를 동일 그리드(정책 행 × 배치 열)로 추가 검증. SAFA 적용(sfqa-auto·sfqa) vs 미적용(fifo·sjf·las) 분리.
+
+**포팅**: KAI Scheduler(NVIDIA) nodeplacement — `binpack`(pack.go: free 적은 노드 consolidate, 순위=free 오름차순)·`spread`(spread.go: free 많은 노드 분산, 순위=free 내림차순). `sim/policies.py::pref_kai_binpack/pref_kai_spread`. KAI는 GPU 타입 speed-tier 안 함(순수 binpack/spread). `placement_axis.py`에 열로 추가.
+
+### fair_p1 (sfqa-auto = SAFA 적용 / 미적용 비교)
+| 배치 | 256단일 | 256이종 | 512단일 | 512이종 | 비고 |
+|---|--:|--:|--:|--:|---|
+| (참고) most-allocated | 54.3 | 54.4 | 53.1 | 50.5 | 기존 |
+| **KAI binpack** | 54.3 | 54.5 | 53.1 | 50.5 | **≈ most-allocated** (consolidate=최소 free 선택으로 수렴) |
+| **KAI spread** | 67.7 | 68.5 | 58.2 | 58.5 | 분산 → round-robin과 같은 소폭 상향 대역 |
+| (참고) round-robin | 69.7 | 59.5 | 62.1 | 53.7 | 기존(분산) |
+
+미적용 정책은 신규 배치에서도 동일: **fifo p1=100**(순서공정·느림), 과부하 이종에서 **sjf=0·las=0**(붕괴). SAFA만 50–68 유지.
+
+### q_p50 (초) — KAI는 speed 무시로 이종에서 most-allocated 대비 차이
+- kai_binpack 이종 q_p50(sfqa-auto): 512h 1.77M, 256h 3.46M — most-alloc(1.76M/3.77M)과 근사하나, fifo 기준 KAI 단독은 +5~10%(KAI가 빠른 타입 우선을 안 해 느린 타입 배치 증가).
+- kai_spread는 분산이라 q_p50 소폭 증가(패킹 비효율).
+
+### 결론 (정직)
+- **SAFA 배치 불변이 7개 배치(코어 4 + FGD + KAI binpack/spread)로 확장 재확인** — SAFA p1 50–70, 미적용 그리디는 과부하 이종에서 0 붕괴. 정책 간 순위가 모든 배치에서 보존.
+- **KAI binpack ≡ most-allocated**(whole-GPU 과포화에서 consolidate=최소 free), KAI spread ≈ round-robin. 배치 축은 이 레짐에서 여전히 무변별.
+- **bestfit_type 제외**: 타입-인지 best-fit은 작업이 GPU 타입을 명시한다고 가정하나 본 트레이스는 type-agnostic(`any`)이라 후보 노드 집합이 비어 q_p50=0으로 퇴화 → 부적용.
+- **범위 밖**: 외부 운영 스케줄러(Volcano·YuniKorn)·부분 GPU 공유 레짐은 whole-GPU 엔진 밖의 향후 과제. (mcts 256:hetero 재확인 run은 고부하 비용으로 미완료 → §3의 기존 커밋값 사용.)

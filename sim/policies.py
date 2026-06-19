@@ -334,6 +334,13 @@ def pref_kai_binpack(job, nodes):
     return sorted(_typed(job, nodes), key=lambda n: n.free)
 
 
+def pref_kai_spread(job, nodes):
+    """KAI nodeplacement spread 전략(spread.go::nodeResourceSpread). 충실 포팅.
+    binpack과 반대로 미할당 GPU가 가장 '많은' 노드에 높은 점수 → 부하를 분산(distribute).
+    순위 = free 내림차순. KAI는 여기서도 speed-tier 안 함(순수 spread)."""
+    return sorted(_typed(job, nodes), key=lambda n: -n.free)
+
+
 class KAIonly(Policy):
     """KAI-only = KAI 네이티브: FIFO admission(gang 예약/pipelining) + binpack 배치.
     KAI allocate action은 큐 순서로 PopNextJob 후 안 맞는 gang을 pipeline(자원 예약)해

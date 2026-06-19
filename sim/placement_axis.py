@@ -33,8 +33,9 @@ from order_fairness import per_job_score                      # noqa: E402
 
 OUT = os.path.join(HERE, "sweep_results", "placement")
 
-# 배치 4종. mcts는 인스턴스(상태/sim 주입 필요)라 팩토리로.
-PLACEMENTS = ["mostallocated", "compact", "round_robin", "mcts"]
+# 배치: 코어 4종 + FGD + KAI 2전략(binpack/spread) + 이종 best-fit. mcts는 인스턴스(상태/sim 주입).
+PLACEMENTS = ["mostallocated", "compact", "round_robin", "mcts", "fgd",
+              "kai_binpack", "kai_spread", "bestfit_type"]
 # 정책: 핵심 SAFA(sfqa-auto) + 베이스라인. 여유 시 sfqa(고정)·las 추가.
 POLICIES = ["sfqa-auto", "fifo", "sjf", "sfqa", "las"]
 
@@ -84,6 +85,12 @@ def make_pref(placement, trace=None):
         if trace is not None:
             f.set_dist([g for _, _, _, g, _ in trace])
         return f.node_pref, None
+    if placement == "kai_binpack":            # KAI 기본 binpack(consolidate, free 적은 노드 우선)
+        return P.pref_kai_binpack, None
+    if placement == "kai_spread":             # KAI spread(분산, free 많은 노드 우선)
+        return P.pref_kai_spread, None
+    if placement == "bestfit_type":           # 이종 타입-인지 best-fit(같은 타입·빠른 타입 우선)
+        return P.pref_bestfit_type, None
     raise ValueError(placement)
 
 
