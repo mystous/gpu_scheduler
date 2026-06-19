@@ -323,9 +323,41 @@ class FGD(Policy):
         return sorted(cand, key=key)
 
 
+# ── KAI Scheduler (NVIDIA, github.com/NVIDIA/KAI-Scheduler) 배치 포팅 ──────────
+def pref_kai_binpack(job, nodes):
+    """KAI nodeplacement 기본 전략 = **binpack**(GPU). 충실 포팅.
+    원본(pkg/scheduler/plugins/nodeplacement/pack.go) 노드 스코어:
+      score = MaxHighDensity·(1 − (free − min)/(max − min))   (fitting 노드의 free 범위로 정규화)
+      → free(NonAllocatedResource)가 가장 작은(가장 꽉 찬) 노드가 최고점 = consolidate.
+    스코어가 free에 단조 감소이므로 순위 = free 오름차순. KAI는 GPU 타입 speed-tier를 하지 않음
+    (순수 binpack) → typed(요청 호환) 필터 후 free로만 정렬. 빈 노드를 큰 gang용으로 남긴다."""
+    return sorted(_typed(job, nodes), key=lambda n: n.free)
+
+
+class KAIonly(Policy):
+    """KAI-only = KAI 네이티브: FIFO admission(gang 예약/pipelining) + binpack 배치.
+    KAI allocate action은 큐 순서로 PopNextJob 후 안 맞는 gang을 pipeline(자원 예약)해
+    굶주림을 막음 → head-of-line 예약. 엔진 blocking=True FIFO가 이 head 예약의 충실 근사
+    (pipelining의 예약-존중 backfill은 미모델 — KAI-only 처리량을 과소평가할 뿐, 공정성엔 보수적)."""
+    name = "kai"; blocking = True
+    pref_fn = staticmethod(pref_kai_binpack)
+
+    def order(self, cand_idx, age, ar, sim):
+        return cand_idx                                  # FIFO 순서(=KAI 큐 순서, gang 예약)
+
+
+class SAFA_KAI(SFQAAuto):
+    """SAFA + KAI = SAFA(zero-knob) 큐 재정렬 order × KAI binpack 배치.
+    order는 SFQAAuto(P*=1/base^pos + α_eff·age_rel·R, 단일승급) 그대로 상속,
+    배치만 KAI binpack으로 교체 → SAFA 순서 기여를 동일 KAI 배치 위에서 분리 측정."""
+    name = "safa-kai"
+    pref_fn = staticmethod(pref_kai_binpack)
+
+
 # 주의: sfqa-auto-rsv(v3)는 EASY식 예약이 duration(사후값)에 의존해 SQUAD 철학 위반 → 제거.
 # SQUAD에서 자리 비우기는 PTR(디프래그)이 담당. SFQA 라인은 duration-free만 유지.
-POLICIES = {p.name: p for p in [FIFO, SJF, LAS, Themis, SFQA, SFQAAuto, EASY, Kueue, FGD]}
+POLICIES = {p.name: p for p in [FIFO, SJF, LAS, Themis, SFQA, SFQAAuto, EASY, Kueue, FGD,
+                                KAIonly, SAFA_KAI]}
 
 
 def make(name, **kw):
@@ -335,6 +367,10 @@ def make(name, **kw):
         return SFQAAuto(**kw)
     if name == "fgd":
         return FGD(**kw)
+    if name == "kai":
+        return KAIonly()
+    if name == "safa-kai":
+        return SAFA_KAI(**kw)
     cls = {p.name: p for p in [FIFO, SJF, LAS, Themis, EASY, Kueue]}.get(name)
     if cls is None:
         raise ValueError(f"unknown policy: {name}")
