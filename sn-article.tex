@@ -125,7 +125,7 @@ Sia\cite{b4}는 이종 GPU 클러스터의 자원 적응형 딥러닝 작업을 
 Pollux\cite{qiao2021pollux}는 작업의 배치 크기와 자원량을 함께 조절해 goodput(통계적 학습 효율 $\times$ 시스템 throughput)을 최적화하는 공적응(co-adaptive) 딥러닝 스케줄러다. 각 작업의 goodput 프로파일과 탄력적 자원 조정을 전제하므로, 고정 요청 갱 트레이스에는 그 결정 변수(탄력 goodput 구성)가 정의되지 않는다.
 
 \subsection{Arena}\label{ARENA}
-Arena\cite{arena2026}는 대형 모델 학습을 위해 동적 스케줄링과 적응적 병렬화를 함께 설계하는(co-design) 스케줄러다. 작업의 throughput 프로파일과 병렬화 계획에 의존하는데, 선형 throughput 외삽이 최대 2.12$\times$ 오차를 낸다고 저자 스스로 보고한다. 그 결정 변수(작업 내부 병렬화 계획)가 고정 요청 트레이스에 존재 하지 않는 부가 정보이다.
+Arena\cite{arena2026}는 대형 모델 학습을 위해 동적 스케줄링과 적응적 병렬화를 함께 설계하는(co-design) 스케줄러다. 작업의 throughput 프로파일과 병렬화 계획에 의존하는데, 선형 throughput 외삽이 최대 2.12$\times$ 오차를 낸다고 저자 스스로 보고한다. 그 결정 변수(작업 내부 병렬화 계획)가 고정 요청 트레이스에 존재하지 않는 부가 정보이다.
 
 \subsection{Rubick}\label{RUBICK}
 Rubick\cite{rubick2025}은 작업의 실행 계획(병렬화·자원 구성)을 실행 중에 재구성(reconfigure)해 클러스터 효율을 높이는 딥러닝 스케줄러다. 재구성의 결정 변수가 잡별 성능 프로파일과 실행 계획이라, 고정 요청 갱 트레이스로는 정의될 수 없다.
@@ -134,7 +134,7 @@ Rubick\cite{rubick2025}은 작업의 실행 계획(병렬화·자원 구성)을 
 NotebookOS\cite{notebookos2026}는 대화형 노트북을 위한 복제(replicated) 플랫폼으로, 온디맨드로 GPU를 붙였다 떼며 대화형 학습을 스케줄링한다. 
 
 \subsection{FFT}\label{FFT}
-\textit{부차 정보 (iii): 라운드 솔버.} FFT(Fast and Fair Training)\cite{fft2025}는 이종 GPU 클러스터에서 JCT와 공정성을 동시에 다루는 스케줄러로, 라운드마다 비용 최소화 최적화를 풀고 finish-time-fairness를 목표로 삼는다. 이종 환경의 JCT와 공정성을 정면으로 다룬다. 이째 라운드 솔버와 epoch(수렴) 추정 정보를 전제로한다. 
+\textit{부차 정보 (iii): 라운드 솔버.} FFT(Fast and Fair Training)\cite{fft2025}는 이종 GPU 클러스터에서 JCT와 공정성을 동시에 다루는 스케줄러로, 라운드마다 비용 최소화 최적화를 풀고 finish-time-fairness를 목표로 삼는다. 이종 환경의 JCT와 공정성을 정면으로 다룬다. 이때 라운드 솔버와 epoch(수렴) 추정 정보를 전제로 한다.
 
 \subsection{RLTune}\label{RLTUNE}
 RLTune\cite{rltune2025}은 이종 클러스터의 동적 스케줄러로, 강화학습으로 작업 우선순위화를 학습하고 노드 매핑은 MILP로 푼다. 학습된 모델과 라운드 솔버를 함께 전제하며, 블랙박스 작업이나 학습 분포 밖의 신규 작업에는 적용이 어렵다는 한계를 저자도 지적한다.
