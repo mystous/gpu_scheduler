@@ -340,7 +340,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-\ref{coeff:limit}절의 고정 $\alpha$ 한계를 없애기 위해, 고정-$\alpha$ SAFA의 식과 동작을 그대로 계승하되 계수 $\alpha$를 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다(이것이 본 논문의 SAFA다). 각 대기 작업 $j$에 대해
+고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 각 대기 작업 $j$에 대해
 \begin{equation}
 P^*_j = \frac{1}{\text{base}^{\,pos_j}} + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
 \tag{5}
