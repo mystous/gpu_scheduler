@@ -230,18 +230,18 @@ GPU 갱(gang) 스케줄링의 HOL 블로킹은 \textit{공간적이고 불가분
 $P^*$를 작업 $t_0^*$, $t_1^*$, $t_2^*$, \dots, $t_n^*$의 조정된 우선순위 값이라 하자. $P^*$는 스케줄링이 시작되기 전에 계산되어 재부여된다. 스케줄러는 수정된 작업 우선순위를 사용한다. 조정된 작업 우선순위 $P^*$는 다음과 같이 정의된다:
 
 \begin{equation}
-P^* = P + \alpha A \times R
+P^*_j = \frac{1}{\text{base}^{\,pos_j}} + \alpha\, \tilde A_j \cdot R_j
 \label{eq:01}
 \vspace{1em}
 \end{equation}
 
-첫 번째 항 $P$는 작업 $t_0$, $t_1$, \dots, $t_n$의 원래 우선순위를 나타낸다. 구체적으로 우선순위는 $p_0$ = 1, $p_1$ = 0.5, $p_2$ = 0.25와 같이 정의되어 이후 우선순위가 절반씩 감소하며, 값이 클수록 우선순위가 높다. 두 번째 항은 기아 지수(starvation index)를 나타내는 변수 $\alpha A \times R$로 구성된다. 여기서 $\alpha$는 기아 지수가 증가 하여 우순 순위를 역전 시키는 속도를 결정하는 계수다. 예컨대 대기 큐의 두 번째 작업의 우선순위가 6시간 안에 역전되도록 하려면, $R$을 1로 가정하고 10분에 1 단위로 나이가 올라 갈 때 $\alpha$는 최소 0.013889로 설정되어야 한다. 수치로 보면 $P_1$이 0.5일 때 $0.013889 \times 36 \times 1 = 0.500004$가 계산되어 갱신된 우선순위는 1.000004가 되고, 이는 $P_0$ 값 1을 넘어서므로 순위 추월이 일어난다.
+첫 번째 항 $\frac{1}{\text{base}^{\,pos_j}}$는 도착순 큐 위치 $pos_j$에 따른 원래(FIFO) 우선순위다. 밑 $\text{base}=2$에서 $pos_j=0,1,2$에 대해 각각 $1$, $0.5$, $0.25$로 절반씩 감소하며, 값이 클수록 우선순위가 높다. 두 번째 항 $\alpha\, \tilde A_j R_j$는 기아 지수(starvation index)다. 여기서 $\alpha$는 기아 지수가 증가하여 우선순위를 역전시키는 속도를 결정하는 계수다. 예컨대 큐 두 번째 작업($pos_j=1$, base 항 0.5)의 우선순위가 6시간 안에 역전되도록 하려면, $R_j$를 1로 가정하고 10분에 1 단위로 나이가 오를 때 $\alpha$는 최소 0.013889로 설정되어야 한다. 수치로 보면 $0.013889 \times 36 \times 1 = 0.500004$가 더해져 갱신된 우선순위는 1.000004가 되고, 이는 선두 작업($pos_j=0$) 값 1을 넘어서므로 순위 추월이 일어난다.
 
-다만 이 예시는 직관을 위해 선두 작업 자신의 나이 보너스를 무시한 단순화다. 실제로는 선두에도 $\alpha A_0 R_0$가 붙으므로, 진짜 역전은 두 작업의 $A\cdot R$ 곱 차이가 base 우선순위 차이를 넘을 때, 즉 자리 적합 $R$의 차등이 있을 때 일어난다. 이는 \ref{sec:eval}.Experimental Evaluation에서 SAFA(Zero-knob) 순효과에서 $R$이 균일하면 역전이 전혀 일어나지 않음을 측정으로 증명 한다.
+다만 이 예시는 직관을 위해 선두 작업 자신의 나이 보너스를 무시한 단순화다. 실제로는 선두에도 $\alpha\, \tilde A_0 R_0$가 붙으므로, 진짜 역전은 두 작업의 $\tilde A\cdot R$ 곱 차이가 base 우선순위 차이를 넘을 때, 즉 자리 적합 $R$의 차등이 있을 때 일어난다. 이는 \ref{sec:eval}.Experimental Evaluation에서 SAFA(Zero-knob) 순효과에서 $R$이 균일하면 역전이 전혀 일어나지 않음을 측정으로 증명 한다.
 
-이제 나머지 두 인자를 살펴 보자 $A$는 작업의 나이(age)를 단위 없는 0과 양의 자연수 이다. 증가 단위는 상황에 맞게 정의 한다. 본 연구에서는 새로운 Job에 스케쥴러에 제출 될 때 마다 1씩 증가 한다. $R$은 자원 적합도 지수(resource suitability index)다. $A$는 작업이 스케줄링되면 대기 큐의 가장 적은 나이를 모든 대기 작업에서 빼서 나이를 재산정 한다. $R$ 값은 작업의 요구 가속기 수가 전체 서버 각각의 가속기 가용 숫자 중 요구 가속기 수가 적은 경우 1이고, 가용을 초과하는 부족분 하나마다 $0.1$씩 감소한다.
+이제 나머지 두 인자를 살펴보자. 나이 $A_j$는 단위 없는 0 이상의 정수로, 증가 단위는 상황에 맞게 정의하며 본 연구에서는 새 작업이 스케줄러에 제출될 때마다 1씩 증가한다. 식에 쓰는 $\tilde A_j$는 \textit{상대 나이}로, 작업이 스케줄링되면 대기 큐의 가장 적은 나이를 모든 대기 작업에서 빼서 재산정한 값이다($\tilde A_j = A_j - \min_k A_k$). $R_j$는 자원 적합도 지수(resource suitability index)로, 요구 가속기 수가 서버의 가속기 가용 수 이하인 경우 1이고, 가용을 초과하는 부족분 하나마다 $0.1$씩 감소한다.
 
-여기서 주목할 점은 수식 \eqref{eq:01}의 세 입력이 \textit{모두 큐에서 직접 관측된다}는 것이다. $P$는 큐 위치, $A$는 대기 시간(나이), $R$은 요청 가속기 수 대 가용 수의 적합도다. 이 형태는 우선순위가 대기 시간에 선형 비례해 자라는 Kleinrock의 time-dependent(delay-dependent) priority 규율\cite{kleinrock1976queueing}과 \textit{형태적으로} 같은 계열이다. 다만 이는 식의 형태(선형 aging)를 가리키는 것이지 그 분석 결과까지 물려받는다는 뜻은 아니다. Kleinrock의 보존 법칙은 선점·단일 서버·정상상태에서 성립하지만, 본 설정(비선점·공간 공유 갱·이질 서비스 시간·과포화)은 그 전제를 모두 벗어나므로 어떤 보존량이 불변인지는 별도로 보장되지 않는다. 본 기여는 이 고전 골격에 분할 불가능한 갱 자원 적합도 $R$을 결합하고 계수를 큐 통계로 정규화한 데 있다. Algorithm \ref{alg:adjust_wait_queue}는 수식 \eqref{eq:01}을 사용한 기아 방지 알고리즘의 구현을 보여준다.
+여기서 주목할 점은 수식 \eqref{eq:01}의 세 입력 --- 큐 위치 $pos_j$, 상대 나이 $\tilde A_j$, 자원 적합도 $R_j$ --- 이 \textit{모두 큐에서 직접 관측된다}는 것이다. 이 형태는 우선순위가 대기 시간에 선형 비례해 자라는 Kleinrock의 time-dependent(delay-dependent) priority 규율\cite{kleinrock1976queueing}과 \textit{형태적으로} 같은 계열이다. 다만 이는 식의 형태(선형 aging)를 가리키는 것이지 그 분석 결과까지 물려받는다는 뜻은 아니다. Kleinrock의 보존 법칙은 선점·단일 서버·정상상태에서 성립하지만, 본 설정(비선점·공간 공유 갱·이질 서비스 시간·과포화)은 그 전제를 모두 벗어나므로 어떤 보존량이 불변인지는 별도로 보장되지 않는다. 본 기여는 이 고전 골격에 분할 불가능한 갱 자원 적합도 $R$을 결합하고 계수를 큐 통계로 정규화한 데 있다. Algorithm \ref{alg:adjust_wait_queue}는 수식 \eqref{eq:01}을 사용한 기아 방지 알고리즘의 구현을 보여준다.
 
 \begin{algorithm}
 \caption{Starvation-Aware Queue Adjustment}\label{alg:adjust_wait_queue}
@@ -271,9 +271,10 @@ P^* = P + \alpha A \times R
     \ENDFOR
 \ENDFOR
 \STATE {}
+\STATE $\tilde A_i \gets A_i - \min_k A_k,\ \forall i$ \COMMENT{상대 나이 재산정}
 \FOR{ $i \gets 0$ to $l_{wq}-1$}
-    \STATE $P_i \gets 1/2^i$
-    \STATE $P_i^* \gets P_i + \alpha A_i \times R_{a_{t_i}}$
+    \STATE $P_i \gets 1/\text{base}^{\,i}$ \COMMENT{$\text{base}=2$}
+    \STATE $P_i^* \gets P_i + \alpha\, \tilde A_i \cdot R_{a_{t_i}}$
 \ENDFOR
 \STATE {}
 \STATE $(P_{i_{\max}}^*, i_{\max}) \gets \max(P^*)$
