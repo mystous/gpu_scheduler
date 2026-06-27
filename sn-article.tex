@@ -759,9 +759,9 @@ SAFA는 Placement 스케줄러 교체 없이 쿠버네티스 \texttt{PodScheduli
 \end{algorithm}
 
 \subsection{실 클러스터 실측 검증(B200)}\label{eval:b200}
-위 결과를 NVIDIA B200$\times$8 단일 노드 쿠버네티스(v1.31, kind)에서 교차 검증한다(표 \ref{tab:b200}). Philly 500작업을 \texttt{submit-clamp}로 압축 제출해 8/8 GPU 포화·대기 큐 47개 과부하를 만들고, 각 작업은 GPU를 점유하는 \texttt{sleep} 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 거치게 했다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 압축 후 $p50$이 11초로 게이트 주기 $\Delta{=}5$초의 2배에 불과한 짧은-작업 레짐이라 시간 단위 거동은 외삽이고, Placement·collocation·다중 노드는 향후 과제다.
+위 결과를 NVIDIA B200$\times$8 단일 노드 쿠버네티스(v1.31, kind)에서 교차 검증한다(그림 \ref{fig:b200}). Philly 500작업을 \texttt{submit-clamp}로 압축 제출해 8/8 GPU 포화·대기 큐 47개 과부하를 만들고, 각 작업은 GPU를 점유하는 \texttt{sleep} 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 거치게 했다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 압축 후 $p50$이 11초로 게이트 주기 $\Delta{=}5$초의 2배에 불과한 짧은-작업 레짐이라 시간 단위 거동은 외삽이고, Placement·collocation·다중 노드는 향후 과제다.
 
-표 \ref{tab:b200}·그림 \ref{fig:b200}에서 시뮬 경향이 재현된다. 그리디·비순서 정책(기본 kube-scheduler 49.8\%·Themis 31.4\%·SJF 30.4\%)은 높은 추월 불공정(\texttt{lt50\%})을, 예약·admission 정책(EASY 1.8\%·Kueue 4.4\%)은 추월 억제를 보이며, SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 FIFO-gate(6.2\%)·LAS 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준 공정성을 달성함을 실 클러스터에서 확인한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열 할당률이 기본 대비 7--11\%p 낮은 것은 주기 $\Delta$의 어드미션 지연이 만든 구현 비용이지($\Delta$ 축소로 감소) 처리량 손실은 아니다(makespan 51--54분 $<$ 기본 68분).
+그림 \ref{fig:b200}에서 시뮬 경향이 재현된다(q\_p50 대 순서 공정성). 그리디·비순서 정책(기본 kube-scheduler 49.8\%·Themis 31.4\%·SJF 30.4\%)은 높은 추월 불공정(\texttt{lt50\%})을, 예약·admission 정책(EASY 1.8\%·Kueue 4.4\%)은 추월 억제를 보이며, SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 FIFO-gate(6.2\%)·LAS 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준 공정성을 달성함을 실 클러스터에서 확인한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열 할당률이 기본 대비 7--11\%p 낮은 것은 주기 $\Delta$의 어드미션 지연이 만든 구현 비용이지($\Delta$ 축소로 감소) 처리량 손실은 아니다(makespan 51--54분 $<$ 기본 68분).
 
 단 균일 도착에서는 나이 순서가 도착 순서와 같아 SAFA의 나이 승급이 비활성이므로, \textbf{도착 버스트}를 보존한 추가 실측으로 보완했다(peak 12$\times$, 대기 큐 440개; blocking-aware 해제$+$도착-순번 나이; 표 \ref{tab:b200burst}). \textbf{blocking$+$counter는 $p1$ 82.8·\texttt{lt50} 0.0\%로 버스트 아사를 예방}하나 옛 greedy$+$wall은 $p1$ 3.8로 붕괴해, blocking-aware 해제가 버스트 조건의 결정 인자임을 보인다. 다만 단일 노드에서는 counter 나이가 도착 순번에 단조라 SAFA(82.8)와 FIFO(84.2)가 사실상 동등하므로, 이 실측은 ``blocking 해제가 버스트 아사를 막는다''까지 입증하며 ``나이 승급이 FIFO를 능가''는 다중 노드 시뮬레이션이 담당한다.
 
@@ -780,29 +780,6 @@ SAFA blocking$+$counter ($\Delta$1) & 40.1 & 4.0 & 443 \\
 SAFA greedy$+$wall(옛 거동) & 3.8 & 5.0 & 474 \\
 FIFO blocking & 84.2 & 0.2 & 1784 \\
 \quad 반복 & 89.5 & 0.2 & 1785 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[htb!]
-\centering
-\caption{B200 \textbf{균일} 도착 실측 --- 정책 안전성·무튜닝 수렴(나이 승급 \textit{비활성})}
-\label{tab:b200}
-\footnotesize
-\begin{tabular}{@{}l@{\hspace{1.2em}}rrrr@{}}
-\toprule
-정책 & \texttt{lt50\%}$\downarrow$ & fair평균 & $q_{p50}$(s) & alloc \\
-\midrule
-기본 kube-sched(비FIFO) & 49.8 & 56.3 & 857 & 91\% \\
-FIFO (gate) & 6.2 & 93.8 & 422 & 84\% \\
-SJF & 30.4 & 71.9 & 15 & 82\% \\
-LAS & 5.2 & 94.5 & 424 & 84\% \\
-Kueue & 4.4 & 95.6 & 449 & 82\% \\
-EASY & 1.8 & 96.6 & 1138 & 80\% \\
-Themis & 31.4 & 70.6 & 76 & 84\% \\
-\midrule
-SAFA (고정 $\alpha$) & 5.2 & 94.4 & 424 & 83\% \\
-\textbf{SAFA(Zero-knob)} & \textbf{5.2} & \textbf{94.6} & 423 & 83\% \\
 \bottomrule
 \end{tabular}
 \end{table}
