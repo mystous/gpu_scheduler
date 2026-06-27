@@ -666,32 +666,11 @@ KAI spread     & 67.7 & 68.5 & 58.2 & 58.5 \\
 \end{figure}
 
 \subsection{쿠버네티스 통합 경로}\label{SAFA:k8s}
-SAFA는 Placement 스케줄러 교체 없이 쿠버네티스 \texttt{PodSchedulingGates}만으로 끼워 넣는다. 각 Pod에 게이트 \texttt{safa.io/admission}를 부여해 기본 \texttt{kube-scheduler} 후보에서 빼고, SAFA 컨트롤러가 주기 $\Delta$마다 식 \eqref{eq:01}로 $P^*$ 최고 Pod부터 게이트를 해제하면(Algorithm \ref{alg:k8s}) 기본 스케줄러가 그 순서로만 binding하므로 Placement 로직은 손대지 않는다.
+SAFA는 Placement 스케줄러 교체 없이 쿠버네티스 \texttt{PodSchedulingGates}만으로 끼워 넣는다. 각 Pod에 게이트 \texttt{safa.io/admission}를 부여해 기본 \texttt{kube-scheduler} 후보에서 빼고, SAFA 컨트롤러가 주기 $\Delta$마다 식 \eqref{eq:01}로 $P^*$ 최고 Pod부터 게이트를 해제하면 기본 스케줄러가 그 순서로만 binding하므로 Placement 로직은 손대지 않는다.
 
 운영상 핵심은 \textbf{게이트 해제 규율이 공정성을 가른다}는 점이다 --- greedy 해제는 중앙 대기를 7.5배 줄이나 p1을 0으로 붕괴시키므로 \textbf{선두가 들어갈 자리가 없으면 해제를 멈춰야}(blocking-aware) 한다(뒤 B200 실측: blocking$+$counter p1 82.8 대 greedy 3.8). 단 blocking을 SJF·Themis에 줘도 p1은 0이라 도착순 골격·blocking·제한적 승급이 함께 작동해야 한다.
 
 그 밖의 멀티노드·멀티테넌트 운영 요건(노드 단위 fit·잠정 점유, wedge dead-letter 격리, VC 내부 적용, Kueue suspend 결합, fail-open)은 설계 사항으로 남긴다. 본 참조 구현은 단일 노드(B200$\times$8)를 집계 용량으로 단순화했으며 그 구현·검증은 향후 과제다.
-
-\begin{algorithm}[htb!]
-\caption{쿠버네티스 게이트 기반 어드미션-계층 통합(컨트롤 루프)}
-\label{alg:k8s}
-\begin{algorithmic}[1]
-\LOOP{ (주기 $\Delta$마다)}
-  \STATE $N \gets$ 노드 가용 GPU 관측;~ $Q \gets$ 게이트 \texttt{safa.io/admission}된 대기 Pod(나이·요청)
-  \IF{$Q=\emptyset$}
-    \STATE \textbf{continue} \COMMENT{대기 큐 비어 있으면 개입 없음}
-  \ENDIF
-  \STATE $C' \gets$ \textsc{ZeroKnobSAFA}$(Q,N)$ \COMMENT{식 \eqref{eq:01}로 $\arg\max P^*$ 1건만 맨 앞으로(단일 승급)}
-  \STATE $f \gets$ 잔여 가용 GPU
-  \FOR{각 $j \in C'$ (순서대로)}
-    \IF{$j$의 gang이 \textit{노드 단위로} 배치 가능(또는 결합된 gang 계층의 dry-run admission 통과)}
-      \STATE $j$의 게이트 \texttt{safa.io/admission} 제거;~ 잠정 점유 차감 \COMMENT{용량만큼 모두 해제 --- 직렬화 없음}
-    \ENDIF
-  \ENDFOR
-  \STATE 기본 \texttt{kube-scheduler}(또는 결합된 gang 계층)가 게이트 풀린 Pod을 자체 로직으로 binding
-\ENDLOOP
-\end{algorithmic}
-\end{algorithm}
 
 \subsection{실 클러스터 실측 검증(B200)}\label{eval:b200}
 위 결과를 NVIDIA B200$\times$8 단일 노드 쿠버네티스(v1.31, kind)에서 교차 검증한다(그림 \ref{fig:b200}). Philly 500작업을 \texttt{submit-clamp}로 압축 제출해 8/8 GPU 포화·대기 큐 47개 과부하를 만들고, 각 작업은 GPU를 점유하는 \texttt{sleep} 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 거치게 했다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 압축 후 $p50$이 11초로 게이트 주기 $\Delta{=}5$초의 2배에 불과한 짧은-작업 레짐이라 시간 단위 거동은 외삽이고, Placement·collocation·다중 노드는 향후 과제다.
