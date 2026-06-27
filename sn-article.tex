@@ -340,20 +340,11 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 각 대기 작업 $j$에 대해
-\begin{equation}
-P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
-\tag{5}
-\label{eq:auto-pstar}
-\end{equation}
-를 계산해 $P^*$가 최대인 작업 \emph{하나만} 큐 맨 앞으로 올린다(단일 승급, Algorithm \ref{alg:adjust_wait_queue}와 동일 구조). $P_j$는 식 \eqref{eq:01}의 base 우선순위($1/\text{base}^{\,pos_j}$, $\text{base}=2$), $R_j$는 식 \eqref{eq:01}의 자원 적합도다.
+고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 수식 \ref{eq:01}에서 고정 $\alpha$를 대기 큐로 계산된 $\alpha_{\text{eff}}$를 사용한다. 이 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드의 시간 단위와 무관하게 승급 문턱이 큐의 나이 통계 자체로 정해진다(단위 소거).
 
-설계의 출발 직관은 PS-공정 속도저하 $\sigma^*=1/(1-\rho)$\cite{wierman2003classifying}였으나, 이 양은 SAFA의 운영 규칙에 들어가지 않는다($\rho$를 계산하지 않으며, 과포화(할당률 99--100\%)에서는 1로 포화해 무의미하다). 실제 메커니즘은 부하 적응이 아니라 \textbf{나이-스케일 정규화}다 --- 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드의 시간 단위와 무관하게 승급 문턱이 큐의 나이 통계 자체로 정해진다(단위 소거).
-
-이 규칙의 핵심은 계수 $\alpha_{\text{eff}}$를 외부 상수 없이 큐 통계만으로 정하는 것이다:
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big),
-\tag{6}
+\tag{5}
 \label{eq:auto-alpha}
 \end{equation}
 여기서 큐 상대 나이 $\tilde A_j = A_j - \min_k A_k$, 동적 나이 스케일 $A_{\text{ref}} = \max(1,\,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, 자리 적합이 가장 나쁜 작업의 적합도 $R_{\min}=\max(0.1,\,\min_k R_k)$다. $g$는 모든 후보의 상대 나이가 0인 자명한 경우에만 1 미만이 되는 경계 가드이며(그때는 나이 보너스 자체가 0), 따라서 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}이지 부하 게이트가 아니다. $R_{\min}$ 분모는 시간-단위 소거($A_{\text{ref}}$가 담당)가 아니라 승급 강도를 키우는 \textit{이득 항}으로, 효율--공정 균형점의 위치를 정하는 설계 상수다(단독 제거 시 512 이종에서 $p1$ 75.2·$q_{p50}$ 2.31M초로 FIFO 쪽 frontier로 이동). 큐 상대 나이를 쓰므로 배치로 멤버가 바뀌면 $\min_k A_k$가 갱신돼 남은 작업 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
@@ -421,7 +412,7 @@ P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
 정책은 세 축으로 비교한다. \textbf{큐잉 지연}(도착부터 배치까지; 중앙값 \texttt{q\_p50}·최댓값 \texttt{q\_max}, 초 단위, K$=10^3$·M$=10^6$, 낮을수록 우수), \textbf{Alloc}(평균 GPU 할당률 --- 효율 이득이 자원을 놀려 얻은 것인지 가름), 그리고 \textbf{순서 공정성(order-fairness)}이다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
 \begin{equation}
 F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr).
-\tag{7}
+\tag{6}
 \label{eq:order-fair}
 \end{equation}
 $F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이면 $F_k=100$으로 둔다(전체 트레이스를 끝까지 결정적으로 재생하므로 검열은 없다). 주 지표 \textbf{p1}은 $F_k$의 하위 1\% 분위 --- 가장 심하게 추월당한 1\% 작업의 공정성으로, 평균이 가리는 최악 추월 피해를 드러낸다(높을수록 우수).
