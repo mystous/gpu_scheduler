@@ -132,7 +132,8 @@ def fig_placement():
     placements = ["mostallocated", "compact", "round_robin", "mcts", "fgd"]
     plabel = {"mostallocated": "most-alloc", "compact": "compact",
               "round_robin": "round-robin", "mcts": "MCTS", "fgd": "FGD"}
-    configs = [("256:hetero", "256 het"), ("512:hetero", "512 het"), ("512:single", "512 sgl")]
+    configs = [("256:single", "256 sgl"), ("256:hetero", "256 het"),
+               ("512:single", "512 sgl"), ("512:hetero", "512 het")]
     fig, ax = plt.subplots(figsize=(3.4, 2.6))
     w = 0.2
     for ci, (cfg, clab) in enumerate(configs):
@@ -145,11 +146,11 @@ def fig_placement():
         ax.bar(xs, ys, width=w, label=clab)
     ax.axhline(50, ls=":", color="gray", lw=0.8)
     ax.text(0.02, 51, "$p_1$=50", fontsize=6.5, color="gray")
-    ax.set_xticks([j + w for j in range(len(placements))])
+    ax.set_xticks([j + 1.5*w for j in range(len(placements))])
     ax.set_xticklabels([plabel[p] for p in placements], rotation=20, ha="right", fontsize=7)
-    ax.set_ylabel("SAFA order-fairness $p_1$"); ax.set_ylim(0, 70)
+    ax.set_ylabel("SAFA order-fairness $p_1$"); ax.set_ylim(0, 78)
     ax.set_title("SAFA $p_1$ by core placement", fontsize=8)
-    ax.legend(fontsize=6.5, ncol=3, loc="upper center", columnspacing=1.0)
+    ax.legend(fontsize=6.5, ncol=4, loc="upper center", columnspacing=0.8)
     fig.savefig(os.path.join(OUT, "fig_placement.pdf"))
     plt.close(fig)
     print("wrote fig_placement.pdf")
