@@ -490,31 +490,9 @@ SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-sing
 
 종합하면, 무튜닝 정규화 덕에 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지한다 --- 다른 어떤 빠른 정책도 보이지 못한 안정성이다. 즉 SAFA는 워크로드별 튜닝 없이 $O(n)$ 경량으로 99\% 할당률과 효율--공정 균형을 달성해, 기존 스케줄러 위에 부담 없이 통합되는 실용적 후보다.
 \subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
-무튜닝의 순효과를 \textit{같은 큐 전처리 골격} 안에서 격리하려 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 6구성에서 대비한다(표 \ref{tab:ablation}). 둘은 식 \eqref{eq:01}의 동일 $P^*$·단일 승급을 공유하고 차이는 나이 가중을 고정값으로 두느냐 큐 통계에서 유도하느냐뿐이다(고정 $\alpha$는 워크로드별 최적이 아니라 모든 구성 공통 단일값 $\alpha=0.13889$).
+무튜닝의 순효과는 \textit{같은 큐 전처리 골격} 안에서 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 직접 대비해 격리한다(표 \ref{tab:sim-single}의 두 SAFA 행). 둘은 식 \eqref{eq:01}의 동일 $P^*$·단일 승급을 공유하고 차이는 나이 가중을 고정값으로 두느냐 큐 통계에서 유도하느냐뿐이다(고정 $\alpha$는 워크로드별 최적이 아니라 모든 구성 공통 단일값 $\alpha=0.13889$).
 
-표 \ref{tab:ablation}처럼 SAFA(Zero-knob)는 6구성 모두에서 p1을 고정 $\alpha$ 대비 동등 이상으로 유지한다 --- 경합이 깊은 256·512에서 단일 41.9$\to$54.3·41.4$\to$53.1, 이종 40.4$\to$54.4·37.3$\to$50.5로 끌어올리고, 1024에서도 동등하거나 향상(이종 72.1$\to$76.5)했다. 대가는 작은 중앙값 양보(512 이종 1.48M$\to$1.76M초)뿐이고 할당률은 사실상 동일하다(0.1\%p 이내). 즉 고정값 재튜닝 없이 큐 유도 계수만으로 공정성이 더 안정적으로 유지된다.
-
-\begin{table}[htb!]
-\centering
-\caption{무튜닝 ablation}
-\label{tab:ablation}
-\small
-\begin{tabular}{@{}ll@{\hspace{1.0em}}rr@{\hspace{1.0em}}rr@{\hspace{1.0em}}rr@{}}
-\toprule
- & & \multicolumn{2}{c}{\textbf{q\_p50 (s)}} & \multicolumn{2}{c}{\textbf{p1}} & \multicolumn{2}{c}{\textbf{Alloc}} \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
-\textbf{구성} & \textbf{GPU} & 고정\,$\alpha$ & SAFA & 고정\,$\alpha$ & SAFA & 고정\,$\alpha$ & SAFA \\
-\midrule
-\multirow{3}{*}{단일} & 256  & 2.0M & 2.4M & 41.9 & \textbf{54.3} & 99.1 & 99.0 \\
-                     & 512  & 492K & 607K & 41.4 & \textbf{53.1} & 98.8 & 98.8 \\
-                     & 1024 & 2    & 2    & 100  & 100           & 75.6 & 75.7 \\
-\midrule
-\multirow{3}{*}{이종} & 256  & 2.7M & 3.8M & 40.4 & \textbf{54.4} & 99.1 & 99.1 \\
-                     & 512  & 1.5M & 1.8M & 37.3 & \textbf{50.5} & 99.0 & 99.0 \\
-                     & 1024 & 205K & 256K & 72.1 & \textbf{76.5} & 95.8 & 95.8 \\
-\bottomrule
-\end{tabular}
-\end{table}
+표 \ref{tab:sim-single}에서 보듯 SAFA(Zero-knob)는 6구성 모두에서 p1을 고정 $\alpha$ 대비 동등 이상으로 유지한다 --- 경합이 깊은 256·512에서 단일 41.9$\to$54.3·41.4$\to$53.1, 이종 40.4$\to$54.4·37.3$\to$50.5로 끌어올리고, 1024에서도 동등하거나 향상(이종 72.1$\to$76.5)했다. 대가는 작은 중앙값 양보(512 이종 1.48M$\to$1.76M초)뿐이고 할당률은 사실상 동일하다(0.1\%p 이내). 즉 고정값 재튜닝 없이 큐 유도 계수만으로 공정성이 더 안정적으로 유지된다.
 
 \subsubsection{워크로드별 최적 고정 $\alpha$와의 대비(강화판)}\label{eval:ablation:grid}
 더 강한 질문은 ``\textit{구성마다} $\alpha$를 최적으로 골라도 무튜닝이 따라잡히는가''이다. 6구성을 16점 그리드($\alpha\in[0.01,2.0]$\footnote{$\alpha$ 값: 0.01, 0.02, 0.05, 0.1, 0.139, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0.})로 탐색해도 5개 부하 구성 전부에서 어떤 고정 $\alpha$도 무튜닝에 못 미친다(최선 대비 $+4.4$--$12.8$점, 예: 512 이종 39.1 대 50.5; 표 \ref{tab:ablation-grid}). 그리드를 $10^{-4}$까지 넓히면 고정 $\alpha$도 FIFO 쪽으로 올라(512 단일 87.5) FIFO--그리디 보간 노브임이 드러나며, 도달 불가 동작점은 없다.
