@@ -368,33 +368,7 @@ P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
 
 나머지 내부 상수의 성격은 둘로 갈린다(p1 기준, \S\ref{eval:robust:sens}). 밑 $\text{base}$는 1.5--4.0에서 둔감하고(p1 50--51.5), $R$ 감쇠(기본 0.1)는 효율--공정 균형점을 옮기는 위치 상수다(0.05--0.2에서 p1 50--98). 다만 같은 0.1이 세 트레이스(Philly·Helios·Alibaba)에서 재튜닝 없이 일관된 균형점을 주므로, 워크로드-민감 노브가 아니라 운영자의 효율--공정 선호를 한 번 표현하는 설계 상수다. 또한 SAFA는 트리거 임계 $\beta$ 없이 항상 발동하므로(상대 나이가 없으면 보너스가 0이라 자연히 무개입) 제거되는 노브가 하나 더 늘어난다. 무튜닝의 가치는 ``고정 $\alpha$가 전이 불가''라는 데 있지 않고(잘 고른 단일 미세값은 전이된다, \S\ref{eval:ablation:grid}), 절벽형 $\alpha$-그리드를 \textit{탐색할 필요 자체를 없앤} 데 있다.
 
-기아 완화의 구동원은 \textit{시간}이 아니라 후속 도착·배치 사건이다(주 엔진 나이는 도착 카운터, \S\ref{eval:sim}). 다만 정규화 분모 $A_{\text{ref}}$도 도착과 함께 자라 승급 압력은 $R$ 차등에 비례해 \textbf{포화}하므로, $R$ 차등이 작은 작업은 끝내 승급되지 않을 수 있다 --- 유계 보장이 아니라 \textit{$R$-차등 구동의 기아 완화}이며, SAFA의 정체성은 ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합으로 정체를 절단한다''로 읽어야 한다. 이 무튜닝 적응의 대가는 작은 중앙값 양보이며, 그 대신 부하·이질성 전반에서 일관되게 높은 공정성을 얻음을 \S\ref{eval:main}에서 정량적으로 보인다. 단일 승급 절차는 Algorithm \ref{alg:auto}에 정리한다.
-
-\begin{algorithm}[htb!]
-\caption{Zero-knob, Scale-Normalized SAFA}
-\label{alg:auto}
-\begin{algorithmic}[1]
-\STATE \textbf{입력:} 대기 큐 $Q$(도착순), 작업별 나이 $A$
-\IF{$Q=\emptyset$}
-  \RETURN $Q$ \COMMENT{빈 큐}
-\ENDIF
-\STATE $\tilde A_j \gets A_j - \min_k A_k$ \COMMENT{큐 상대 나이(자동 재기준)}
-\STATE $A_{\text{ref}} \gets \max(1,\,\text{mean}(\tilde A))$;~ $A_{\max} \gets \max_k \tilde A_k$
-\STATE $R_{\min} \gets \max(0.1,\,\min_k R_k)$ \COMMENT{최악 자리적합}
-\STATE $g \gets \min(1,\,A_{\max}/A_{\text{ref}})$ \COMMENT{경계 가드(본문 참조 --- 상대 나이 존재 시 항상 1)}
-\STATE $\alpha_{\text{eff}} \gets g/(A_{\text{ref}}\,R_{\min})$
-\FOR{각 $j \in Q$}
-  \STATE $P_j \gets 1/\text{base}^{\,pos_j}$ \COMMENT{$\text{base}=2$}
-  \STATE $P^*_j \gets P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j$
-\ENDFOR
-\STATE $m \gets \arg\max_j P^*_j$
-\IF{$m = 0$}
-  \RETURN $Q$ \COMMENT{이미 선두}
-\ELSE
-  \RETURN $j_m$를 맨 앞으로 올린 $Q$ \COMMENT{단일 승급}
-\ENDIF
-\end{algorithmic}
-\end{algorithm}
+기아 완화의 구동원은 \textit{시간}이 아니라 후속 도착·배치 사건이다(주 엔진 나이는 도착 카운터, \S\ref{eval:sim}). 다만 정규화 분모 $A_{\text{ref}}$도 도착과 함께 자라 승급 압력은 $R$ 차등에 비례해 \textbf{포화}하므로, $R$ 차등이 작은 작업은 끝내 승급되지 않을 수 있다 --- 유계 보장이 아니라 \textit{$R$-차등 구동의 기아 완화}이며, SAFA의 정체성은 ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합으로 정체를 절단한다''로 읽어야 한다. 이 무튜닝 적응의 대가는 작은 중앙값 양보이며, 그 대신 부하·이질성 전반에서 일관되게 높은 공정성을 얻음을 \S\ref{eval:main}에서 정량적으로 보인다.
 
 계수 $\alpha$를 제거한 뒤 남는 소수의 내부 상수가 또 다른 숨은 노브가 아님을 보이기 위해 1차원 민감도 분석을 수행했다(그림 \ref{fig:sensitivity}, C++ 시뮬 12구성). 자원 적합도 페널티 $R$(0.05--0.3)과 우선순위 밑 $P$(1.5--4)는 makespan 변동이 $\pm$2\% 이내로 둔감했고, 큐 재정렬 창 $m$만 $m$=1에서 $+8.9\%$로 민감해 안전값 $m$=3을 채택했다. 단 이 둔감성은 \textit{처리량(makespan)}에 한정되며, 주축 지표인 순서 공정성(p1)으로 보면 $R$ 감쇠는 효율--공정 균형점을 옮기는 설계 상수다(\S\ref{eval:robust:sens}).
 
@@ -928,7 +902,7 @@ SAFA가 ``Placement 이전의 Order 계층''이라는 주장을 운영 차원에
   \IF{$Q=\emptyset$}
     \STATE \textbf{continue} \COMMENT{대기 큐 비어 있으면 개입 없음}
   \ENDIF
-  \STATE $C' \gets$ \textsc{ZeroKnobSAFA}$(Q,N)$ \COMMENT{식 \eqref{eq:auto-pstar}로 $\arg\max P^*$ 1건만 맨 앞으로(단일 승급), Algorithm \ref{alg:auto}}
+  \STATE $C' \gets$ \textsc{ZeroKnobSAFA}$(Q,N)$ \COMMENT{식 \eqref{eq:auto-pstar}로 $\arg\max P^*$ 1건만 맨 앞으로(단일 승급)}
   \STATE $f \gets$ 잔여 가용 GPU
   \FOR{각 $j \in C'$ (순서대로)}
     \IF{$j$의 gang이 \textit{노드 단위로} 배치 가능(또는 결합된 gang 계층의 dry-run admission 통과)}
