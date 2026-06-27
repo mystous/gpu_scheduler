@@ -361,6 +361,8 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 
 나이로 우선순위를 올리는 발상 자체는 새롭지 않다 --- OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}(누적 서비스가 적은 작업 우선), Slurm multifactor의 age factor가 같은 계보다. 본 연구의 기여는 \textit{aging 메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며, 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 분할 가능 자원을 전제한 고전 aging과 달리 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로, HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다 (ii) \textbf{절대 시간이 아닌 상대 나이} --- 절대 대기에 고정 계수를 곱하는 고전 aging은 시간 스케일이 바뀌면 재튜닝이 필요하나, SAFA는 $\tilde A_j$·$A_{\text{ref}}$로 정규화해 단위를 소거한다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread 자체에서 유도되어, spread가 형성되면 그것을 기준으로 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다.
 
+\section{Experimental Evaluation}\label{sec:eval}
+
 \subsection{Scale generalization via discrete-event simulation}\label{eval:sim}
 \S\ref{SAFA}의 $\alpha$ 탐색에 쓴 이산 시간 C++ 시뮬레이터는 8개 합성 트레이스에 한정되므로, 규모와 현실성을 위해 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU의 단일·이종 구성에서 평가하는 이산 사건 시뮬레이터를 새로 개발했다. 여기에 \S\ref{eval:overhead}의 작업당 실측 오버헤드를 주입했고, 기준선 FIFO와 Order 정책 SJF·LAS·Kueue·EASY·Themis·Lucid, SAFA 두 변형, Placement 축 참고용 FGD를 모두 충실 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조검증, \S\ref{eval:impl}). 트레이스만으로 잡별 프로파일을 정의할 수 없는 탄력 스케줄러(Sia 등)는 제외하고 관련 연구에서 다룬다(\S\ref{baseline-rationale}).
 
