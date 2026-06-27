@@ -106,20 +106,24 @@ def fig_helios():
         sz = 240 if lead == "sfqa-auto" else (90 if lead in ("fifo", "sfqa") else 45)
         ax.scatter(x, y, s=sz, marker=mk, color=col, zorder=3, edgecolor="k", linewidth=0.6)
         lab = "/".join(DISP[p] for p in pols_here)
-        # 라벨 겹침 해소: 우측 점(추월 많은 정책)은 라벨을 왼쪽 위로, SAFA/FIFO는 오른쪽
-        if x > 15:
-            ax.annotate(lab, (x, y), xytext=(x-0.6, y+1.4), fontsize=6.8, ha="right")
-        elif lead in ("fifo", "sfqa-auto"):
-            ax.annotate(lab, (x, y), xytext=(x+0.6, y-0.2), fontsize=7.2, ha="left", fontweight="bold")
-        else:
-            ax.annotate(lab, (x, y), xytext=(x+0.6, y+0.5), fontsize=6.8, ha="left")
-    ax.set_xlabel("overtaken-jobs share (\\%) $-$ fairer $\\leftarrow$", fontsize=8)
+        # x축 반전(오른쪽=공정): 공정한 점(낮은 lt50, 우측)은 라벨을 왼쪽으로, 불공정 점은 오른쪽으로.
+        if x > 15:            # 좌측(불공정): 라벨 오른쪽
+            ax.annotate(lab, (x, y), textcoords="offset points", xytext=(8, 6), fontsize=6.8, ha="left")
+        elif x < 5:           # 우측(공정): 라벨 왼쪽, FIFO/SAFA는 상하로 분리
+            dy = 7 if lead == "fifo" else (-9 if lead == "sfqa-auto" else -2)
+            ax.annotate(lab, (x, y), textcoords="offset points", xytext=(-8, dy),
+                        fontsize=7.2 if lead in ("fifo", "sfqa-auto") else 6.8, ha="right",
+                        fontweight="bold" if lead in ("fifo", "sfqa-auto") else "normal")
+        else:                 # 중앙
+            ax.annotate(lab, (x, y), textcoords="offset points", xytext=(8, 5), fontsize=6.8, ha="left")
+    ax.set_xlabel("overtaken-jobs share (\\%) $-$ fairer $\\rightarrow$", fontsize=8)
     ax.set_ylabel("mean order-fairness $-$ fairer $\\uparrow$", fontsize=8)
-    ax.set_title("Helios (independent trace): top-left $=$ fairest", fontsize=8.5)
+    ax.set_title("Helios (independent trace): top-right $=$ fairest", fontsize=8.5)
     ax.set_xlim(-2.5, 25); ax.set_ylim(73, 103)
+    ax.invert_xaxis()  # 오른쪽이 더 좋은(공정한) 수치 — lt50 낮을수록 우측
     ax.grid(alpha=0.3)
-    ax.axhspan(96, 103, xmin=0.0, xmax=0.16, color="green", alpha=0.07, zorder=0)
-    ax.annotate("ideal", (-1.5, 102), fontsize=7, color="green", ha="left", va="top")
+    ax.axhspan(96, 103, xmin=0.84, xmax=1.0, color="green", alpha=0.07, zorder=0)
+    ax.annotate("ideal", (-2.3, 102.5), fontsize=7, color="green", ha="right", va="top")
     fig.tight_layout()
     fig.savefig(os.path.join(OUT, "fig_helios.pdf"))
     plt.close(fig)
