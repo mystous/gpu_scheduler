@@ -340,20 +340,11 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 각 대기 작업 $j$에 대해
-\begin{equation}
-P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
-\tag{5}
-\label{eq:auto-pstar}
-\end{equation}
-를 계산해 $P^*$가 최대인 작업 \emph{하나만} 큐 맨 앞으로 올린다(단일 승급, Algorithm \ref{alg:adjust_wait_queue}와 동일 구조). $P_j$는 식 \eqref{eq:01}의 base 우선순위($1/\text{base}^{\,pos_j}$, $\text{base}=2$), $R_j$는 식 \eqref{eq:01}의 자원 적합도다.
+고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 곧 식 \eqref{eq:01}의 고정 $\alpha$ 대신, 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$를 쓴다(단일 승급 구조는 동일). 이 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드의 시간 단위와 무관하게 승급 문턱이 큐의 나이 통계 자체로 정해진다(단위 소거).
 
-설계의 출발 직관은 PS-공정 속도저하 $\sigma^*=1/(1-\rho)$\cite{wierman2003classifying}였으나, 이 양은 SAFA의 운영 규칙에 들어가지 않는다($\rho$를 계산하지 않으며, 과포화(할당률 99--100\%)에서는 1로 포화해 무의미하다). 실제 메커니즘은 부하 적응이 아니라 \textbf{나이-스케일 정규화}다 --- 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드의 시간 단위와 무관하게 승급 문턱이 큐의 나이 통계 자체로 정해진다(단위 소거).
-
-이 규칙의 핵심은 계수 $\alpha_{\text{eff}}$를 외부 상수 없이 큐 통계만으로 정하는 것이다:
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big),
-\tag{6}
+\tag{5}
 \label{eq:auto-alpha}
 \end{equation}
 여기서 큐 상대 나이 $\tilde A_j = A_j - \min_k A_k$, 동적 나이 스케일 $A_{\text{ref}} = \max(1,\,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, 자리 적합이 가장 나쁜 작업의 적합도 $R_{\min}=\max(0.1,\,\min_k R_k)$다. $g$는 모든 후보의 상대 나이가 0인 자명한 경우에만 1 미만이 되는 경계 가드이며(그때는 나이 보너스 자체가 0), 따라서 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}이지 부하 게이트가 아니다. $R_{\min}$ 분모는 시간-단위 소거($A_{\text{ref}}$가 담당)가 아니라 승급 강도를 키우는 \textit{이득 항}으로, 효율--공정 균형점의 위치를 정하는 설계 상수다(단독 제거 시 512 이종에서 $p1$ 75.2·$q_{p50}$ 2.31M초로 FIFO 쪽 frontier로 이동). 큐 상대 나이를 쓰므로 배치로 멤버가 바뀌면 $\min_k A_k$가 갱신돼 남은 작업 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
@@ -373,7 +364,7 @@ P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
 계수 $\alpha$를 제거한 뒤 남는 소수의 내부 상수가 또 다른 숨은 노브가 아님을 보이기 위해 1차원 민감도 분석을 수행했다(그림 \ref{fig:sensitivity}, C++ 시뮬 12구성). 자원 적합도 페널티 $R$(0.05--0.3)과 우선순위 밑 $P$(1.5--4)는 makespan 변동이 $\pm$2\% 이내로 둔감했고, 큐 재정렬 창 $m$만 $m$=1에서 $+8.9\%$로 민감해 안전값 $m$=3을 채택했다. 단 이 둔감성은 \textit{처리량(makespan)}에 한정되며, 주축 지표인 순서 공정성(p1)으로 보면 $R$ 감쇠는 효율--공정 균형점을 옮기는 설계 상수다(\S\ref{eval:robust:sens}).
 
 \paragraph{고전 aging과의 관계}
-나이로 우선순위를 올리는 발상 자체는 새롭지 않다 --- OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}(누적 서비스가 적은 작업 우선), Slurm multifactor의 age factor가 같은 계보다. 본 연구의 기여는 \textit{aging 메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며, 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 분할 가능 자원을 전제한 고전 aging과 달리 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로, HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다(\eqref{eq:auto-pstar}; $R\equiv1$로 끄면 세 구성 모두 FIFO와 동치 퇴화, \S\ref{eval:ablation:comp}). (ii) \textbf{절대 시간이 아닌 상대 나이} --- 절대 대기에 고정 계수를 곱하는 고전 aging은 시간 스케일이 바뀌면 재튜닝이 필요하나(\S\ref{sec:coeff}), SAFA는 $\tilde A_j$·$A_{\text{ref}}$로 정규화해 단위를 소거한다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread 자체에서 유도되어, spread가 형성되면 그것을 기준으로 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다. ``자동화''의 순효과(고정 $\alpha$ 대비 Zero-knob 이득)를 같은 큐 전처리 골격에서 격리하는 ablation은 \S\ref{eval:ablation}(표 \ref{tab:ablation}), 워크로드별 최적 $\alpha$와의 비교는 표 \ref{tab:ablation-grid}에서 제시한다.
+나이로 우선순위를 올리는 발상 자체는 새롭지 않다 --- OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}(누적 서비스가 적은 작업 우선), Slurm multifactor의 age factor가 같은 계보다. 본 연구의 기여는 \textit{aging 메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며, 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 분할 가능 자원을 전제한 고전 aging과 달리 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로, HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다(\eqref{eq:01}; $R\equiv1$로 끄면 세 구성 모두 FIFO와 동치 퇴화, \S\ref{eval:ablation:comp}). (ii) \textbf{절대 시간이 아닌 상대 나이} --- 절대 대기에 고정 계수를 곱하는 고전 aging은 시간 스케일이 바뀌면 재튜닝이 필요하나(\S\ref{sec:coeff}), SAFA는 $\tilde A_j$·$A_{\text{ref}}$로 정규화해 단위를 소거한다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread 자체에서 유도되어, spread가 형성되면 그것을 기준으로 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다. ``자동화''의 순효과(고정 $\alpha$ 대비 Zero-knob 이득)를 같은 큐 전처리 골격에서 격리하는 ablation은 \S\ref{eval:ablation}(표 \ref{tab:ablation}), 워크로드별 최적 $\alpha$와의 비교는 표 \ref{tab:ablation-grid}에서 제시한다.
 
 \begin{figure*}[htb!]
 \centerline{\includegraphics[width=\textwidth]{Pic/Fig_22.pdf}}
@@ -395,7 +386,7 @@ P^*_j = P_j + \alpha_{\text{eff}}\cdot \tilde A_j \cdot R_j
 정책은 세 축으로 비교한다. \textbf{큐잉 지연}(도착부터 배치까지; 중앙값 \texttt{q\_p50}·최댓값 \texttt{q\_max}, 초 단위, K$=10^3$·M$=10^6$, 낮을수록 우수), \textbf{Alloc}(평균 GPU 할당률 --- 효율 이득이 자원을 놀려 얻은 것인지 가름), 그리고 \textbf{순서 공정성(order-fairness)}이다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
 \begin{equation}
 F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr).
-\tag{7}
+\tag{6}
 \label{eq:order-fair}
 \end{equation}
 $F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이면 $F_k=100$으로 둔다(전체 트레이스를 끝까지 결정적으로 재생하므로 검열은 없다). 주 지표 \textbf{p1}은 $F_k$의 하위 1\% 분위 --- 가장 심하게 추월당한 1\% 작업의 공정성으로, 평균이 가리는 최악 추월 피해를 드러낸다(높을수록 우수).
@@ -452,7 +443,7 @@ $F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이
 \item \textbf{Kueue~\cite{kueue2024}}: VC별 \texttt{nominalQuota}로 under-served VC 우선, 유휴 용량은 cohort borrowing(비차단 backfill). 프로덕션 admission을 이식했다(Philly 테넌트 15개, 최대 VC 47\%). borrowing·비차단은 순서 공정성에 비관적이며, StrictFIFO에 가깝게 운용하면 크게 개선된다(\S\ref{eval:b200}; 단일 VC StrictFIFO는 head-blocking FIFO와 동치라 본 표 FIFO 행이 대리). 즉 본 표 Kueue p1은 ``한계''가 아니라 처리량-우선 구성의 비용이다(멀티-VC는 인터리빙이 전역 도착순을 깨 전역 p1 미회복).
 \item \textbf{FGD~\cite{weng2023beware}}: 단편화 $F_n=\textit{free}_n\cdot P(\textit{task}>\textit{free}_n)$의 증가 $\Delta F$가 최소인 노드를 고른다(큐 FCFS). 저자의 분수 GPU 정의를 whole-GPU gang으로 특수화해 단편화 인지 \emph{Placement}의 순효과를 분리한다.
 \item \textbf{Lucid~\cite{b5}}: 비침습·비선점 collocation. 공유 점수 $SS\in\{0,1,2\}$(Tiny/Medium/Jumbo)를 부여하고 큐는 $\textit{gpu\_count}\times\textit{duration}$ 오름차순(GPU 가중 SJF)으로 정렬하며, Indolent Packing 규칙(동일 gpu\_count, $SS_a{+}SS_b\le2$, 단일노드, GPU당 $\le2$작업)으로 두 작업을 collocate하고 감속은 $SS$ 쌍별 고정 계수로 모델링한다(저자 \S2.3 RTX3090). 저자 프로파일러·실측 간섭 곡선이 트레이스에 없어 \emph{이용률=합성, duration=oracle, 감속=고정 계수}로 대체한 \textit{적응 구현}이다(\S\ref{eval:threats}).
-\item \textbf{SAFA(고정 $\alpha$) / SAFA(Zero-knob)}: \textsc{order}는 각 대기 작업의 $P^*$(고정 $\alpha$=식 \eqref{eq:01}의 $P+\alpha A\,R$, Zero-knob=식 \eqref{eq:auto-pstar})를 계산해 \emph{최대 한 작업만} 앞으로 올리는 단일 승급 $O(n)$ 연산이다. $\alpha_{\text{eff}}$는 관측 큐 통계(상대 나이 분포·$R$)에서만 매 패스 유도되어 노브가 없고 부하 $\rho$는 입력 아니다(\S\ref{SAFA}). \textsc{node\_pref}는 most-allocated 빈 패킹, 배치는 blocking 규율(FIFO와 동일)이다. 입력은 큐 관측량(대기 시간·자원 요구량·큐 위치)뿐이며 duration 추정·프로파일·솔버를 쓰지 않는다.
+\item \textbf{SAFA(고정 $\alpha$) / SAFA(Zero-knob)}: \textsc{order}는 각 대기 작업의 $P^*$(고정 $\alpha$=식 \eqref{eq:01}의 $P+\alpha A\,R$, Zero-knob=같은 식에 $\alpha_{\text{eff}}$ 적용(식 \eqref{eq:auto-alpha}))를 계산해 \emph{최대 한 작업만} 앞으로 올리는 단일 승급 $O(n)$ 연산이다. $\alpha_{\text{eff}}$는 관측 큐 통계(상대 나이 분포·$R$)에서만 매 패스 유도되어 노브가 없고 부하 $\rho$는 입력 아니다(\S\ref{SAFA}). \textsc{node\_pref}는 most-allocated 빈 패킹, 배치는 blocking 규율(FIFO와 동일)이다. 입력은 큐 관측량(대기 시간·자원 요구량·큐 위치)뿐이며 duration 추정·프로파일·솔버를 쓰지 않는다.
 \end{itemize}
 
 기아를 다루는 정책도 \textit{무엇을 어떤 정보로 보장하는가}는 다르다. EASY\cite{mualem2001backfilling}(원전 Lifka\cite{lifka1995anl})는 \textit{큐 선두 1건}의 시작 시각 $T$가 backfill로 지연되지 않음을 보장하나(막힌 비선두까지 예약하는 것은 conservative backfilling\cite{feitelson1998conservative}) 실행시간 추정을 요구한다. 반면 SAFA는 나이 승급으로 \textit{큐 정체}만 절단할 뿐 개별 대형 작업의 완료는 보장하지 않으나(\S\ref{SAFA}) 큐 관측 정보만 쓴다. 즉 EASY는 강한 보장(개별 완료)을 강한 정보(duration)로, SAFA는 약한 보장(큐 정체 절단)을 무정보로 얻는다.
@@ -614,7 +605,7 @@ SAFA의 중앙값·공정성 이득은 GPU를 놀려서 얻은 것이 아니다(
 
 종합하면 이 경향은 SAFA의 설계와 일관된다. SAFA가 \eqref{eq:auto-alpha}처럼 나이 가중 계수를 큐 나이 통계로 무튜닝 정규화하므로, 부하가 0.9$\times$에서 3.6$\times$로, 또 단일에서 이종으로 바뀌어도 동일한 코드와 설정으로 하위 1\% 공정성을 50.5--76.5 수준으로 유지한다. 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다. 운영 관점에서 SAFA는 (i) 워크로드별 계수 튜닝이 불필요하고, (ii) 단일 승급 $O(n)$ 연산으로 부하와 무관하게 경량이며, (iii) 약 99\%의 GPU 할당률을 유지하면서 효율과 공정성의 균형을 달성한다. 따라서 SAFA는 기존 클러스터 스케줄러를 교체하지 않고 그 위에 부담 없이 통합될 수 있는, 본 평가에서 유일한 실용적 후보다.
 \subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
-무튜닝이 가져온 순효과를 \textit{같은 큐 전처리 골격} 안에서 격리하기 위해, 고정 계수 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 6구성 전체에서 직접 대비한다(표 \ref{tab:ablation}). 두 변형은 식 \eqref{eq:01}/\eqref{eq:auto-pstar}의 동일한 $P^*$ 구조와 단일 승급 절차를 공유한다. 유일한 차이는 나이 가중 계수를 \textit{사전에 고정한 단일 값}으로 두느냐, 아니면 \textit{큐 통계에서 매 패스 유도}하느냐다. 여기서 SAFA(고정 $\alpha$)는 \textbf{워크로드별 최적 $\alpha$가 아니라 모든 구성에 공통으로 쓴 단일 고정 설정 $\alpha=0.13889$(\S\ref{algo:intro} 예시값의 10배 --- C++ 구현 기본값)}임을 분명히 밝힌다. 따라서 이 표가 답하는 1차 질문은 ``재튜닝 없이 단일 무튜닝 규칙이 단일 고정값보다 공정성을 일관되게 지키는가''이다. 이어 \S\ref{eval:ablation:grid}에서는 구성별로 $\alpha$를 그리드 탐색한 \textit{워크로드별 최적} 고정값과 대비하여 그 비교의 정직한 전모를 제시한다. 즉, 0.01--2.0 그리드 안에선 무튜닝이 모두를 능가하지만, 그리드를 미세 영역까지 넓히면 고정 $\alpha$도 frontier의 다른 점에 도달하며, 무튜닝의 가치는 지배가 아니라 \textit{탐색 없는 일관 균형점}에 있다.
+무튜닝이 가져온 순효과를 \textit{같은 큐 전처리 골격} 안에서 격리하기 위해, 고정 계수 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 6구성 전체에서 직접 대비한다(표 \ref{tab:ablation}). 두 변형은 식 \eqref{eq:01}의 동일한 $P^*$ 구조와 단일 승급 절차를 공유한다. 유일한 차이는 나이 가중 계수를 \textit{사전에 고정한 단일 값}으로 두느냐, 아니면 \textit{큐 통계에서 매 패스 유도}하느냐다. 여기서 SAFA(고정 $\alpha$)는 \textbf{워크로드별 최적 $\alpha$가 아니라 모든 구성에 공통으로 쓴 단일 고정 설정 $\alpha=0.13889$(\S\ref{algo:intro} 예시값의 10배 --- C++ 구현 기본값)}임을 분명히 밝힌다. 따라서 이 표가 답하는 1차 질문은 ``재튜닝 없이 단일 무튜닝 규칙이 단일 고정값보다 공정성을 일관되게 지키는가''이다. 이어 \S\ref{eval:ablation:grid}에서는 구성별로 $\alpha$를 그리드 탐색한 \textit{워크로드별 최적} 고정값과 대비하여 그 비교의 정직한 전모를 제시한다. 즉, 0.01--2.0 그리드 안에선 무튜닝이 모두를 능가하지만, 그리드를 미세 영역까지 넓히면 고정 $\alpha$도 frontier의 다른 점에 도달하며, 무튜닝의 가치는 지배가 아니라 \textit{탐색 없는 일관 균형점}에 있다.
 
 표 \ref{tab:ablation}이 보이듯, SAFA(Zero-knob)는 6구성 모두에서 하위 1\% 순서 공정성(p1)을 고정 $\alpha$ 대비 동등 이상으로 유지한다. 경합이 깊은 256·512 구성에서는 p1을 단일에서 41.9$\to$54.3, 41.4$\to$53.1로, 이종에서 40.4$\to$54.4, 37.3$\to$50.5로 끌어올렸다. 큐가 얕은 1024 구성에서도 동등(단일 100$=$100)하거나 향상(이종 72.1$\to$76.5)했다. 이 공정성 향상의 대가는 작은 중앙값 양보(예: 512 이종 q\_p50 1.48M$\to$1.76M초)이며, 평균 GPU 할당률은 두 변형이 사실상 동일하다(전 구성 0.1\%p 이내). 요컨대 \textit{단일 고정 $\alpha$를 워크로드마다 다시 고를 필요 없이}, 큐에서 유도한 무튜닝 계수만으로 부하·이질성 전반에서 공정성이 더 안정적으로 유지된다.
 
@@ -887,7 +878,7 @@ KAI spread     & 67.7 & 68.5 & 58.2 & 58.5 \\
 \end{figure}
 
 \subsection{쿠버네티스 통합 경로}\label{SAFA:k8s}
-SAFA가 ``Placement 이전의 Order 계층''이라는 주장을 운영 차원에서 뒷받침하려면, Placement 스케줄러를 교체하지 않고도 SAFA를 끼워 넣을 수 있어야 한다. 쿠버네티스에서는 커스텀 스케줄러를 새로 빌드할 필요 없이 \texttt{PodSchedulingGates}만으로 이를 실현한다. 각 Pod에 게이트 \texttt{safa.io/admission}를 부여하면 그 Pod는 기본 \texttt{kube-scheduler}의 후보 집합에서 잠시 빠진다. SAFA 컨트롤러는 주기 $\Delta$마다 게이트된 Pod의 대기 나이와 자원 요청을 관측하고, 식 \eqref{eq:auto-pstar}로 $P^*$를 계산한 뒤 가장 높은 Pod부터 게이트를 해제한다(Algorithm \ref{alg:k8s}). 게이트가 풀린 Pod만 기본 스케줄러가 그 순서대로 binding하므로 Placement 로직은 전혀 손대지 않는다. Kueue와 결합하면 LocalQueue 제출 직전에, 커스텀 플러그인과 결합하면 QueueSort 앞단의 전처리로 동작한다.
+SAFA가 ``Placement 이전의 Order 계층''이라는 주장을 운영 차원에서 뒷받침하려면, Placement 스케줄러를 교체하지 않고도 SAFA를 끼워 넣을 수 있어야 한다. 쿠버네티스에서는 커스텀 스케줄러를 새로 빌드할 필요 없이 \texttt{PodSchedulingGates}만으로 이를 실현한다. 각 Pod에 게이트 \texttt{safa.io/admission}를 부여하면 그 Pod는 기본 \texttt{kube-scheduler}의 후보 집합에서 잠시 빠진다. SAFA 컨트롤러는 주기 $\Delta$마다 게이트된 Pod의 대기 나이와 자원 요청을 관측하고, 식 \eqref{eq:01}로 $P^*$를 계산한 뒤 가장 높은 Pod부터 게이트를 해제한다(Algorithm \ref{alg:k8s}). 게이트가 풀린 Pod만 기본 스케줄러가 그 순서대로 binding하므로 Placement 로직은 전혀 손대지 않는다. Kueue와 결합하면 LocalQueue 제출 직전에, 커스텀 플러그인과 결합하면 QueueSort 앞단의 전처리로 동작한다.
 
 운영상 가장 중요한 점은 \textbf{게이트를 어떤 규율로 해제하느냐가 공정성을 가른다}는 것이다. 선두가 막혔을 때도 뒤 Pod을 계속 푸는 greedy 비차단 해제는 중앙 대기를 7.5배 줄이지만, 그 대가로 worst-1\% p1을 0으로 붕괴시킨다. 따라서 시뮬과 같은 p1을 지키려면 \textbf{선두가 들어갈 자리가 없을 때 그 주기의 해제를 멈춰야}(blocking-aware) 한다. 이 대비는 \S\ref{eval:b200}의 버스트 도착 B200 \textit{실측}으로 확인되는데, blocking$+$counter가 p1 82.8인 반면 기존 greedy는 3.8에 그친다. 다만 이 규율 하나만으로는 부족하다. blocking을 SJF나 Themis 정렬에 적용해도 p1은 0이므로, p1을 유지하려면 도착순 골격과 blocking, 제한적 승급이 함께 작용해야 한다. 권장 구현인 blocking-aware 해제와 도착-순번 나이는 컨트롤러 참조 구현으로 제공한다.
 
@@ -902,7 +893,7 @@ SAFA가 ``Placement 이전의 Order 계층''이라는 주장을 운영 차원에
   \IF{$Q=\emptyset$}
     \STATE \textbf{continue} \COMMENT{대기 큐 비어 있으면 개입 없음}
   \ENDIF
-  \STATE $C' \gets$ \textsc{ZeroKnobSAFA}$(Q,N)$ \COMMENT{식 \eqref{eq:auto-pstar}로 $\arg\max P^*$ 1건만 맨 앞으로(단일 승급)}
+  \STATE $C' \gets$ \textsc{ZeroKnobSAFA}$(Q,N)$ \COMMENT{식 \eqref{eq:01}로 $\arg\max P^*$ 1건만 맨 앞으로(단일 승급)}
   \STATE $f \gets$ 잔여 가용 GPU
   \FOR{각 $j \in C'$ (순서대로)}
     \IF{$j$의 gang이 \textit{노드 단위로} 배치 가능(또는 결합된 gang 계층의 dry-run admission 통과)}
