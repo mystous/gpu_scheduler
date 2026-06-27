@@ -175,9 +175,9 @@ GPU 갱(gang) 스케줄링의 HOL 블로킹은 \textit{공간적이고 불가분
 이 HOL 블로킹 해소 메커니즘을 분석하고 빠르게 반복 개발하기 위해, 우리는 작업 스케줄링용 자체(in-house) 시뮬레이터를 개발했다. 이 시뮬레이터는 작업 로그를 파싱해 여러 스케줄링 정책으로 재생하며, 기존 메커니즘을 건드리지 않고도 새로운 스케줄링 방법론을 끼워 넣을 수 있다. 이러한 모듈성은 큐 조정이 Placement 스케줄링 방식과 독립적으로 동작함을 보여준다.
 
 \section{Resolving Head-of-Line Blocking in the Job Queue}\label{algo:intro}
-우리는 작업 대기 큐의 HOL 블로킹을 해소하기 위해 기아 인지 공정 나이가중(Starvation-Aware Fair Aging) 알고리즘 SAFA를 제안한다. 먼저 용어를 정리해 둔다. 본 논문에서 ``gang''은 GPU 스케줄링 문헌의 관용을 따라 \textit{전부-아니면-전무로 동시 할당되는 고정 GPU 요청}을 가리킨다. 이는 Feitelson--Rudolph 고전 분류\cite{feitelson1996toward}의 rigid job에 해당하며, 조율된 시분할을 뜻하는 Ousterhout류 고전 gang scheduling\cite{ousterhout1982gang}과는 구별된다. 
+작업 대기 큐의 HOL 블로킹을 해소하는 SAFA(Starvation-Aware Fair Aging)를 제안한다. 본 논문에서 ``gang''은 \textit{전부-아니면-전무로 동시 할당되는 고정 GPU 요청}(Feitelson--Rudolph 분류\cite{feitelson1996toward}의 rigid job)을 가리키며, 조율된 시분할인 Ousterhout류 gang scheduling\cite{ousterhout1982gang}과는 구별된다.
 \subsection{Starvation-Aware Queue Adjustment}
-큐 조정의 목표는 처리량을 높이는 것이 아니다. 동일 처리량 아래에서 HOL 블로킹으로 막힌 작업들의 큐 지연을 줄이고 도착 순서 공정성을 지키는 것이다. 큐를 조정하면 막힌 작업들이 스케줄링될 수 있으나, 최악의 경우 막힘을 유발하는 가장 큰 작업 자체는 계속 자리가 비기를 기다린다. 따라서 본 알고리즘이 방지하는 것은 \textit{큐가 한 작업에 무한정 막혀 후속이 영구히 적체되는 상태}이며, 개별 대형 작업의 완료를 보장하지는 않는다. 한편 우선순위를 임의로 조정하면 새 공정성 문제가 생길 수 있으므로, 우리는 나이 가중으로 그 트레이드오프를 제어한다.
+큐 조정의 목표는 처리량 향상이 아니라 동일 처리량 아래 HOL로 막힌 작업의 큐 지연을 줄이고 도착 순서 공정성을 지키는 것이다. 즉 방지하는 것은 \textit{큐가 한 작업에 무한정 막혀 후속이 영구 적체되는 상태}이지 개별 대형 작업의 완료 보장이 아니다(최악의 경우 가장 큰 작업은 계속 자리를 기다린다). 임의 우선순위 조정은 새 불공정을 낳으므로 나이 가중으로 그 트레이드오프를 제어한다.
 
 $P^*$를 작업 $t_0^*$, $t_1^*$, $t_2^*$, \dots, $t_n^*$의 조정된 우선순위 값이라 하자. $P^*$는 스케줄링이 시작되기 전에 계산되어 재부여된다. 스케줄러는 수정된 작업 우선순위를 사용한다. 조정된 작업 우선순위 $P^*$는 다음과 같이 정의된다:
 
@@ -187,26 +187,20 @@ P^*_j = P_j + \alpha\, \tilde A_j \cdot R_j
 \vspace{1em}
 \end{equation}
 
-첫 번째 항 $P_j$는 도착순 큐 위치 $pos_j$에 따른 원래(FIFO) 우선순위로, $P_j = 1/\text{base}^{\,pos_j}$로 정의된다. 밑 $\text{base}=2$에서 $pos_j=0,1,2$에 대해 각각 $1$, $0.5$, $0.25$로 절반씩 감소하며, 값이 클수록 우선순위가 높다. 두 번째 항 $\alpha\, \tilde A_j R_j$는 기아 지수(starvation index)다. 여기서 $\alpha$는 기아 지수가 증가하여 우선순위를 역전시키는 속도를 결정하는 계수다. 예컨대 큐 두 번째 작업($pos_j=1$, base 항 0.5)의 우선순위가 6시간 안에 역전되도록 하려면, $R_j$를 1로 가정하고 10분에 1 단위로 나이가 오를 때 $\alpha$는 최소 0.013889로 설정되어야 한다. 수치로 보면 $0.013889 \times 36 \times 1 = 0.500004$가 더해져 갱신된 우선순위는 1.000004가 되고, 이는 선두 작업($pos_j=0$) 값 1을 넘어서므로 순위 추월이 일어난다.
+첫 항 $P_j=1/\text{base}^{\,pos_j}$는 도착순(FIFO) 우선순위로, $\text{base}=2$에서 $pos_j=0,1,2$에 각각 $1,0.5,0.25$이며 클수록 높다. 둘째 항 $\alpha\,\tilde A_j R_j$는 기아 지수이고, $\alpha$는 그것이 우선순위를 역전시키는 속도를 정한다. 예컨대 큐 둘째 작업($pos_j=1$, base 0.5)을 6시간 안에 역전시키려면($R_j=1$, 10분당 나이 1) $\alpha\ge0.013889$여야 한다 --- $0.013889\times36\times1=0.5$가 더해져 1.0을 넘어 선두를 추월한다.
 
-다만 이 예시는 직관을 위해 선두 작업 자신의 나이 보너스를 무시한 단순화다. 실제로는 선두에도 $\alpha\, \tilde A_0 R_0$가 붙으므로, 진짜 역전은 두 작업의 $\tilde A\cdot R$ 곱 차이가 base 우선순위 차이를 넘을 때, 즉 자리 적합 $R$의 차등이 있을 때 일어난다. 실제로 $R$이 균일하면 역전이 전혀 일어나지 않으며, 이는 측정으로도 확인된다.
+다만 이 예시는 선두 자신의 나이 보너스를 무시한 단순화다. 실제로는 선두에도 $\alpha\,\tilde A_0 R_0$가 붙어, 진짜 역전은 두 작업의 $\tilde A\cdot R$ 곱 차이가 base 차이를 넘을 때, 즉 자리 적합 $R$의 차등이 있을 때만 일어난다($R$이 균일하면 역전이 없으며 측정으로 확인된다).
 
-이제 나머지 두 인자를 살펴보자. 나이 $A_j$는 단위 없는 0 이상의 정수로, 증가 단위는 상황에 맞게 정의하며 본 연구에서는 새 작업이 스케줄러에 제출될 때마다 1씩 증가한다. 식에 쓰는 $\tilde A_j$는 \textit{상대 나이}로, 작업이 스케줄링되면 대기 큐의 가장 적은 나이를 모든 대기 작업에서 빼서 재산정한 값이다($\tilde A_j = A_j - \min_k A_k$). $R_j$는 자원 적합도 지수(resource suitability index)로, 요구 가속기 수가 서버의 가속기 가용 수 이하인 경우 1이고, 가용을 초과하는 부족분 하나마다 $0.1$씩 감소한다.
+나이 $A_j$는 0 이상 정수로 새 작업 제출마다 1 증가하며, $\tilde A_j=A_j-\min_k A_k$는 \textit{상대 나이}다(스케줄링 시 대기 큐 최소 나이를 빼 재산정). $R_j$는 자원 적합도 지수로, 요구 가속기 수가 서버 가용 이하면 1이고 초과 부족분 하나마다 $0.1$씩 감소한다.
 
-여기서 주목할 점은 수식 \eqref{eq:01}의 세 입력 --- 큐 위치 $pos_j$, 상대 나이 $\tilde A_j$, 자원 적합도 $R_j$ --- 이 \textit{모두 큐에서 직접 관측된다}는 것이다. 이 형태는 우선순위가 대기 시간에 선형 비례해 자라는 Kleinrock의 time-dependent(delay-dependent) priority 규율\cite{kleinrock1976queueing}과 \textit{형태적으로} 같은 계열이다. 다만 이는 식의 형태(선형 aging)를 가리키는 것이지 그 분석 결과까지 물려받는다는 뜻은 아니다. Kleinrock의 보존 법칙은 선점·단일 서버·정상상태에서 성립하지만, 본 설정(비선점·공간 공유 갱·이질 서비스 시간·과포화)은 그 전제를 모두 벗어나므로 어떤 보존량이 불변인지는 별도로 보장되지 않는다. 본 기여는 이 고전 골격에 분할 불가능한 갱 자원 적합도 $R$을 결합하고 계수를 큐 통계로 정규화한 데 있다. Algorithm \ref{alg:adjust_wait_queue}는 수식 \eqref{eq:01}을 사용한 기아 방지 알고리즘의 구현을 보여준다.
+세 입력($pos_j$·$\tilde A_j$·$R_j$)은 \textit{모두 큐에서 직접 관측된다}. 이 선형 형태는 Kleinrock의 time-dependent priority\cite{kleinrock1976queueing}와 같은 계열이나, 형태가 같을 뿐 그 보존 법칙(선점·단일 서버·정상상태 전제)은 비선점·공간 공유 갱·과포화인 본 설정에 적용되지 않는다. 본 기여는 이 고전 골격에 분할 불가능한 갱 자원 적합도 $R$을 결합하고 계수를 큐 통계로 정규화한 데 있다. Algorithm \ref{alg:adjust_wait_queue}가 그 구현이다.
 
 \begin{algorithm}
 \caption{Starvation-Aware Queue Adjustment}\label{alg:adjust_wait_queue}
 \textbf{Input:} \\
-\hspace*{4mm} Server count : \( \boldsymbol{n} \), Wait queue length : \( \boldsymbol{l_{wq}} \) \\
-\hspace*{4mm} Servers :\( \boldsymbol{S_i} \in \{S_0, S_1, \ldots, S_{n-1}\} \), \\
-\hspace*{4mm} Accelerator count in $S_i$: \( \boldsymbol{M_i} \in \{M_0, M_1, \ldots, M_{n-1}\} \), \\
-\hspace*{4mm} Resource suitability index : \( \boldsymbol{R_i} = 0, \forall i \in \{1, 2, \ldots, 8\} \), \\
-\hspace*{4mm} Wait Queue : \( \boldsymbol{WQ_i} \in \{WQ_0, WQ_1, \ldots, WQ_{l-1}\} \), \\
-\hspace*{4mm} Task in $WQ$ : \( \boldsymbol{t_i} \in \{t_0, t_1, \ldots, t_{l-1}\} \), \\
-\hspace*{4mm} Accelerator request of $t_i$ : \( \boldsymbol{a_{t_i}} \), \\
-\hspace*{4mm} Idle accelerator count in $S_i$ : \( \boldsymbol{f_{S_i}} \) \\
-\hspace*{4mm} Wait Age : \( \boldsymbol{A_i} \in \{A_0, A_1, \ldots, A_{l-1}\} \)
+\hspace*{4mm} 서버 $S_i$ ($i{<}n$): 가속기 수 $M_i$, 유휴 수 $f_{S_i}$ \\
+\hspace*{4mm} 대기 작업 $t_i$ ($i{<}l_{wq}$): 가속기 요청 $a_{t_i}$, 나이 $A_i$ \\
+\hspace*{4mm} 자원 적합도 $R_j$ ($j\in\{1,\ldots,8\}$, 초기 0)
 \begin{flushleft}
 \textbf{Procedure:} Updated wait queues
 \end{flushleft}
@@ -236,22 +230,22 @@ P^*_j = P_j + \alpha\, \tilde A_j \cdot R_j
 \end{algorithmic}
 \end{algorithm}
 
-SAFA는 placement 단계에 독립적으로 동작하며, 주기적으로 동작하는 placement보다 한 발 앞서 실행된다. 동작 결정에 작업 대기 큐와 서버 풀의 현재 할당 상태만 사용하므로, 코어 스케줄러의 종류나 방식과 무관하게 큐를 다듬는 전처리기로 기능한다. 다만 SAFA가 대기 큐를 직접 관리하는 만큼, 큐 스케줄링을 자체적으로 수행하거나 누적 지표·문맥에 의존하는 스케줄러는 적용 대상에서 제외한다.
+SAFA는 placement보다 한 발 앞서 동작하며 대기 큐와 서버 풀의 현재 할당 상태만 쓰므로, 코어 스케줄러와 무관하게 큐를 다듬는 전처리기로 기능한다(단 큐 스케줄링을 자체 수행하거나 누적 지표·문맥에 의존하는 스케줄러는 제외).
 
-Algorithm \ref{alg:adjust_wait_queue}는 한 번의 루프에서 $P^*$가 최대인 작업 \textit{하나}만 큐 앞으로 위치 시킨다. 따라서 큐 길이 $l_{wq}$에 대해 $O(l_{wq})$, 즉 단일 승급 $O(n)$이다(자원 적합도 $R$ 계산은 서버 수에 선형). 이 경량성은 의도된 설계 선택의 결과다. 전 순열 공간($l_{wq}!$)을 탐색하는 전역 최적 재배열은 조합적으로 비현실적이므로, 우리는 최적해를 추구하지 않는다. 대신 ``매 패스 굶은 상태가 오래 되었고, 현재 서버 상황에 적합한 작업 하나를 승급''하는 탐욕적 탐색 방식이다. 
+한 패스에서 $P^*$가 최대인 작업 \textit{하나}만 큐 앞으로 올리므로 복잡도는 단일 승급 $O(l_{wq})$다($R$ 계산은 서버 수에 선형). 전 순열($l_{wq}!$) 전역 최적 재배열은 비현실적이라 추구하지 않고, ``오래 굶었고 현재 서버에 적합한 작업 하나를 승급''하는 탐욕적 방식을 택한 의도된 경량 설계다.
 
 \subsection{계수 $\alpha$의 최적화 --- 고정에서 무튜닝으로}\label{sec:coeff}
-기아 방지 알고리즘은 트레이드오프 제어를 위해 나이 가중치 계수 $\alpha$를 사용한다. 이 절은 다음 순서로 전개된다. 먼저 $\alpha$가 제어하는 트레이드오프를 정량화하고 그 최적값을 정의한다. 이어 최적 $\alpha$가 워크로드 특성에 따라 크게 달라져 고정 계수에는 단일 최적값이 없음을 보인다. 끝으로 이 한계를 제거하기 위해 계수 결정을 큐잉 이론에 위임한 SAFA(Zero-knob)를 유도한다.
+이 절은 $\alpha$가 제어하는 트레이드오프와 그 최적값을 정의하고, 최적 $\alpha$가 워크로드에 따라 크게 달라져 고정 계수에 단일 최적값이 없음을 보인 뒤, 계수 결정을 큐 통계에 위임한 SAFA(Zero-knob)를 유도한다.
 
 \subsubsection{트레이드오프 분석과 지표 정의}
-$\alpha$는 HOL 블로킹 제거에 도움을 준다. 그러나 값이 지나치게 크면 막혀 있던 작업이 다른 작업을 과도하게 추월하여 새로운 불공정을 낳을 수 있다. 적절한 $\alpha$를 정하려면 이 트레이드오프를 정량화해야 한다. 이를 위해 각 작업의 누적 대기 시간을 요청 가속기 수별로 묶고, 그 변화량을 누적 평균 거리(accumulated average distance, AAD)로 정의한다.
+$\alpha$가 크면 막혔던 작업이 과도하게 추월해 새 불공정을 낳으므로, 적절한 값을 정하려면 이 트레이드오프를 정량화해야 한다. 작업 누적 대기 시간을 요청 가속기 수별로 묶어 그 변화량을 누적 평균 거리(accumulated average distance, AAD)로 정의한다.
 \begin{equation}
 AAD = \sum_{k=1}^8 \frac{(WT'_k - WT_k)}{2^{8-k}}
 \tag{2}
 \label{eq:07}
 \end{equation}
 
-식 \eqref{eq:07}은 $\alpha$ 적용 전후 대기 시간의 가중 평균 차이를 측정한다. 요청 가속기 수 $k$의 작업 클래스를 $C_k$라 할 때, $WT_k=\sum_{j\in C_k} w_j$는 적용 전 대기 시간 합, $WT'_k$는 적용 후 합이다. 가중 $1/2^{8-k}$는 큰 작업 클래스에 지수적 비중을 두려는 설계 선택이다. 다만 $WT_k$가 클래스 \textit{합}이라 클래스 크기 비가 이 가중을 부분 상쇄할 수 있음(Philly는 1-GPU가 다수)도 함께 명시한다. 어느 쪽이든, 이 가중의 임의성 자체가 무튜닝(Zero-knob)의 동기 중 하나다. 한편 클래스별 \textit{최악} 대기의 변화를 같은 가중으로 누적한 누적 최대 거리(accumulated maximum distance, AMD)는 식 \eqref{eq:08}로 정의된다:
+여기서 $C_k$는 요청 가속기 $k$개 클래스, $WT_k=\sum_{j\in C_k} w_j$는 적용 전 대기 합, $WT'_k$는 적용 후다. 가중 $1/2^{8-k}$는 큰 작업에 지수 비중을 두되 합 기반이라 클래스 크기가 이를 일부 상쇄할 수 있으며, 이 가중의 임의성 자체가 무튜닝(Zero-knob)의 동기 중 하나다. 클래스별 \textit{최악} 대기 변화를 같은 가중으로 누적한 것이 누적 최대 거리(accumulated maximum distance, AMD)다:
 
 \begin{equation}
 AMD = \sum_{k=1}^8 \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k} w_j}{2^{8-k}},
@@ -259,12 +253,10 @@ AMD = \sum_{k=1}^8 \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k
 \label{eq:08}
 \vspace{1em}
 \end{equation}
-여기서 $w_j$/$w'_j$는 적용 전/후 작업 $j$의 대기 시간이다($C_k=\emptyset$이면 해당 항은 0). 식 \eqref{eq:07}--\eqref{eq:08}과 그 min--max 정규화 합(식 \eqref{eq:09})은 $\alpha$ \textit{탐색의 목적함수}일 뿐 본 논문의 평가 지표가 아니다. 가중·정규화 선택에 따라 최적 $\alpha$ 수치가 달라질 수 있는데, 이 점이 바로 ``단일 고정 $\alpha$는 워크로드·목적함수에 민감하다''는 고정 계수의 한계를 한 겹 더 뒷받침한다.
-
-두 지표는 작업 대기 시간의 평균 편차와 최대 편차를 함께 포착한다. AAD가 전반적 대기 쏠림을, AMD가 특정 클래스의 최악 대기를 잡아낸다. 따라서 둘을 함께 최소화하면 평균적 공정성과 기아 억제를 동시에 겨냥할 수 있다.
+$w_j$/$w'_j$는 적용 전/후 대기 시간이다($C_k=\emptyset$이면 0). 이 두 지표와 그 min--max 정규화 합(식 \eqref{eq:09})은 $\alpha$ \textit{탐색의 목적함수}일 뿐 평가 지표가 아니며, 가중·정규화 선택에 따라 최적 $\alpha$가 달라진다는 점이 고정 계수의 한계를 한 겹 더 뒷받침한다. AAD는 전반적 대기 쏠림을, AMD는 특정 클래스의 최악 대기를 잡으므로, 둘을 함께 최소화하면 평균 공정성과 기아 억제를 동시에 겨냥한다.
 
 \subsubsection{목적 함수}
-$\alpha$는 makespan, AAD, AMD를 최소화하도록 조정된다. 최적값을 결정하기 위해 $\alpha$ 값 범위(0.01--1.99, 0.01 간격)에 대해 탐색을 수행하고, 각 값에서 세 지표를 계산한다. 지표 간 공정한 비교를 위해 세 지표 모두 min--max 스케일러로 정규화한 뒤 합산하여 목적 함수를 정의하며, 이를 최소화하는 $\alpha$를 선택한다.
+$\alpha$는 0.01--1.99(0.01 간격)에서 탐색하며, 세 지표(makespan·AAD·AMD)를 min--max 정규화해 합한 목적 함수를 최소화하는 값을 고른다.
 
 \begin{equation}
 Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
@@ -274,7 +266,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \end{equation}
 
 \subsubsection{고정 계수의 한계}\label{coeff:limit}
-고정 $\alpha$ 방식의 근본 한계는 \textit{최적 $\alpha$에 단일 값이 없다}는 것이다. 이를 확인하기 위해, 8가지 작업 분포(정규·지수·로그 정규·감마·베타·Weibull minimum·균등·푸아송)로 각 1,000개의 작업을 합성하였다. 그리고 이산 시간 시뮬레이터로 $\alpha$를 0.01--1.99(0.01 간격) 범위에서 탐색하여 \eqref{eq:09}의 목적 함수를 최소화하는 분포별 최적값을 구했다. 표 \ref{fig:motivation}이 보이듯 최적 $\alpha$는 분포에 따라 0.22(감마·푸아송)에서 1.63(로그 정규)까지 달라진다. 모든 워크로드를 만족시키는 단일 $\alpha$는 존재하지 않는다. 따라서 한 번 고정한 $\alpha$는 특정 워크로드에 대한 타협일 뿐이며, 워크로드가 바뀔 때마다 그리드 탐색을 다시 수행해야 한다.
+고정 $\alpha$의 근본 한계는 \textit{최적값이 단일하지 않다}는 것이다. 8가지 분포(정규·지수·로그정규·감마·베타·Weibull·균등·푸아송)로 각 1,000작업을 합성해 \eqref{eq:09}를 최소화하는 분포별 최적 $\alpha$를 구하면(표 \ref{fig:motivation}) 0.22(감마·푸아송)에서 1.63(로그정규)까지 달라진다. 모든 워크로드를 만족하는 단일 $\alpha$는 없으므로, 고정 $\alpha$는 특정 워크로드 타협일 뿐 워크로드가 바뀌면 그리드 탐색을 다시 해야 한다.
 
 \begin{table}[htb!]
 \centering
@@ -292,26 +284,26 @@ Obj_i^{sfa} = makespan_i^{norm} + AAD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$ 한계를 없애기 위해, 관측 가능한 큐 통계만으로 매 스케줄링 시점에 동적으로 결정해 튜닝 노브를 제거한다. 곧 식 \eqref{eq:01}의 고정 $\alpha$ 대신, 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$를 쓴다(단일 승급 구조는 동일). 이 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드의 시간 단위와 무관하게 승급 문턱이 큐의 나이 통계 자체로 정해진다(단위 소거).
+고정 $\alpha$ 한계를 없애기 위해 식 \eqref{eq:01}의 $\alpha$ 대신 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$를 쓴다(단일 승급 구조는 동일). 이를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드 시간 단위와 무관하게 승급 문턱이 큐 나이 통계 자체로 정해진다(단위 소거).
 
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big),
 \tag{5}
 \label{eq:auto-alpha}
 \end{equation}
-여기서 큐 상대 나이 $\tilde A_j = A_j - \min_k A_k$, 동적 나이 스케일 $A_{\text{ref}} = \max(1,\,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, 자리 적합이 가장 나쁜 작업의 적합도 $R_{\min}=\max(0.1,\,\min_k R_k)$다. 가드 $g=\min(1,\,A_{\max}/A_{\text{ref}})$는 모든 대기 작업의 상대 나이가 같은 자명한 경우($\tilde A_j\!\equiv\!0$)에만 1 미만이 되는데 그때는 나이 보너스도 0이므로 결과를 바꾸지 않는다 --- 따라서 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 큐 상대 나이를 쓰므로 배치로 멤버가 바뀌면 $\min_k A_k$가 갱신돼 남은 작업 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
+여기서 $\tilde A_j = A_j - \min_k A_k$, $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, $R_{\min}=\max(0.1,\min_k R_k)$다. 가드 $g$는 모든 상대 나이가 같은 자명한 경우($\tilde A_j\!\equiv\!0$, 이때 보너스도 0)에만 1 미만이라 결과를 바꾸지 않으므로 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 상대 나이를 쓰므로 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
 
 \noindent\textbf{나이-스케일 정규화의 의미.} 이 정규화가 갖는 뜻은 보너스 항을 두 \textit{상대 비율의 곱}으로 풀면 분명해진다:
 \[
 \alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \underbrace{\frac{\tilde A_j}{A_{\text{ref}}}}_{\text{큐 평균 대비 나이}} \;\times\; \underbrace{\frac{R_j}{R_{\min}}}_{\text{최악 적합 대비 적합도}}.
 \]
-즉 SAFA는 절대 대기 시간이 아니라 \textbf{``큐 평균보다 얼마나 더 오래 기다렸는가''(나이 비율)와 ``자리에 가장 안 맞는 잡보다 얼마나 더 잘 맞는가''(적합 비율)의 곱}으로 승급 압력을 매긴다. \textit{곱}이므로 둘 중 하나라도 1에 가까우면 압력이 죽어, \textit{평균보다 유의하게 늙었고 지금 비는 자리에 유의하게 잘 맞는} 작업만 떠오른다. 나이 비율을 $A_{\text{ref}}$로 정규화한 덕에 판정이 워크로드의 절대 시간 단위에 불변이며, 이는 임의의 트릭이 아니다 --- 승급 거동이 워크로드 간에 같으려면 최적 고정 $\alpha$가 대략 $1/A_{\text{ref}}$에 비례해야 하므로, $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 그리드 탐색이 줄곧 찾던 값을 큐 통계로 대입한 닫힌 형태다.
+즉 승급 압력은 절대 대기가 아니라 \textbf{나이 비율($\tilde A_j/A_{\text{ref}}$)과 적합 비율($R_j/R_{\min}$)의 곱}이라, 하나라도 1에 가까우면 죽어 \textit{평균보다 유의하게 늙고 지금 비는 자리에 잘 맞는} 작업만 떠오른다. $A_{\text{ref}}$ 정규화로 판정이 절대 시간 단위에 불변이며, 이는 트릭이 아니다 --- 워크로드 간 승급 거동이 같으려면 최적 고정 $\alpha\propto1/A_{\text{ref}}$여야 하므로 $\alpha_{\text{eff}}$는 그리드 탐색이 줄곧 찾던 값의 닫힌 형태다.
 
-승급 조건은 선두에도 보너스가 붙으므로($\tilde A_{\text{head}}=A_{\max}$) $\alpha_{\text{eff}}(\tilde A_j R_j - A_{\max}R_{\text{head}}) > 1 - \text{base}^{-pos_j}$, 곧 \textbf{나이 열세를 자리 적합 우위($R_j>R_{\text{head}}$)가 상쇄할 때만} 승급된다($R\equiv1$이면 선두가 항상 이겨 FIFO 동치). 따라서 SAFA가 올리는 것은 \emph{자리가 맞는 굶은 작업}이고, HOL 주범인 가장 큰 작업($R_{\min}$)은 나이 보너스가 가장 약해 스스로 승급되지 않는다. 승급 감사(Philly 512 이종, 122,952패스)에서 승급된 작업의 87\%가 1-GPU로 \textit{직접 수혜자는 빈 틈에 맞는 소형 작업}이고, 큰 작업이 얻는 것은 \textbf{선두 보존}이다 --- 즉 ``starvation-free''는 큐가 큰 작업 하나에 막히는 정체를 끊는다는 뜻이지 개별 대형 작업의 완료 보장이 아니다. 모든 양은 측정값에서 계산되고 작업 duration은 쓰지 않으므로, 제거한 것은 워크로드에 가장 민감한 단일 노브 $\alpha$다.
+승급 조건은 선두에도 보너스가 붙어($\tilde A_{\text{head}}=A_{\max}$) $\alpha_{\text{eff}}(\tilde A_j R_j - A_{\max}R_{\text{head}}) > 1 - \text{base}^{-pos_j}$, 곧 \textbf{나이 열세를 자리 적합 우위($R_j>R_{\text{head}}$)가 상쇄할 때만} 승급된다($R\equiv1$이면 FIFO 동치). 따라서 올라오는 것은 \emph{자리가 맞는 굶은 작업}이고 HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 승급되지 않는다 --- 승급 감사(Philly 512 이종, 122,952패스)에서 승급의 87\%가 1-GPU였다. 즉 ``starvation-free''는 큐가 큰 작업에 막히는 정체를 끊는 것이지 개별 대형 작업의 완료 보장이 아니며, 모든 양이 측정값에서 계산돼 duration을 쓰지 않으므로 제거된 것은 워크로드에 가장 민감한 노브 $\alpha$다.
 
-정규화 분모 $A_{\text{ref}}$가 도착과 함께 자라 승급 압력이 $R$ 차등에 비례해 \textbf{포화}하므로, 이는 유계 보장이 아니라 \textit{$R$-차등 구동의 기아 완화}다 --- SAFA의 정체성은 ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합으로 정체를 절단한다''이다. 무튜닝의 가치는 고정 $\alpha$의 전이 불가가 아니라 절벽형 $\alpha$-그리드 \textit{탐색을 없앤} 데 있고, 그 대가인 작은 중앙값 양보는 부하·이질성 전반의 일관된 공정성으로 보상됨을 보인다.
+$A_{\text{ref}}$가 도착과 함께 자라 승급 압력이 $R$ 차등에 비례해 \textbf{포화}하므로 이는 유계 보장이 아니라 \textit{$R$-차등 구동의 기아 완화}이며, ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합으로 정체를 절단한다''이다. 무튜닝의 가치는 절벽형 $\alpha$-그리드 \textit{탐색을 없앤} 데 있고, 그 대가인 작은 중앙값 양보는 일관된 공정성으로 보상된다.
 
-나이로 우선순위를 올리는 발상 자체는 새롭지 않다 --- OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}(누적 서비스가 적은 작업 우선), Slurm multifactor의 age factor가 같은 계보다. 본 연구의 기여는 \textit{aging 메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며, 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 분할 가능 자원을 전제한 고전 aging과 달리 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로, HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다 (ii) \textbf{절대 시간이 아닌 상대 나이} --- 절대 대기에 고정 계수를 곱하는 고전 aging은 시간 스케일이 바뀌면 재튜닝이 필요하나, SAFA는 $\tilde A_j$·$A_{\text{ref}}$로 정규화해 단위를 소거한다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread 자체에서 유도되어, spread가 형성되면 그것을 기준으로 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다.
+나이로 우선순위를 올리는 발상 자체는 새롭지 않다(OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}, Slurm multifactor age factor). 본 기여는 aging \textit{메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로 HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다. (ii) \textbf{절대 시간이 아닌 상대 나이} --- $\tilde A_j$·$A_{\text{ref}}$ 정규화로 시간 단위를 소거해 워크로드가 바뀌어도 재튜닝이 불필요하다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread에서 유도돼, spread가 있으면 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다.
 
 \section{Experimental Evaluation}\label{sec:eval}
 
