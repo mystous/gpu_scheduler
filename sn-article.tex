@@ -372,60 +372,20 @@ Gandiva\cite{xiao2018gandiva} & OSDI'18 & \xmark & --- & 관련연구 \\
 \subsection{주 결과: 효율--공정성 지형}\label{eval:main}
 6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 세 그림(효율--공정 트레이드오프 \ref{fig:tradeoff}, 부하 곡선 \ref{fig:loadcurve}, 큰 작업 꼬리 \ref{fig:bigjob})으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
 
-\paragraph{전체 구도: 효율--공정성 위치}
-중심 질문은 \textit{어떤 정책이 빠른 동시에 공정하며 그 균형이 이질성·부하에 견디는가}이다(표 \ref{tab:sim-single}, 그림 \ref{fig:tradeoff}). 먼저 SAFA의 가치는 ``절대적으로 가장 빠름''이 아니다 --- 단일 512에서 SAFA의 중앙값(607K초)은 빠른 축이 못 되고 Lucid(83s, p1=69)는 두 축 모두에서 SAFA를 지배한다. 다만 Lucid의 우위는 utilization 프로파일·oracle duration이라는 \textit{부차 정보} 위에 성립하며, SAFA는 그 둘 없이 큐 정보만으로 동작한다 --- 이 정보 격차가 본 평가를 관통하는 축이다.
+\paragraph{① 순서 공정성(p1)}
+깊은 경합에서 빠른 정보-우위 정책들의 하위 1\% 공정성 p1이 0으로 붕괴(완전 순서 역전)하는 반면, SAFA는 이를 50--54로 유지한다(이종 512에서 Lucid 포함 빠른 베이스라인 p1 0\,$\sim$\,1 대 SAFA 50.5). FIFO는 p1=100이나 선두 큰 작업이 후속을 막아 가장 느리고, 이 영역의 p1을 유지한 경량 정책은 SAFA가 유일했다. 이 공정성은 도착순 골격·blocking 해제·$R$ 나이 승급에서 나오며, SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리한다($R\equiv1$이면 FIFO와 동치로 퇴화). 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지하며, 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다(그림 \ref{fig:tradeoff}).
 
-이 기여는 두 갈래다. 첫째, \textbf{공정성을 포기하지 않고 빨라진다} --- 빠른 베이스라인들의 p1이 0으로 붕괴하는 구간에서 SAFA는 이를 50--54로 유지하면서 FIFO 대비 중앙값 대기를 50--61\% 단축한다(99\% 할당률 유지). 둘째, \textbf{무튜닝 적응성}으로, 경합이 깊은 과부하·이종에서 드러난다. 이종 512에서 Lucid 포함 빠른 베이스라인의 p1이 0\,$\sim$\,1로 붕괴(완전 순서 역전)하는 반면 SAFA만 큐 정보로 공정성을 유지하며, 이 영역의 p1을 유지한 경량 정책은 SAFA가 유일했다(트레이스별 변별력은 \texttt{lt50\%}로도 교차 검증한다).
+\paragraph{② 큐잉 지연(q\_p50·q\_max)}
+중앙값 q\_p50는 FIFO 대비 50--61\% 짧다. 단 SAFA가 절대적으로 가장 빠른 것은 아니다 --- 단일 512에서 Lucid(83s, p1=69)는 utilization 프로파일·oracle duration이라는 \textit{부차 정보}로 SAFA(607K초)를 두 축 모두 지배하나, SAFA는 그 둘 없이 큐 정보만으로 동작한다(이 정보 격차가 본 평가를 관통하는 축이다). 최악 대기 q\_max는 기아를 가른다 --- EASY의 추월은 무해하고(q\_max 이종 7.68M $<$ FIFO 7.81M) SJF·Themis는 q\_max가 FIFO 대비 단일 $+115\%$·$+70\%$로 폭증해 실제 기아를 낳는다(단일 512 SJF는 p1 64로 SAFA 53.1보다 높아도 q\_max는 폭증, 두 지표를 병행 보고한다). 우위는 부하가 깊을수록 커진다 --- 저부하(1024)는 큐가 안 쌓여 정책이 무의미하고, 과부하 256 단일에서 FIFO 4.93M 대 SAFA 2.38M초($-52\%$)다. 큰 작업도 평균이 아니라 \textit{최악 꼬리}를 절단한다(SJF 큰 작업 p99 단일 4.54M $\to$ SAFA 2.50M초; 그림 \ref{fig:bigjob}). 다만 q\_max 억제는 이종 한정이다(단일 512 SAFA 2.52M $>$ FIFO 2.18M). 그림 \ref{fig:loadcurve}이 부하별 구도를 보인다.
 
-다만 p1 붕괴(추월)가 곧 기아는 아니다. p1$\approx$0 정책을 절대 최악 대기로 다시 가르면 두 부류다. \textbf{EASY의 추월은 무해하다} --- 선두 예약이 시작 시각을 지켜 q\_max(이종 7.68M초)가 FIFO(7.81M)보다 짧다(본 표 EASY는 보수판이며 완전판도 이종 과부하 p1은 0이라 구도 불변). 반면 \textbf{SJF·Themis의 추월은 실제 기아 꼬리를 만든다} --- 크기·잔여시간 선별이 큰 작업을 미뤄 q\_max가 FIFO 대비 단일 $+115\%$(SJF)·$+70\%$(Themis)로 폭증한다(Themis 꼬리는 $r$-정렬 근사 한정). 단일 512 SJF처럼 p1 64로 SAFA(53.1)보다 높아도 q\_max가 폭증하는 셀이 있어 두 지표를 병행 보고하며, SAFA가 EASY에 갖는 우위는 기아 방지가 아니라 \textit{duration 추정 없이} 순서 공정성까지 지키는 정보 조건에 있다.
-
-\paragraph{독립 지표 교차 확인} SAFA가 최적화하지 않은 독립 지표로 점검해도 결론은 같다(512 이종, 표 \ref{tab:indep}) --- 대기 \textbf{Gini} 0.494·\textbf{p99/p50} 3.9로 둘 다 비-FIFO 최저이고 \texttt{lt25/50}도 최저다(\texttt{lt75}만 일부 역전). 즉 SAFA의 우위는 도착순 척도가 만든 산물이 아니다.
-
-\paragraph{공정성의 귀속} 비차단 정책의 p1 붕괴는 부분적으로 본 엔진의 비선점·비차단 선택 탓이므로, SAFA의 공정성을 도착순 골격·blocking 해제·$R$ 나이 승급 셋으로 나눠 본다. 이 중 SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리하며($R\equiv1$이면 FIFO와 동치로 퇴화), 그 추가 이득은 단편화가 실재하는 다중 노드에서 드러난다.
-
-\begin{table}[htb!]
-\centering
-\caption{독립 공정성 지표}
-\label{tab:indep}
-\footnotesize
-\begin{tabular}{@{}l@{\hspace{1.0em}}rr@{\hspace{1.2em}}rrr@{}}
-\toprule
-정책 & Gini$\downarrow$ & p99/p50$\downarrow$ & lt25 & lt50 & lt75 \\
-\midrule
-FIFO & 0.365 & 2.2 & 0.00 & 0.00 & 0.00 \\
-SJF & 0.964 & 7{,}116 & 2.06 & 3.15 & 4.27 \\
-LAS & 0.594 & 13.2 & 3.51 & 5.59 & 7.77 \\
-Kueue & 0.925 & 631 & 5.21 & 5.77 & 7.34 \\
-EASY & 0.525 & 4.7 & 6.53 & 9.51 & 31.34 \\
-Themis & 0.954 & 2{,}109 & 2.45 & 3.34 & 4.57 \\
-FGD & 0.594 & 13.2 & 3.51 & 5.59 & 7.77 \\
-Lucid & 0.979 & 63{,}803 & 1.45 & 1.55 & 1.96 \\
-SAFA (고정 $\alpha$) & 0.530 & 4.9 & 0.04 & 3.99 & 5.79 \\
-\textbf{SAFA(Zero-knob)} & \textbf{0.494} & \textbf{3.9} & 0.00 & 0.76 & 5.55 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-SAFA의 이점은 \textit{처리량(makespan)}에 있지 않다. 경량 정책은 모두 99\% 할당률로 처리량 한계에 묶여 makespan이 사실상 동일하고(단일 154일), SAFA도 FIFO와 동등하거나 $-3$\%(이종 222$\to$214일)에 그친다 --- 즉 처리량을 \textit{해치지 않을 뿐}이며, 눈에 띄게 단축하는 것은 collocation의 Lucid(145일)뿐이다. SAFA의 가치는 동일 처리량 아래 큐 지연과 순서 공정성의 재분배에 있다.
-
-나머지 베이스라인은 각자 한쪽 축을 포기한다. FIFO는 p1=100이나 선두 큰 작업이 후속을 막아 가장 느리고, SJF·Themis·LAS는 짧은 작업을 먼저 빼 중앙값을 최소화하나 큰 작업이 적체돼 이종 과부하에서 p1이 0으로 붕괴하며 SJF·Themis는 q\_max 폭증(실제 기아)을 동반한다. 이 폭증은 \textit{비선점 gang $+$ 지속 과부하}라는 고전 정상상태 분류\cite{wierman2003classifying} 밖 영역의 측정이다. Lucid는 중앙값은 극히 작으나 단일의 높은 공정성(p1=69)이 이종에서 1로 무너진다. 그림 \ref{fig:tradeoff}은 이 구도를 6구성에서 보인다 --- 빠른 베이스라인은 이종·과부하로 갈수록 우하단(빠르지만 공정성 0)으로 무너지고, FIFO는 좌상단(공정하나 느림), SAFA는 그 사이 ``빠르면서 공정한'' 영역에 머문다.
-
-\paragraph{부하 의존성}
-그림 \ref{fig:loadcurve}처럼 우위는 부하가 깊을수록 커진다. 명목 부하 0.9/1.8/3.6$\times$는 이종에서 B200-등가 용량이 73.8\%로 줄어 실효 1.2/2.4/4.9$\times$가 된다. \textbf{동일 실효부하 대조}(단일 512 duration을 1.355배 늘려 이종 512와 같은 실효 2.4$\times$로 정합)에서 베이스라인 붕괴와 SAFA 유지(49.6 대 이종 50.5)가 그대로 재현되므로, ``이종 우위''의 동인은 이질성 자체가 아니라 \textbf{그것이 만드는 깊은 경합}이다.
-
-\textbf{저부하}(1024, 0.9$\times$)에서는 큐가 안 쌓여 정책이 무의미하고(이득은 임계 이상 레짐 전용) 차이는 이종에서만 난다(FIFO 607K 대 SAFA 256K초). \textbf{임계·과부하}(512·256)로 갈수록 격차가 벌어져 256 단일 FIFO 4.93M 대 SAFA 2.38M초($-52$\%)이고, p1은 SJF·Themis·LAS·FGD가 고부하 이종에서 0으로 붕괴하나 SAFA만 유지된다. 다만 꼬리(q\_max) 억제는 이종 한정이라(이종 512 SAFA 7.26M $<$ FIFO 7.81M이나 단일 512 SAFA 2.52M $>$ FIFO 2.18M) SAFA의 일관된 우위는 꼬리가 아니라 중앙값·p1에 있다.
-
-\paragraph{큰 작업의 기아: 좁은 주장으로의 한정}
-SAFA가 ``큰 작업을 보호한다''는 주장은 데이터가 지지하지 않아 좁힌다. 8-GPU 작업만 보면 SAFA는 \textit{중앙값} 대기를 오히려 FIFO보다 악화시키나(512 단일 2.04M 대 1.60M초), 보호하는 것은 평균이 아니라 \textit{최악 꼬리}다(그림 \ref{fig:bigjob}). 짧은 작업 우선 정책이 큰 작업을 영구 적체시키는 반면(SJF 큰 작업 p99 단일 4.54M·이종 9.10M초) SAFA의 나이 승급은 이를 끊어 p99를 2.50M·7.22M초로 억제한다 --- 즉 ``SJF식 영구 starvation tail의 절단''이라는 좁은 주장이다.
+\paragraph{③ 자원 활용도(Alloc)}
+SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-single} Alloc 열) --- 10개 행 모두 임계·과부하(256·512)에서 평균 99\% 안팎의 할당률을 유지하므로, 정책 간 차이는 자원 놀림이 아니라 순수한 큐 순서 효과다(저부하 1024는 수요가 얕아 동반 하락). 처리량(makespan)도 손상되지 않는다 --- 경량 정책이 모두 99\% 할당률로 처리량 한계에 묶여 makespan이 사실상 동일하고(단일 154일), SAFA도 FIFO와 동등하거나 $-3$\%(이종 222$\to$214일)에 그친다(눈에 띄게 단축하는 것은 collocation의 Lucid 145일뿐). 즉 SAFA는 처리량을 \textit{해치지 않은 채} 큐 지연과 순서 공정성을 재분배한다(그림 \ref{fig:tradeoff}: 빠른 베이스라인은 이종·과부하로 갈수록 우하단(빠르나 공정성 0)으로 무너지고, FIFO는 좌상단(공정하나 느림), SAFA는 그 사이 ``빠르면서 공정한'' 영역).
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_26.pdf}}
 \caption{큰 작업 꼬리}
 \label{fig:bigjob}
 \end{figure}
-
-\paragraph{부차 지표: slowdown(BSLD)}
-BSLD(bounded slowdown)에서는 짧은 작업 우선 정책(SJF·Lucid)이 유리하고 SAFA는 열위인데, BSLD가 서비스 시간으로만 정규화해 짧은 작업에 본질적으로 유리하기 때문이다. 본 연구 목표는 \eqref{eq:order-fair}의 도착 순서 공정성이지 slowdown 최소화가 아니므로, BSLD는 부차 지표로만 보고한다(완전 분포는 보충자료).
 
 \begin{figure*}[htb!]
 \centerline{\includegraphics[width=\textwidth]{Pic/Fig_20.pdf}}
@@ -479,10 +439,7 @@ FGD         & 3.3M & 521K & 49K  & 0   & 0   & 60  & 100 & 99 & 95 \\
 \label{tab:sim-single}
 \end{table*}
 
-\paragraph{활용도 검증}
-SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-single} Alloc 열). 10개 행 모두 임계·과부하(256·512)에서 평균 99\% 안팎의 할당률을 유지하므로, 정책 간 차이는 자원을 놀린 결과가 아니라 순수한 큐 순서·Placement 효과다(저부하 1024는 수요가 얕아 동반 하락).
-
-종합하면, 무튜닝 정규화 덕에 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지한다 --- 다른 어떤 빠른 정책도 보이지 못한 안정성이다. 즉 SAFA는 워크로드별 튜닝 없이 $O(n)$ 경량으로 99\% 할당률과 효율--공정 균형을 달성해, 기존 스케줄러 위에 부담 없이 통합되는 실용적 후보다.
+종합하면, SAFA는 워크로드별 튜닝 없이 $O(n)$ 경량으로 세 축 모두 --- 순서 공정성(p1) 유지, 큐잉 지연(q\_p50) 단축, 99\% 할당률 무손상 --- 을 달성해, 기존 스케줄러 위에 부담 없이 통합되는 실용적 후보다.
 \subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
 무튜닝의 순효과는 \textit{같은 큐 전처리 골격} 안에서 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 직접 대비해 격리한다(표 \ref{tab:sim-single}의 두 SAFA 행). 둘은 식 \eqref{eq:01}의 동일 $P^*$·단일 승급을 공유하고 차이는 나이 가중을 고정값으로 두느냐 큐 통계에서 유도하느냐뿐이다(고정 $\alpha$는 워크로드별 최적이 아니라 모든 구성 공통 단일값 $\alpha=0.13889$).
 
@@ -548,7 +505,33 @@ SAFA가 고전 priority aging과 갈리는 첫 지점인 \textit{$R$ 결합}을 
 \end{table}
 
 \subsection{강건성과 일반화}\label{eval:robust}
-주 결과와 ablation이 드러낸 핵심 대비 --- \textit{이종·과부하에서 정보-우위 베이스라인은 공정성 붕괴를 겪으나 SAFA는 큐 정보만으로 예방한다} --- 가 평가 설계의 인위적 산물이 아님을 네 축에서 시험한다: (i) 합성 계수 민감도, (ii) 독립 트레이스 일반화, (iii) 시뮬레이터 충실도, (iv) Placement 무관성. 통계적 유의성은 앞의 비중첩 부트스트랩 CI가 이미 뒷받침한다.
+주 결과와 ablation이 드러낸 핵심 대비 --- \textit{이종·과부하에서 정보-우위 베이스라인은 공정성 붕괴를 겪으나 SAFA는 큐 정보만으로 예방한다} --- 가 평가 설계의 인위적 산물이 아님을 다섯 축에서 시험한다: (i) 지표 강건성(척도 비의존), (ii) 합성 계수 민감도, (iii) 독립 트레이스 일반화, (iv) 시뮬레이터 충실도, (v) Placement 무관성. 통계적 유의성은 앞의 비중첩 부트스트랩 CI가 이미 뒷받침한다.
+
+\subsubsection{지표 강건성: 척도 비의존 교차검증}\label{eval:robust:metric}
+주 결과의 순서 공정성(p1)이 도착순 척도가 만든 산물이 아님을, SAFA가 최적화하지 않은 독립 지표로 점검한다(512 이종, 표 \ref{tab:indep}). 대기 \textbf{Gini} 0.494·\textbf{p99/p50} 3.9로 둘 다 비-FIFO 최저이고 \texttt{lt25/50}도 최저다(\texttt{lt75}만 일부 역전). 또한 slowdown 계열 부차 지표 BSLD에서는 짧은 작업 우선 정책(SJF·Lucid)이 구조적으로 유리해 SAFA가 열위로 보이나, 이는 BSLD가 서비스 시간으로만 정규화해 짧은 작업에 본질적으로 유리하기 때문이며 본 연구 목표(도착 순서 공정성)와 다른 척도다(완전 분포는 보충자료). 요컨대 p1 우위는 척도 선택의 산물이 아니다.
+
+\begin{table}[htb!]
+\centering
+\caption{독립 공정성 지표 (512 이종)}
+\label{tab:indep}
+\footnotesize
+\begin{tabular}{@{}l@{\hspace{1.0em}}rr@{\hspace{1.2em}}rrr@{}}
+\toprule
+정책 & Gini$\downarrow$ & p99/p50$\downarrow$ & lt25 & lt50 & lt75 \\
+\midrule
+FIFO & 0.365 & 2.2 & 0.00 & 0.00 & 0.00 \\
+SJF & 0.964 & 7{,}116 & 2.06 & 3.15 & 4.27 \\
+LAS & 0.594 & 13.2 & 3.51 & 5.59 & 7.77 \\
+Kueue & 0.925 & 631 & 5.21 & 5.77 & 7.34 \\
+EASY & 0.525 & 4.7 & 6.53 & 9.51 & 31.34 \\
+Themis & 0.954 & 2{,}109 & 2.45 & 3.34 & 4.57 \\
+FGD & 0.594 & 13.2 & 3.51 & 5.59 & 7.77 \\
+Lucid & 0.979 & 63{,}803 & 1.45 & 1.55 & 1.96 \\
+SAFA (고정 $\alpha$) & 0.530 & 4.9 & 0.04 & 3.99 & 5.79 \\
+\textbf{SAFA(Zero-knob)} & \textbf{0.494} & \textbf{3.9} & 0.00 & 0.76 & 5.55 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsubsection{합성 계수 민감도 ($\pm 50\%$)}\label{eval:robust:sens}
 비교 조건은 SAFA에 불리하다(SJF·EASY·Themis는 oracle duration, Lucid는 정확한 프로파일을 무비용 제공). 그럼에도 합성 계수 의존성을 보기 위해 파라미터를 각각 $\pm50\%$ 흔들어 512 단일·이종에서 \textbf{전 정책}을 재평가했다(표 \ref{tab:sens}, 그림 \ref{fig:sens-robust}). 핵심 부호는 전 구간 불변이다 --- SAFA가 고정 $\alpha$를 능가하는 관계가 유지되고(무튜닝 p1 49.7--53.1 대 고정 36.9--41.4) 정보-우위 베이스라인의 붕괴($p1\!\approx\!0$)도 유지된다. 예외는 Lucid로, 속도계수 $-50\%$에서 p1이 0.7$\to$13.8로 출렁이나 SAFA(49.7)와는 자릿수 차이다.
