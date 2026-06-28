@@ -370,13 +370,13 @@ Gandiva\cite{xiao2018gandiva} & OSDI'18 & \xmark & --- & 관련연구 \\
 \subsection{주 결과: 효율--공정성 지형}\label{eval:main}
 6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 그림 \ref{fig:tradeoff}(효율--공정 트레이드오프)으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
 
-\paragraph{① 순서 공정성(p1)}
+\paragraph{순서 공정성(p1)}
 깊은 경합에서 빠른 정보-우위 정책들의 하위 1\% 공정성 p1이 0으로 붕괴(완전 순서 역전)하는 반면, SAFA는 이를 50--54로 유지한다(이종 512에서 Lucid 포함 빠른 베이스라인 p1 0\,$\sim$\,1 대 SAFA 50.5). FIFO는 p1=100이나 선두 큰 작업이 후속을 막아 가장 느리고, 이 영역의 p1을 유지한 경량 정책은 SAFA가 유일했다. 이 공정성은 도착순 골격·blocking 해제·$R$ 나이 승급에서 나오며, SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리한다($R\equiv1$이면 FIFO와 동치로 퇴화). 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지하며, 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다(그림 \ref{fig:tradeoff}).
 
-\paragraph{② 큐잉 지연(q\_p50·q\_max)}
+\paragraph{큐잉 지연(q\_p50·q\_max)}
 중앙값 q\_p50는 FIFO 대비 50--61\% 짧다. 단 SAFA가 절대적으로 가장 빠른 것은 아니다 --- 단일 512에서 Lucid(83s, p1=69)는 utilization 프로파일·oracle duration이라는 \textit{부차 정보}로 SAFA(607K초)를 두 축 모두 지배하나, SAFA는 그 둘 없이 큐 정보만으로 동작한다(이 정보 격차가 본 평가를 관통하는 축이다). 최악 대기 q\_max는 기아를 가른다 --- EASY의 추월은 무해하고(q\_max 이종 7.68M $<$ FIFO 7.81M) SJF·Themis는 q\_max가 FIFO 대비 단일 $+115\%$·$+70\%$로 폭증해 실제 기아를 낳는다(단일 512 SJF는 p1 64로 SAFA 53.1보다 높아도 q\_max는 폭증, 두 지표를 병행 보고한다). 큰 작업도 최악 꼬리(p99)는 SAFA가 줄인다(SJF 4.54M$\to$2.50M초). 다만 q\_max 억제는 이종 한정이다(단일 512 SAFA 2.52M $>$ FIFO 2.18M).
 
-\paragraph{③ 자원 활용도(Alloc)}
+\paragraph{자원 활용도(Alloc)}
 SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-single} Alloc 열) --- 10개 행 모두 임계·과부하(256·512)에서 평균 99\% 안팎의 할당률을 유지하므로, 정책 간 차이는 자원 놀림이 아니라 순수한 큐 순서 효과다(저부하 1024는 수요가 얕아 동반 하락). 처리량(makespan)도 손상되지 않는다 --- 경량 정책이 모두 99\% 할당률로 처리량 한계에 묶여 makespan이 사실상 동일하고(단일 154일), SAFA도 FIFO와 동등하거나 $-3$\%(이종 222$\to$214일)에 그친다(눈에 띄게 단축하는 것은 collocation의 Lucid 145일뿐). 즉 SAFA는 처리량을 \textit{해치지 않은 채} 큐 지연과 순서 공정성을 재분배한다(그림 \ref{fig:tradeoff}: 빠른 베이스라인은 이종·과부하로 갈수록 우하단(빠르나 공정성 0)으로 무너지고, FIFO는 좌상단(공정하나 느림), SAFA는 그 사이 ``빠르면서 공정한'' 영역).
 
 \begin{table*}[htb!]
@@ -423,10 +423,8 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 \label{fig:tradeoff}
 \end{figure*}
 
-
-
 요컨대 주 결과는 세 축에서 일관된다 --- SAFA는 순서 공정성(p1)을 유지하면서 큐잉 지연(q\_p50)을 FIFO 대비 단축하고 99\% 할당률을 해치지 않는다.
-\subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
+
 무튜닝의 순효과를 \textit{같은 큐 전처리 골격}(식 \eqref{eq:01}의 동일 $P^*$·단일 승급) 안에서 격리한다. Zero-knob의 나이 가중은 큐 통계로 \textit{매 작업 유도되는 적응형}이라 어떤 \textit{고정 상수} $\alpha$보다 표현력이 크다 --- 표 \ref{tab:sim-single}의 두 SAFA 행이 공통 고정값($\alpha{=}0.13889$) 대비를 보이고, 구성마다 16점 그리드($\alpha\in[0.01,2.0]$)로 \textit{최적} 고정 $\alpha$를 골라도 5개 부하 구성 전부에서 무튜닝에 못 미친다(최선 대비 $+4.4$--$12.8$점, 잡 모집단 부트스트랩 CI 비중첩; 표 \ref{tab:ablation-grid}). 핵심은 점수 차가 아니라 \textbf{재튜닝 제거}다 --- 고정 $\alpha$의 p1은 미세 구간($10^{-4}$--$3{\times}10^{-3}$)에서 $87{\to}46$으로 급변하는 절벽이라 워크로드마다 다시 맞춰야 하지만, Zero-knob는 같은 코드로 세 트레이스에서 50.5/83.9/98.4를 유지한다.
 
 성분 측면에서 SAFA가 고전 priority aging과 갈리는 지점은 \textit{$R$ 결합}이다. $R\equiv1$이나 고전 aging(절대 나이$\times$고정 $\alpha$, $R$ 없음)으로 두면 도착순 큐에서 단일 승급이 발화하지 않아 \textbf{FIFO와 동치로 퇴화}하고, 전체 재정렬형 aging(Slurm multifactor류)은 가중 $w$를 맞추면 유사 frontier에 닿으나 $w$가 절벽 노브라 Helios·Alibaba에서 p1 0으로 붕괴한다 --- 즉 \textit{나이-정규화된 fit}만이 노브 없이 공정 균형점을 만든다.
@@ -464,10 +462,8 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 \end{figure}
 
 
-\paragraph{세 번째 독립 트레이스: Alibaba PAI}
 세 번째로 \textbf{Alibaba PAI}\cite{weng2022mlaas}(NSDI'22)를 재생했다(표 \ref{tab:trace3}, seed-42 16.4\% 서브샘플 120,105작업, 부하배수를 Philly와 일치). 비차단 정책(LAS·Kueue·FGD·EASY)이 7.7--15.3\%를 추월에 빠뜨리는($p1{=}0$) 반면 SAFA는 \textbf{\texttt{lt50\%} 0.0\%($p1{=}98.4$)}로 고정 $\alpha$(73.8)보다 25점 높고, 중앙 대기 18.8M초로 FIFO(19.2M)와 동등해 효율 손실이 없다. 여기도 용량(256) 초과 26건을 뺀 동일 모집단(120,079)으로 재실행했다(정정 전 고정 $\alpha$ ``붕괴'' 7.9는 이 결함의 산물). 짧은-꼬리 작업이 많아 그리디 추월이 Philly보다 크다(EASY 15.3\%).
 
-\paragraph{세 트레이스 종합}
 세 독립 트레이스에서 같은 결론이 반복된다(표 \ref{tab:trace3}). 과부하 이종에서 정보-우위 그리디의 추월 불공정(\texttt{lt50\%})이 두 자릿수인 반면 SAFA는 어느 트레이스에서도 비차단 중 최저(0.0--0.08\%)이고, worst-1\% $p1$도 고정 $\alpha$를 13--25점 일관 상회한다(50.5 대 37.3, 83.9 대 63.7, 98.4 대 73.8 --- 동일 코드).
 
 \begin{table}[htb!]
@@ -497,7 +493,7 @@ SAFA(고정 $\alpha$) & 4.9 & 37.3 & 0.05 & 63.7 & 0.0 & 73.8 \\
 \subsection{Placement 무관성: 어떤 Placement 정책 위에서도}\label{eval:robust:placement}
 본 whole-GPU 과포화 레짐에서 Placement는 변별되지 않는다. 단편화 인지 배치 \textbf{FGD는 LAS와 전 지표가 동일}한데(표 \ref{tab:placement}), 둘 다 비차단 FCFS 규율이고 빈 슬롯이 희소해 단편화 인지 배치(ΔF 최소)가 most-allocated로 수렴하기 때문이다 --- 즉 FGD의 FIFO 대비 54--92\% 중앙값 단축은 ``단편화 인지 배치''가 아니라 \textbf{비차단 큐 규율}의 효과이고, 그 대가로 과부하 p1이 0으로 붕괴한다. 프로덕션 스케줄러로도 확인된다 --- NVIDIA KAI\cite{kai2025} binpack 위에서 2$\times$2(Order$\times$Placement)로 재면 \textbf{이득은 전적으로 큐 순서(SAFA) 축}에서 나온다(FIFO$\to$SAFA 중앙 대기 256 이종 10.2M$\to$3.5M초 대 배치 효과 $\pm5$--$10\%$). 즉 ``빠르지만 굶기는'' 효율 축과 SAFA의 균형 축의 차이는 Placement가 아니라 큐 규율이다.
 
-이 직교성이 특정 Placement에 의존하지 않음을 폭넓게 확인한다. 동일 SAFA 큐 전처리를 \textbf{7개 Placement}(코어 most-allocated·compact·round-robin·MCTS, FGD, KAI binpack·spread) 위에 얹어 재실험했다(표 \ref{tab:placement}, 그림 \ref{fig:placement}). \textbf{SAFA의 $p1$이 7개 Placement$\times$과부하 4구성에서 50--70으로 유지}되며 Placement가 큐 지연에 주는 영향은 작다($q_{p50}$ 변동 5--15\%). FGD·KAI 행도 다른 Placement와 같은 대역이라(KAI spread는 round-robin처럼 58--68) SAFA가 연구 프로토타입뿐 아니라 \textit{프로덕션 Placement 스케줄러와도 간섭 없이 합성}됨이 확인된다. 즉 SAFA의 기여는 Placement 휴리스틱과 직교하며 어떤 Placement 위에서도 작동한다(타입-인지 best-fit은 트레이스가 type-agnostic이라 퇴화해 제외; Volcano·YuniKorn·부분 GPU 공유 결합은 향후 과제).
+이 직교성이 특정 Placement에 의존하지 않음을 폭넓게 확인한다. 동일 SAFA 큐 전처리를 \textbf{7개 Placement}(코어 most-allocated·compact·round-robin·MCTS, FGD, KAI binpack·spread) 위에 얹어 재실험했다(표 \ref{tab:placement}). \textbf{SAFA의 $p1$이 7개 Placement$\times$과부하 4구성에서 50--70으로 유지}되며 Placement가 큐 지연에 주는 영향은 작다($q_{p50}$ 변동 5--15\%). FGD·KAI 행도 다른 Placement와 같은 대역이라(KAI spread는 round-robin처럼 58--68) SAFA가 연구 프로토타입뿐 아니라 \textit{프로덕션 Placement 스케줄러와도 간섭 없이 합성}됨이 확인된다. 즉 SAFA의 기여는 Placement 휴리스틱과 직교하며 어떤 Placement 위에서도 작동한다(타입-인지 best-fit은 트레이스가 type-agnostic이라 퇴화해 제외; Volcano·YuniKorn·부분 GPU 공유 결합은 향후 과제).
 
 \begin{table}[htb!]
 \centering
@@ -522,11 +518,6 @@ KAI spread     & 67.7 & 68.5 & 58.2 & 58.5 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[htb!]
-\centerline{\includegraphics[width=\columnwidth]{Pic/fig_placement.pdf}}
-\caption{Placement별 SAFA 공정성}
-\label{fig:placement}
-\end{figure}
 
 \subsection{쿠버네티스 통합 경로}\label{SAFA:k8s}
 SAFA는 Placement 스케줄러 교체 없이 쿠버네티스 \texttt{PodSchedulingGates}만으로 끼워 넣는다. 각 Pod에 게이트 \texttt{safa.io/admission}를 부여해 기본 \texttt{kube-scheduler} 후보에서 빼고, SAFA 컨트롤러가 주기 $\Delta$마다 식 \eqref{eq:01}로 $P^*$ 최고 Pod부터 게이트를 해제하면 기본 스케줄러가 그 순서로만 binding하므로 Placement 로직은 손대지 않는다.
@@ -536,9 +527,9 @@ SAFA는 Placement 스케줄러 교체 없이 쿠버네티스 \texttt{PodScheduli
 그 밖의 멀티노드·멀티테넌트 운영 요건(노드 단위 fit·잠정 점유, wedge dead-letter 격리, VC 내부 적용, Kueue suspend 결합, fail-open)은 설계 사항으로 남긴다. 본 참조 구현은 단일 노드(B200$\times$8)를 집계 용량으로 단순화했으며 그 구현·검증은 향후 과제다.
 
 \subsection{실 클러스터 실측 검증(B200)}\label{eval:b200}
-위 결과를 NVIDIA B200$\times$8 단일 노드 쿠버네티스(v1.31, kind)에서 교차 검증한다(그림 \ref{fig:b200}). Philly 500작업을 \texttt{submit-clamp}로 압축 제출해 8/8 GPU 포화·대기 큐 47개 과부하를 만들고, 각 작업은 GPU를 점유하는 \texttt{sleep} 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 거치게 했다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 압축 후 $p50$이 11초로 게이트 주기 $\Delta{=}5$초의 2배에 불과한 짧은-작업 레짐이라 시간 단위 거동은 외삽이고, Placement·collocation·다중 노드는 향후 과제다.
+위 결과를 NVIDIA B200$\times$8 단일 노드 쿠버네티스(v1.31, kind)에서 교차 검증한다. Philly 500작업을 \texttt{submit-clamp}로 압축 제출해 8/8 GPU 포화·대기 큐 47개 과부하를 만들고, 각 작업은 GPU를 점유하는 \texttt{sleep} 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 거치게 했다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 압축 후 $p50$이 11초로 게이트 주기 $\Delta{=}5$초의 2배에 불과한 짧은-작업 레짐이라 시간 단위 거동은 외삽이고, Placement·collocation·다중 노드는 향후 과제다.
 
-그림 \ref{fig:b200}에서 시뮬 경향이 재현된다(q\_p50 대 순서 공정성). 그리디·비순서 정책(기본 kube-scheduler 49.8\%·Themis 31.4\%·SJF 30.4\%)은 높은 추월 불공정(\texttt{lt50\%})을, 예약·admission 정책(EASY 1.8\%·Kueue 4.4\%)은 추월 억제를 보이며, SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 FIFO-gate(6.2\%)·LAS 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준 공정성을 달성함을 실 클러스터에서 확인한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열 할당률이 기본 대비 7--11\%p 낮은 것은 주기 $\Delta$의 어드미션 지연이 만든 구현 비용이지($\Delta$ 축소로 감소) 처리량 손실은 아니다(makespan 51--54분 $<$ 기본 68분).
+실측에서 시뮬 경향이 재현된다(q\_p50 대 순서 공정성). 그리디·비순서 정책(기본 kube-scheduler 49.8\%·Themis 31.4\%·SJF 30.4\%)은 높은 추월 불공정(\texttt{lt50\%})을, 예약·admission 정책(EASY 1.8\%·Kueue 4.4\%)은 추월 억제를 보이며, SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 FIFO-gate(6.2\%)·LAS 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준 공정성을 달성함을 실 클러스터에서 확인한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열 할당률이 기본 대비 7--11\%p 낮은 것은 주기 $\Delta$의 어드미션 지연이 만든 구현 비용이지($\Delta$ 축소로 감소) 처리량 손실은 아니다(makespan 51--54분 $<$ 기본 68분).
 
 단 균일 도착에서는 나이 순서가 도착 순서와 같아 SAFA의 나이 승급이 비활성이므로, \textbf{도착 버스트}를 보존한 추가 실측으로 보완했다(peak 12$\times$, 대기 큐 440개; blocking-aware 해제$+$도착-순번 나이; 표 \ref{tab:b200burst}). \textbf{blocking$+$counter는 $p1$ 82.8·\texttt{lt50} 0.0\%로 버스트 아사를 예방}하나 옛 greedy$+$wall은 $p1$ 3.8로 붕괴해, blocking-aware 해제가 버스트 조건의 결정 인자임을 보인다. 다만 단일 노드에서는 counter 나이가 도착 순번에 단조라 SAFA(82.8)와 FIFO(84.2)가 사실상 동등하므로, 이 실측은 ``blocking 해제가 버스트 아사를 막는다''까지 입증하며 ``나이 승급이 FIFO를 능가''는 다중 노드 시뮬레이션이 담당한다.
 
@@ -561,11 +552,6 @@ FIFO blocking & 84.2 & 0.2 & 1784 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[htb!]
-\centerline{\includegraphics[width=0.92\columnwidth]{Pic/fig_b200.pdf}}
-\caption{B200 트레이드오프}
-\label{fig:b200}
-\end{figure}
 \subsection{타당성 위협(Threats to validity)}\label{eval:threats}
 앞의 일반화·Placement 검증과 부트스트랩 CI를 거쳤더라도 본 평가에는 다음과 같은 한계가 남아 있으므로, 결과는 절대값보다 \textit{경향}으로 해석해야 한다.
 
