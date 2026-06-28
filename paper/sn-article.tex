@@ -605,7 +605,7 @@ SAFA(고정 $\alpha$) & 4.9 & 37.3 & 0.05 & 63.7 & 0.0 & 73.8 \\
 \subsubsection{시뮬레이터 충실도 검증}\label{eval:robust:fidelity}
 엔진이 큐잉 동역학을 정확히 계산하는지를 손계산 가능한 세 toy 사례와 대조했다: (i) 포화 D/D/1 FIFO 큐, (ii) 다중 GPU 노드 gang 동시 스케줄링, (iii) 수명주기 오버헤드 회계. 엔진은 셋의 손계산 큐 지연·완료 시각을 \textbf{부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 재현했다 --- 즉 ``실측의 제한된 범위''는 절대값의 운영적 대표성 한계일 뿐 큐잉 계산의 정확성 문제는 아니다.
 
-\subsubsection{Placement 무관성: 어떤 Placement 정책 위에서도}\label{eval:robust:placement}
+\subsection{Placement 무관성: 어떤 Placement 정책 위에서도}\label{eval:robust:placement}
 본 whole-GPU 과포화 레짐에서 Placement는 변별되지 않는다. 주 표에서 \textbf{FGD와 LAS의 전 지표가 동일}한데, 둘 다 비차단 FCFS 규율이고 빈 슬롯이 희소해 단편화 인지 배치(ΔF 최소)가 most-allocated로 수렴하기 때문이다 --- 즉 FGD의 FIFO 대비 54--92\% 중앙값 단축은 ``단편화 인지 배치''가 아니라 \textbf{비차단 큐 규율}의 효과이고, 그 대가로 과부하 p1이 0으로 붕괴한다. 프로덕션 스케줄러로도 확인된다 --- NVIDIA KAI\cite{kai2025} binpack 위에서 2$\times$2(Order$\times$Placement)로 재면 \textbf{이득은 전적으로 큐 순서(SAFA) 축}에서 나온다(FIFO$\to$SAFA 중앙 대기 256 이종 10.2M$\to$3.5M초 대 배치 효과 $\pm5$--$10\%$). 즉 ``빠르지만 굶기는'' 효율 축과 SAFA의 균형 축의 차이는 Placement가 아니라 큐 규율이다.
 
 이 직교성이 특정 Placement에 의존하지 않음을 폭넓게 확인한다. 동일 SAFA 큐 전처리를 \textbf{7개 Placement}(코어 most-allocated·compact·round-robin·MCTS, FGD, KAI binpack·spread) 위에 얹어 재실험했다(표 \ref{tab:placement}, 그림 \ref{fig:placement}). \textbf{SAFA의 $p1$이 7개 Placement$\times$과부하 4구성에서 50--70으로 유지}되며 Placement가 큐 지연에 주는 영향은 작다($q_{p50}$ 변동 5--15\%). FGD·KAI 행도 다른 Placement와 같은 대역이라(KAI spread는 round-robin처럼 58--68) SAFA가 연구 프로토타입뿐 아니라 \textit{프로덕션 Placement 스케줄러와도 간섭 없이 합성}됨이 확인된다. 즉 SAFA의 기여는 Placement 휴리스틱과 직교하며 어떤 Placement 위에서도 작동한다(타입-인지 best-fit은 트레이스가 type-agnostic이라 퇴화해 제외; Volcano·YuniKorn·부분 GPU 공유 결합은 향후 과제).
