@@ -323,7 +323,7 @@ $F_k$는 순서 위반(추월)을 재며 기아(비유계 대기)와 다르다 -
 이하 표의 큐잉 지연 절대값(과부하 중앙값이 수일\,$\sim$\,수개월)은 운영 현실이 아니라 \textit{스트레스 테스트의 산물}이다. 일부러 작게 잡은 클러스터(부하배수 256/512/1024 = 3.6/1.8/0.9$\times$)에 트레이스를 실시간 재생해 어드미션 컨트롤 없이 백로그를 강제, HOL 블로킹·기아를 증폭시킨 제어된 프로브다. 따라서 의미 있는 것은 절대값이 아니라 \textit{동일 조건의 정책 간 상대 비교}다.
 
 \subsection{베이스라인 구현과 충실도}\label{eval:impl}
-비교군은 네 층위다. \textbf{(i) 무개입 기준선} FIFO(SAFA를 끈 도착순)는 모든 delta의 분모다. \textbf{(ii) Order 정책} SJF·Themis·LAS·EASY·Kueue·Lucid는 ``어떤 작업을 먼저''를 두고 SAFA와 \textit{대체} 관계인 진짜 비교군이다. \textbf{(iii) Placement 축} most-allocated·compact·round-robin·MCTS·FGD는 ``어디에 놓을지''를 푸는 다음 단계라 비교가 아니라 불변성 검증 대상이며, FGD는 큐가 FCFS라 주 표에 ``Placement 축 참고''로 구획했다(과포화에서 most-allocated와 무변별해 LAS와 동일 수치). \textbf{(iv)} 탄력·프로파일 정책군은 결정 변수가 트레이스에 없어 관련 연구로 분리한다. 모든 정책은 단일 엔진에서 \textsc{order}·\textsc{node\_pref}를 공유해 \emph{같은 트레이스·클러스터·오버헤드}를 보므로, 차이가 스케줄링 로직에서만 비롯됨이 보장된다. 각 구현은 저자 공개 코드와 라인 단위로 대조했다.
+비교군은 네 층위다. \textbf{(i) 무개입 기준선} FIFO(SAFA를 끈 도착순)는 모든 delta의 분모다. \textbf{(ii) Order 정책} SJF·Themis·LAS·EASY·Kueue·Lucid는 ``어떤 작업을 먼저''를 두고 SAFA와 \textit{대체} 관계인 진짜 비교군이다. \textbf{(iii) Placement 축} most-allocated·compact·round-robin·MCTS·FGD는 ``어디에 놓을지''를 푸는 다음 단계라 비교가 아니라 불변성 검증 대상이며, FGD는 큐가 FCFS라 주 표에 ``Placement 축 참고''로 구획했다(과포화에서 most-allocated와 무변별해 LAS와 동일 수치). \textbf{(iv)} 탄력·프로파일 정책군은 결정 변수가 트레이스에 없어 관련 연구로 분리한다. 모든 정책은 단일 엔진에서 \textsc{order}·\textsc{node\_pref}를 공유해 \emph{같은 트레이스·클러스터·오버헤드}를 보므로, 차이가 스케줄링 로직에서만 비롯됨이 보장된다. 각 구현은 저자 공개 코드와 라인 단위로 대조했다. 엔진의 큐잉 계산 정확성도 손계산 가능한 세 toy 사례(포화 D/D/1, 멀티-GPU gang, 오버헤드 회계)와 \textbf{부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 일치함을 확인했다.
 
 \begin{itemize}
 \item \textbf{FIFO}: 도착순 항등, 선두 미배치 시 패스 중단(\texttt{blocking}). HOL 통제군.
@@ -458,16 +458,14 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 \end{tabular}
 \end{table}
 
-\subsection{강건성과 일반화}\label{eval:robust}
-주 결과와 ablation이 드러낸 핵심 대비 --- \textit{이종·과부하에서 정보-우위 베이스라인은 공정성 붕괴를 겪으나 SAFA는 큐 정보만으로 예방한다} --- 가 평가 설계의 인위적 산물이 아님을 다섯 축에서 시험한다: (i) 지표 강건성(척도 비의존), (ii) 합성 계수 민감도, (iii) 독립 트레이스 일반화, (iv) 시뮬레이터 충실도, (v) Placement 무관성. 통계적 유의성은 앞의 비중첩 부트스트랩 CI가 이미 뒷받침한다.
+\subsection{강건성: 지표·계수 섭동}\label{eval:robust}
+주 결과와 ablation이 드러낸 핵심 대비 --- \textit{이종·과부하에서 정보-우위 베이스라인은 공정성 붕괴를 겪으나 SAFA는 큐 정보만으로 예방한다} --- 가 평가 설계의 인위적 산물이 아님을, 지표 비의존성과 합성 계수 섭동으로 점검한다(독립 트레이스 일반화·Placement 무관성은 이어지는 절에서 다룬다). 통계적 유의성은 앞의 비중첩 부트스트랩 CI가 이미 뒷받침한다.
 
 \subsubsection{지표 강건성: 척도 비의존 교차검증}\label{eval:robust:metric}
 주 결과의 순서 공정성(p1)이 도착순 척도가 만든 산물이 아님을, SAFA가 최적화하지 않은 독립 지표로 점검한다(표 \ref{tab:sim-single}의 \textbf{Gini}·\textbf{p99/p50}·\texttt{lt50} 열). 과부하에서 SAFA(Zero-knob)는 대기 Gini와 p99/p50가 모두 비-FIFO 최저이고(512 이종 0.49·3.9), 추월 비율 \texttt{lt50}도 최저권이다 --- 즉 p1 우위가 도착순 척도에 국한되지 않는다. 또한 slowdown 계열 부차 지표 BSLD에서는 짧은 작업 우선 정책(SJF·Lucid)이 구조적으로 유리해 SAFA가 열위로 보이나, 이는 BSLD가 서비스 시간으로만 정규화해 짧은 작업에 본질적으로 유리하기 때문이며 본 연구 목표(도착 순서 공정성)와 다른 척도다(완전 분포는 보충자료). 요컨대 p1 우위는 척도 선택의 산물이 아니다.
 
 \subsubsection{합성 계수 민감도 ($\pm 50\%$)}\label{eval:robust:sens}
-비교 조건은 SAFA에 불리하다(SJF·EASY·Themis는 oracle duration, Lucid는 정확한 프로파일을 무비용 제공). 그럼에도 합성 계수 의존성을 보기 위해 파라미터를 각각 $\pm50\%$ 흔들어 512 단일·이종에서 \textbf{전 정책}을 재평가했다(표 \ref{tab:sens}, 그림 \ref{fig:sens-robust}). 핵심 부호는 전 구간 불변이다 --- SAFA가 고정 $\alpha$를 능가하는 관계가 유지되고(무튜닝 p1 49.7--53.1 대 고정 36.9--41.4) 정보-우위 베이스라인의 붕괴($p1\!\approx\!0$)도 유지된다. 예외는 Lucid로, 속도계수 $-50\%$에서 p1이 0.7$\to$13.8로 출렁이나 SAFA(49.7)와는 자릿수 차이다.
-
-SAFA의 잔여 내부 상수도 직접 흔들었다. base 1.5/3/4에서 p1은 50--51.5로 둔감하나 $R$ 감쇠 0.05/0.2에서는 p1이 98.3/67.3으로 이동해 균형점을 옮긴다 --- 감쇠는 숨은 워크로드 노브가 아니라 균형 선호 상수다(세 트레이스에서 0.1로 일관).\footnote{이 균형점 이동이 \textit{매끄러운 단조 노브}는 아님을 밝혀 둔다. 구현은 $R$ 테이블의 음수 항목($R\le0$, 노드 슬롯을 크게 초과하는 부족분)을 방어적으로 0.5로 치환하는데, 기본 감쇠 0.1에서는 8-슬롯 노드의 $R\ge0.2$라 이 가드가 발동하지 않으나(따라서 주 결과는 무영향), 감쇠 $\ge0.2$에서는 부족분이 매우 큰 항이 중간 부족분보다 적합도가 높아지는 비단조가 생긴다. 따라서 0.2 수치(67.3)는 이 가드 하의 값이며, 감쇠 민감도를 단일 단조 곡선으로 외삽하지 않는다.} 요컨대 주 대비는 계수 섭동에 견고하되 Lucid 행 절대값만은 합성 계수에 의존한다.
+오버헤드·속도 계수를 각각 $\pm50\%$ 흔들어 512 단일·이종에서 전 정책을 재평가해도(표 \ref{tab:sens}) 핵심 부호는 불변이다 --- SAFA가 고정 $\alpha$를 능가하고(무튜닝 p1 49.7--53.1 대 고정 36.9--41.4) 정보-우위 베이스라인은 여전히 붕괴($p1\!\approx\!0$)한다(예외 Lucid는 속도계수 $-50\%$에서 0.7$\to$13.8로 출렁이나 SAFA와 자릿수 차이). SAFA 내부 상수도 base 1.5--4에서 p1 50--51.5로 둔감하며, $R$ 감쇠만 균형점을 옮기나 이는 숨은 워크로드 노브가 아니라 세 트레이스에서 0.1로 일관된 균형 선호 상수다. 요컨대 주 대비는 계수 섭동에 견고하되 Lucid 절대값만 합성 계수에 의존한다.
 \begin{table}[htb!]
 \centering
 \caption{계수 민감도}
@@ -491,13 +489,7 @@ SAFA(고정 $\alpha$) & 37.4 & 37.8 & 38.4 & 36.9 & 37.3 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[htb!]
-\centerline{\includegraphics[width=\columnwidth]{Pic/fig_sensitivity.pdf}}
-\caption{계수 교란 강건성}
-\label{fig:sens-robust}
-\end{figure}
-
-\subsubsection{독립 트레이스로의 일반화}\label{eval:robust:trace}
+\subsection{독립 트레이스로의 일반화}\label{eval:robust:trace}
 주 평가는 Philly 단일 트레이스에 기반하므로, 핵심 경향이 다른 워크로드에서도 재현되는지 대규모 공개 독립 트레이스로 시험한다.
 \textbf{Helios}\cite{hu2021helios}(SenseTime, SC'21) Venus 트레이스(Philly와 독립, 125,303작업)에서 동일 스윕을 수행했다(그림 \ref{fig:helios}, 종합 표 \ref{tab:trace3}; 과부하 이종 80 GPU). 용량 초과 요청(1.06\%)이 blocking 정책을 영구 차단하는 모집단 불일치가 있어 초과 666건을 뺀 동일 모집단(62,069작업)으로 재실행했다. Philly 구도가 재현된다 --- \textbf{비차단 정보-우위 정책 전부 $p1$ 0으로 붕괴}(\texttt{lt50\%} 8.9--21.9\%)하나 \textbf{SAFA는 $p1{=}83.9$·\texttt{lt50\%} 0.0}을 유지한다(고정 $\alpha$ 63.7). 다만 효율 trade-off는 더 가팔라 SAFA 중앙 대기가 FIFO 대비 15\%만 짧은데(37.9M 대 44.6M초), 대형 gang(평균 6.7 GPU)이 큐를 지배하기 때문이다. 단일 구성도 패턴 유지(SAFA $p1{=}80.0$).
 
@@ -537,9 +529,6 @@ SAFA(고정 $\alpha$) & 4.9 & 37.3 & 0.05 & 63.7 & 0.0 & 73.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\subsubsection{시뮬레이터 충실도 검증}\label{eval:robust:fidelity}
-엔진이 큐잉 동역학을 정확히 계산하는지를 손계산 가능한 세 toy 사례와 대조했다: (i) 포화 D/D/1 FIFO 큐, (ii) 다중 GPU 노드 gang 동시 스케줄링, (iii) 수명주기 오버헤드 회계. 엔진은 셋의 손계산 큐 지연·완료 시각을 \textbf{부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 재현했다 --- 즉 ``실측의 제한된 범위''는 절대값의 운영적 대표성 한계일 뿐 큐잉 계산의 정확성 문제는 아니다.
 
 \subsection{Placement 무관성: 어떤 Placement 정책 위에서도}\label{eval:robust:placement}
 본 whole-GPU 과포화 레짐에서 Placement는 변별되지 않는다. 단편화 인지 배치 \textbf{FGD는 LAS와 전 지표가 동일}한데(표 \ref{tab:placement}), 둘 다 비차단 FCFS 규율이고 빈 슬롯이 희소해 단편화 인지 배치(ΔF 최소)가 most-allocated로 수렴하기 때문이다 --- 즉 FGD의 FIFO 대비 54--92\% 중앙값 단축은 ``단편화 인지 배치''가 아니라 \textbf{비차단 큐 규율}의 효과이고, 그 대가로 과부하 p1이 0으로 붕괴한다. 프로덕션 스케줄러로도 확인된다 --- NVIDIA KAI\cite{kai2025} binpack 위에서 2$\times$2(Order$\times$Placement)로 재면 \textbf{이득은 전적으로 큐 순서(SAFA) 축}에서 나온다(FIFO$\to$SAFA 중앙 대기 256 이종 10.2M$\to$3.5M초 대 배치 효과 $\pm5$--$10\%$). 즉 ``빠르지만 굶기는'' 효율 축과 SAFA의 균형 축의 차이는 Placement가 아니라 큐 규율이다.
