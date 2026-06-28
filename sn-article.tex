@@ -368,13 +368,13 @@ Gandiva\cite{xiao2018gandiva} & OSDI'18 & \xmark & --- & 관련연구 \\
 \label{tab:artifacts}
 \end{table*}
 \subsection{주 결과: 효율--공정성 지형}\label{eval:main}
-6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 두 그림(효율--공정 트레이드오프 \ref{fig:tradeoff}, 큰 작업 꼬리 \ref{fig:bigjob})으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
+6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 그림 \ref{fig:tradeoff}(효율--공정 트레이드오프)으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
 
 \paragraph{① 순서 공정성(p1)}
 깊은 경합에서 빠른 정보-우위 정책들의 하위 1\% 공정성 p1이 0으로 붕괴(완전 순서 역전)하는 반면, SAFA는 이를 50--54로 유지한다(이종 512에서 Lucid 포함 빠른 베이스라인 p1 0\,$\sim$\,1 대 SAFA 50.5). FIFO는 p1=100이나 선두 큰 작업이 후속을 막아 가장 느리고, 이 영역의 p1을 유지한 경량 정책은 SAFA가 유일했다. 이 공정성은 도착순 골격·blocking 해제·$R$ 나이 승급에서 나오며, SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리한다($R\equiv1$이면 FIFO와 동치로 퇴화). 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지하며, 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다(그림 \ref{fig:tradeoff}).
 
 \paragraph{② 큐잉 지연(q\_p50·q\_max)}
-중앙값 q\_p50는 FIFO 대비 50--61\% 짧다. 단 SAFA가 절대적으로 가장 빠른 것은 아니다 --- 단일 512에서 Lucid(83s, p1=69)는 utilization 프로파일·oracle duration이라는 \textit{부차 정보}로 SAFA(607K초)를 두 축 모두 지배하나, SAFA는 그 둘 없이 큐 정보만으로 동작한다(이 정보 격차가 본 평가를 관통하는 축이다). 최악 대기 q\_max는 기아를 가른다 --- EASY의 추월은 무해하고(q\_max 이종 7.68M $<$ FIFO 7.81M) SJF·Themis는 q\_max가 FIFO 대비 단일 $+115\%$·$+70\%$로 폭증해 실제 기아를 낳는다(단일 512 SJF는 p1 64로 SAFA 53.1보다 높아도 q\_max는 폭증, 두 지표를 병행 보고한다). 큰 작업도 평균이 아니라 \textit{최악 꼬리}를 절단한다(SJF 큰 작업 p99 단일 4.54M $\to$ SAFA 2.50M초; 그림 \ref{fig:bigjob}). 다만 q\_max 억제는 이종 한정이다(단일 512 SAFA 2.52M $>$ FIFO 2.18M).
+중앙값 q\_p50는 FIFO 대비 50--61\% 짧다. 단 SAFA가 절대적으로 가장 빠른 것은 아니다 --- 단일 512에서 Lucid(83s, p1=69)는 utilization 프로파일·oracle duration이라는 \textit{부차 정보}로 SAFA(607K초)를 두 축 모두 지배하나, SAFA는 그 둘 없이 큐 정보만으로 동작한다(이 정보 격차가 본 평가를 관통하는 축이다). 최악 대기 q\_max는 기아를 가른다 --- EASY의 추월은 무해하고(q\_max 이종 7.68M $<$ FIFO 7.81M) SJF·Themis는 q\_max가 FIFO 대비 단일 $+115\%$·$+70\%$로 폭증해 실제 기아를 낳는다(단일 512 SJF는 p1 64로 SAFA 53.1보다 높아도 q\_max는 폭증, 두 지표를 병행 보고한다). 큰 작업도 최악 꼬리(p99)는 SAFA가 줄인다(SJF 4.54M$\to$2.50M초). 다만 q\_max 억제는 이종 한정이다(단일 512 SAFA 2.52M $>$ FIFO 2.18M).
 
 \paragraph{③ 자원 활용도(Alloc)}
 SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-single} Alloc 열) --- 10개 행 모두 임계·과부하(256·512)에서 평균 99\% 안팎의 할당률을 유지하므로, 정책 간 차이는 자원 놀림이 아니라 순수한 큐 순서 효과다(저부하 1024는 수요가 얕아 동반 하락). 처리량(makespan)도 손상되지 않는다 --- 경량 정책이 모두 99\% 할당률로 처리량 한계에 묶여 makespan이 사실상 동일하고(단일 154일), SAFA도 FIFO와 동등하거나 $-3$\%(이종 222$\to$214일)에 그친다(눈에 띄게 단축하는 것은 collocation의 Lucid 145일뿐). 즉 SAFA는 처리량을 \textit{해치지 않은 채} 큐 지연과 순서 공정성을 재분배한다(그림 \ref{fig:tradeoff}: 빠른 베이스라인은 이종·과부하로 갈수록 우하단(빠르나 공정성 0)으로 무너지고, FIFO는 좌상단(공정하나 느림), SAFA는 그 사이 ``빠르면서 공정한'' 영역).
@@ -424,11 +424,6 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 \end{figure*}
 
 
-\begin{figure}[htb!]
-\centerline{\includegraphics[width=\columnwidth]{Pic/Fig_26.pdf}}
-\caption{큰 작업 꼬리}
-\label{fig:bigjob}
-\end{figure}
 
 요컨대 주 결과는 세 축에서 일관된다 --- SAFA는 순서 공정성(p1)을 유지하면서 큐잉 지연(q\_p50)을 FIFO 대비 단축하고 99\% 할당률을 해치지 않는다.
 \subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
