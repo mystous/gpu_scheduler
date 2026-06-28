@@ -340,34 +340,6 @@ $F_k$는 순서 위반(추월)을 재며 기아(비유계 대기)와 다르다 -
 
 기아 보장의 성격도 갈린다. EASY\cite{mualem2001backfilling}는 큐 선두 1건의 시작 시각을 backfill로 지연시키지 않음을 보장하나 실행시간 추정을 요구하고, SAFA는 큐 정체만 절단할 뿐 개별 완료는 보장하지 않으나 큐 관측 정보만 쓴다 --- 강한 보장을 강한 정보로 얻는 EASY와 약한 보장을 무정보로 얻는 SAFA의 대비다. 불가피한 적응은 둘뿐이다. (i) Lucid의 utilization 프로파일을 합성 대체(이상적 상한), (ii) 전 정책 비선점(LAS의 MLFQ 선점 생략). 둘 다 전 정책 공통이거나 명시된 한계로 특정 베이스라인만 불리하게 하지 않는다.
 
-표 \ref{tab:artifacts}는 공개 코드·잡로그·아티팩트 가용성을 정리한다. 공개 코드가 있는 정책(Tiresias·Kueue·FGD·Lucid)은 대조검증했고, 코드가 없는 Themis는 finish-time-fairness 정렬 근사임을 명시한다.
-
-\begin{table*}[htb!]
-\centering
-\caption{아티팩트 현황}
-\footnotesize
-\begin{tabular}{@{}l l c c c@{}}
-\toprule
-\textbf{스케줄러} & \textbf{발표} & \textbf{코드} & \textbf{잡로그} & \textbf{실험} \\
-\midrule
-FIFO / SJF & 고전 & \xmark\,(교과서) & --- & 동일엔진 \\
-EASY backfill & HPC & \xmark\,(Slurm 내장) & \cmark\,SWF & 동일엔진 \\
-LAS (Tiresias) & NSDI'19 & \cmark & \cmark & 동일엔진 \\
-Kueue & k8s & \cmark\,(Go) & \xmark & 동일엔진 \\
-Themis & NSDI'20 & \xmark & \xmark & 동일엔진(근사) \\
-FGD & ATC'23 & \cmark\,(Go) & \cmark\,Alibaba & 동일엔진 \\
-Lucid & ASPLOS'23 & \cmark & \cmark\,Helios & 동일엔진 \\
-\textbf{SAFA(Zero-knob)} & --- & \cmark & \cmark\,Philly+실측 & 제안 \\
-\midrule
-Sia & SOSP'23 & \cmark\,(cvxpy) & \cmark & 관련연구\,$^{\dagger}$ \\
-Optimus & EuroSys'18 & \xmark & --- & 관련연구 \\
-Pollux\cite{qiao2021pollux} & OSDI'21 & \cmark & \cmark & 관련연구 \\
-Gandiva\cite{xiao2018gandiva} & OSDI'18 & \xmark & --- & 관련연구 \\
-\bottomrule
-\multicolumn{5}{@{}l}{\footnotesize $^{\dagger}$Sia는 공개 코드가 있으나 잡별 goodput 프로파일이 트레이스에 없어 동일 엔진에서 충실 평가 불가.}\\
-\end{tabular}
-\label{tab:artifacts}
-\end{table*}
 \subsection{주 결과: 효율--공정성 지형}\label{eval:main}
 6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 그림 \ref{fig:tradeoff}(효율--공정 트레이드오프)으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
 
@@ -382,7 +354,7 @@ SAFA의 이득은 GPU를 놀려서 얻은 것이 아니다(표 \ref{tab:sim-sing
 
 \begin{table*}[htb!]
 \centering
-\caption{주 결과 (큐잉지연·순서공정성·자원, 독립 공정성 지표 포함). Gini·p99/p50은 대기시간 분포 불평등(낮을수록 공정), lt50은 추월당한 작업 비율(\%). 저부하(1024)는 $q_{p50}{\approx}$수초라 Gini·p99/p50가 산물임에 유의.}
+\caption{주 결과 (큐잉지연·순서공정성·자원, 독립 공정성 지표 포함)}
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \resizebox{\textwidth}{!}{%
@@ -458,7 +430,7 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/fig_helios.pdf}}
-\caption{독립 트레이스 순서 공정성(Helios·Alibaba PAI; 우상단=공정). 그리디는 $p1{=}0$으로 붕괴하고 SAFA만 유지한다(값은 표 \ref{tab:trace3}).}
+\caption{독립 트레이스 순서 공정성(Helios·Alibaba PAI; 우상단=공정)}
 \label{fig:helios}
 \end{figure}
 
@@ -469,7 +441,7 @@ SAFA(고정 α)    & 2.7M & 1.5M & 205K & 40  & 37  & 72  & 99 & 99 & 96 & 0.56 
 
 \begin{table}[htb!]
 \centering
-\caption{독립 대규모 트레이스 일반화 (과부하 이종; \texttt{lt50\%}$\downarrow$ / $p1\uparrow$)}
+\caption{독립 대규모 트레이스 일반화}
 \label{tab:trace3}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -512,9 +484,6 @@ MCTS           & 56.6 & 53.4 & 55.0 & 50.6 \\
 FGD(단편화 인지) & 61.0 & 54.6 & 53.5 & 50.1 \\
 KAI binpack    & 54.3 & 54.5 & 53.1 & 50.5 \\
 KAI spread     & 67.7 & 68.5 & 58.2 & 58.5 \\
-\midrule
-\textit{(참고) SJF} & 0 & 0 & 64.1 & 0 \\
-\textit{(참고) LAS} & 0 & 0 & 30.9 & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
