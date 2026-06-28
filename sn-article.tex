@@ -434,7 +434,7 @@ FGD         & 3.3M & 521K & 49K  & 0   & 0   & 60  & 100 & 99 & 95 \\
 \label{fig:bigjob}
 \end{figure}
 
-종합하면, SAFA는 워크로드별 튜닝 없이 $O(n)$ 경량으로 세 축 모두 --- 순서 공정성(p1) 유지, 큐잉 지연(q\_p50) 단축, 99\% 할당률 무손상 --- 을 달성해, 기존 스케줄러 위에 부담 없이 통합되는 실용적 후보다.
+요컨대 주 결과는 세 축에서 일관된다 --- SAFA는 순서 공정성(p1)을 유지하면서 큐잉 지연(q\_p50)을 FIFO 대비 단축하고 99\% 할당률을 해치지 않는다.
 \subsection{SAFA(Zero-knob)의 순효과: SAFA(고정 $\alpha$) 대비 ablation}\label{eval:ablation}
 무튜닝의 순효과는 \textit{같은 큐 전처리 골격} 안에서 SAFA(고정 $\alpha$)와 SAFA(Zero-knob)를 직접 대비해 격리한다(표 \ref{tab:sim-single}의 두 SAFA 행). 둘은 식 \eqref{eq:01}의 동일 $P^*$·단일 승급을 공유하고 차이는 나이 가중을 고정값으로 두느냐 큐 통계에서 유도하느냐뿐이다(고정 $\alpha$는 워크로드별 최적이 아니라 모든 구성 공통 단일값 $\alpha=0.13889$).
 
