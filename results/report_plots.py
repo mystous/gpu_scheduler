@@ -395,7 +395,7 @@ def plot_tradeoff(out):
             ax.set_xscale("log")
             ax.set_ylim(-5, 108)
             if ri == 1:
-                ax.set_xlabel("median queue delay p50 (s, log) — faster $\\leftarrow$")
+                ax.set_xlabel("median queue delay $q_{p50}$ (s, log) — faster $\\leftarrow$")
             if ci == 0:
                 ax.set_ylabel("order-fairness p1 (100=fair) $\\uparrow$")
             ax.set_title(f"{g} GPU {kind} ({ld[g]})", fontsize=12)
