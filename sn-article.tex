@@ -293,9 +293,9 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \label{eq:alphaeff-define}
 \end{equation}
 
-즉 승급 압력은 \textbf{나이 비율($\tilde A_j/A_{\text{ref}}$)과 적합 비율($R_j/R_{\min}$)의 곱}이다, 평균 대비 나이, 최악 적합 대비 적합도 모두가 고려되는 폼이다. HOL 주범인 가장 큰 작업($R_{\min}$)은 적합도가 낮아 승급되지 않는다. $A_{\text{ref}}$가 도착과 함께 자라 승급 압력이 $R$ 차등에 비례해 \textbf{포화}하므로 이는 , ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합도의 조합으로 기아를 방지 한다''이다. 
+즉 승급 압력은 \textbf{나이 비율($\tilde A_j/A_{\text{ref}}$)과 적합 비율($R_j/R_{\min}$)의 곱}으로, 평균 대비 나이와 최악 적합 대비 적합도가 함께 반영된다. HOL 주범인 가장 큰 작업($R_{\min}$)은 적합도가 낮아 승급되지 않는다. $A_{\text{ref}}$가 도착과 함께 자라 승급 압력이 $R$ 차등에 비례해 \textbf{포화}하므로, 이는 ``나이로 기아를 막는다''가 아니라 ``나이-정규화된 자리 적합도의 조합으로 기아를 방지한다''이다.
 
-나이로 우선순위를 올리는 발상 자체는 새롭지 않다(OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}, Slurm multifactor age factor). 본 기여는 aging \textit{메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로 HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다. (ii) \textbf{절대 시간이 아닌 상대 나이} --- $\tilde A_j$·$A_{\text{ref}}$ 정규화로 시간 단위를 소거해 워크로드가 바뀌어도 재튜닝이 불필요하다. (iii) \textbf{큐-구동 무차원 가중} --- $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 현재 큐의 나이 spread에서 유도돼, spread가 있으면 승급 문턱이 정해지고 없으면 보너스가 0이라 무개입이다.
+나이로 우선순위를 올리는 발상 자체는 새롭지 않다(OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}, Slurm multifactor age factor). 본 기여는 aging \textit{메커니즘}이 아니라 \textit{그 가중을 무엇으로 정하는가}이며 세 가지로 갈린다. (i) \textbf{불가분 갱 자원에 대한 $R$ 결합} --- 나이 보너스가 자원 적합도 $R_j$와 곱해져 \textit{지금 비는 자리에 맞는} 굶은 작업만 올리므로 HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다. (ii) \textbf{절대 시간이 아닌 상대 나이} --- $\tilde A_j$·$A_{\text{ref}}$ 정규화로 시간 단위를 소거해 워크로드가 바뀌어도 재튜닝이 불필요하다. (iii) \textbf{고정 상수가 아니라 큐 통계에서 계산되는 계수} --- 고전 aging이 절대 단위에 \textit{미리 정한 고정 가중}을 곱하는 데 비해, SAFA의 가중 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 외부 상수 없이 현재 큐의 나이 분포에서 직접 계산된다. 그래서 큐에 대기 격차가 쌓이면 그 격차가 곧 승급 문턱이 되고, 격차가 없으면 보너스가 0이 되어 SAFA가 자연히 개입하지 않는다.
 
 \section{Experimental Evaluation}\label{sec:eval}
 
