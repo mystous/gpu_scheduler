@@ -280,7 +280,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$ 한계를 없애기 위해 식 \eqref{eq:01}의 $\alpha$ 대신 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$를 쓴다(단일 승급 구조는 동일). 이를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드 시간 단위와 무관하게 승급 문턱이 큐 나이 통계 자체로 정해진다(단위 소거).
+고정 $\alpha$ 한계를 없애기 위해 식 \eqref{eq:01}의 $\alpha$ 대신 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$로 대체한다. 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드 시간 단위와 무관하게 승급 문턱이 큐 나이 통계 자체로 정해진다(단위 소거).
 
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big)
