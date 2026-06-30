@@ -286,7 +286,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big)
 \label{eq:auto-alpha}
 \end{equation}
-여기서 $\tilde A_j = A_j - \min_k A_k$, $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, $R_{\min}=\max(0.1,\min_k R_k)$다. 가드 $g$는 모든 상대 나이가 같은 자명한 경우($\tilde A_j\!\equiv\!0$, 이때 보너스도 0)에만 1 미만이라 결과를 바꾸지 않으므로 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 상대 나이를 쓰므로 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
+여기서 $\tilde A_j = A_j - \min_k A_k$, $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, $R_{\min}=\max(0.1,\min_k R_k)$다. 분모의 상수 $\max(1,\cdot)$·$\max(0.1,\cdot)$은 \textbf{바닥(floor)}으로, 나이 차가 거의 없거나 $R$이 0으로 꺼질 때 분모가 작아져 $\alpha_{\text{eff}}$가 폭주하는 것을 막는다(1은 도착 한 건만큼의 최소 나이 단위). 반대로 $g$의 $\min(1,\cdot)$은 \textbf{덮개(cap)}로, $g$가 1을 넘어 승급을 증폭하는 일이 없게 한다. 그래서 가드 $g$는 모든 상대 나이가 같은 자명한 경우($\tilde A_j\!\equiv\!0$, 이때 보너스도 0)에만 1 미만이라 결과를 바꾸지 않으므로 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 상대 나이를 쓰므로 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
 
 \noindent\textbf{나이-스케일 정규화의 의미.} 이 정규화가 갖는 뜻은 보너스 항을 두 \textit{상대 비율의 곱}으로 풀면 분명해진다:
 
