@@ -280,13 +280,13 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$ 한계를 없애기 위해 식 \eqref{eq:01}의 $\alpha$ 대신 대기 큐 통계로 계산한 $\alpha_{\text{eff}}$로 대체한다. 계수를 큐의 \textit{상대 나이 스케일}로 정규화하면 워크로드 시간 단위와 무관하게 승급 문턱이 큐 나이 통계 자체로 정해진다(단위 소거).
+고정 $\alpha$는 워크로드마다 다시 맞춰야 한다. 이를 없애기 위해 식 \eqref{eq:01}의 $\alpha$를 \textit{대기 큐 통계에서 매 패스 계산하는} $\alpha_{\text{eff}}$로 바꾼다(나머지 단일 승급 구조는 식 \eqref{eq:01}과 동일). 그 통계는 식 \eqref{eq:01}의 상대 나이 $\tilde A_j = A_j - \min_k A_k$에서 유도한다: 큐의 \textit{나이 스케일}을 나타내는 평균 $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, 최대 상대 나이 $A_{\max}=\max_k \tilde A_k$, 그리고 자리에 가장 안 맞는 작업의 적합도 $R_{\min}=\max(0.1,\min_k R_k)$다. 이들로 계수를 다음과 같이 정의한다:
 
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big)
 \label{eq:auto-alpha}
 \end{equation}
-여기서 $\tilde A_j = A_j - \min_k A_k$, $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, $A_{\max}=\max_k \tilde A_k$, $R_{\min}=\max(0.1,\min_k R_k)$다. 분모의 상수 $\max(1,\cdot)$·$\max(0.1,\cdot)$은 \textbf{바닥(floor)}으로, 나이 차가 거의 없거나 $R$이 0으로 꺼질 때 분모가 작아져 $\alpha_{\text{eff}}$가 폭주하는 것을 막는다(1은 도착 한 건만큼의 최소 나이 단위). 반대로 $g$의 $\min(1,\cdot)$은 \textbf{덮개(cap)}로, $g$가 1을 넘어 승급을 증폭하는 일이 없게 한다. 그래서 가드 $g$는 모든 상대 나이가 같은 자명한 경우($\tilde A_j\!\equiv\!0$, 이때 보너스도 0)에만 1 미만이라 결과를 바꾸지 않으므로 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 상대 나이를 쓰므로 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
+분자·분모의 상수는 두 종류의 클램프로 식을 안정화한다. 분모의 $\max(1,\cdot)$·$\max(0.1,\cdot)$은 \textbf{바닥(floor)}으로, 나이 차가 거의 없거나 $R$이 0으로 꺼질 때 분모가 작아져 $\alpha_{\text{eff}}$가 폭주하는 것을 막는다(1은 도착 한 건만큼의 최소 나이 단위). $g$의 $\min(1,\cdot)$은 \textbf{덮개(cap)}로, $g$가 1을 넘어 승급을 증폭하지 못하게 한다. 최대 상대 나이는 평균 이상($A_{\max}\ge\text{mean}(\tilde A)$)이므로 큐에 나이 차가 조금이라도 있으면 $g=1$이고, $g$가 1보다 작아지는 경우는 모든 상대 나이가 0인($\tilde A_j\!\equiv\!0$, 이때 보너스도 0) 자명한 경우뿐이라 결과를 바꾸지 않는다. 따라서 \textbf{실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$}다. 상대 나이를 쓰므로 큐 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되고, 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다.
 
 \noindent\textbf{나이-스케일 정규화의 의미.} 이 정규화가 갖는 뜻은 보너스 항을 두 \textit{상대 비율의 곱}으로 풀면 분명해진다:
 
