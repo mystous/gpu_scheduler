@@ -307,31 +307,28 @@ Evaluation은 세 축을 비교하며, 주 결과도 이 순서로 전개한다 
 F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr)
 \label{eq:order-fair}
 \end{equation}
-$F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이면 $F_k=100$으로 둔다(전체 트레이스를 끝까지 결정적으로 재생하므로 검열은 없다). 주 지표 \textbf{p1}은 $F_k$의 하위 1\% 분위 --- 가장 심하게 추월당한 1\% 작업의 공정성으로, 평균이 가리는 최악 추월 피해를 드러낸다(높을수록 우수).
+$F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이면 $F_k=100$으로 결정한다.. 주 지표 \textbf{p1}은 $F_k$의 하위 1\% 분위 --- 가장 심하게 추월당한 1\% 작업의 공정성으로, 평균이 가리는 최악 추월 피해를 드러낸다(높을수록 우수).
 
-$F_k$는 \textit{작업별} 점수이므로, 표 \ref{tab:sim-single}에는 그 집계를 싣는다 --- 위에 정의한 \textbf{p1}($F_k$ 하위 1\% 분위)과 \textbf{\texttt{lt50}}, 곧 $F_k<50$인 작업의 비율(\%)이다(늦게 온 작업의 절반 이상에게 추월당한 작업의 비중으로, 낮을수록 우수). p1은 절대 대기가 아니라 \textit{추월 횟수}로 계산되어 시작 \textit{순서}만 보므로, 큐 대기가 수 초든 수개월이든 추월 패턴이 같으면 같은 값이라 아래 과부하 스트레스의 절대 수치에 오염되지 않는다(이 $F_k$ 정의는 도착 순서 위반을 불공정으로 보는 고전 정의 Sabin--Sadayappan\cite{sabin2005unfairness}에 대응한다). 다만 분위수 p1은 추월이 작업 간에 재배치되면 비단조적으로 흔들릴 수 있어, 대기 시간 분포 지표 --- 불평등도 \textbf{Gini}와 꼬리비 \textbf{p99/p50}(99분위 대 중앙값 대기) --- 를 함께 읽어 교차 점검한다(둘 다 표 \ref{tab:sim-single}). 한편 순서 위반(추월)은 \textit{기아}(비유계 대기)와 다르며, 기아 자체는 절대 최악 대기 \texttt{q\_max}(표 \ref{tab:sim-single})와 큰 작업의 p99 대기(본문 보고)로 따로 판정한다(순서만 위반하고 기아는 없는 EASY가 그 예다).
+$F_k$는 \textit{작업별} 점수이므로, 표 \ref{tab:sim-single}에는 계산된 수치로 정리 한다. --- 위에 정의한 p1($F_k$ 하위 1\% 분위)과 lt50, 곧 $F_k<50$인 작업의 비율(\%)이다(늦게 온 작업의 절반 이상에게 추월당한 작업의 비중으로, 낮을수록 우수). p1은 절대 대기가 아니라 \textit{추월 횟수}로 계산되어 시작 \textit{순서}만 보므로, 큐 대기가 수 초든 수개월이든 추월 패턴이 같으면 같은 값이라 아래 과부하 스트레스의 절대 수치에 오염되지 않는다(이 $F_k$ 정의는 도착 순서 위반을 불공정으로 보는 고전 정의 Sabin--Sadayappan\cite{sabin2005unfairness}에 대응한다). 다만 분위수 p1은 추월이 작업 간에 재배치되면 비단조적으로 흔들릴 수 있어, 대기 시간 분포 지표 --- 불평등도 \textbf{Gini}와 꼬리비 \textbf{p99/p50}(99분위 대 중앙값 대기) --- 를 함께 읽어 교차 점검한다(둘 다 표 \ref{tab:sim-single}). 한편 순서 위반(추월)은 \textit{기아}(비유계 대기)와 다르며, 기아 자체는 절대 최악 대기 \texttt{q\_max}(표 \ref{tab:sim-single})와 큰 작업의 p99 대기(본문 보고)로 따로 판정한다.
 
 이하 표의 큐잉 지연 절대값(과부하 중앙값이 수일\,$\sim$\,수개월)은 운영 현실이 아니라 \textit{스트레스 테스트의 산물}이다. 일부러 작게 잡은 클러스터(부하배수 256/512/1024 = 3.6/1.8/0.9$\times$)에 트레이스를 실시간 재생해 어드미션 컨트롤 없이 백로그를 강제, HOL 블로킹·기아를 증폭시킨 제어된 프로브다. 따라서 의미 있는 것은 절대값이 아니라 \textit{동일 조건의 정책 간 상대 비교}다.
 
 \subsection{베이스라인 구현과 충실도}\label{eval:impl}
-비교군은 네 층위다. \textbf{(i) 무개입 기준선} FIFO(SAFA를 끈 도착순)는 모든 delta의 분모다. \textbf{(ii) Order 정책} SJF·Themis·LAS·EASY·Kueue·Lucid는 ``어떤 작업을 먼저''를 두고 SAFA와 \textit{대체} 관계인 진짜 비교군이다. \textbf{(iii) Placement 축} most-allocated·compact·round-robin·MCTS·FGD는 ``어디에 놓을지''를 푸는 다음 단계라 비교가 아니라 불변성 검증 대상이며, FGD는 큐가 FCFS라 주 표에 ``Placement 축 참고''로 구획했다(과포화에서 most-allocated와 무변별해 LAS와 동일 수치). \textbf{(iv)} 탄력·프로파일 정책군은 결정 변수가 트레이스에 없어 관련 연구로 분리한다. 모든 정책은 단일 엔진에서 \textsc{order}·\textsc{node\_pref}를 공유해 \emph{같은 트레이스·클러스터·오버헤드}를 보므로, 차이가 스케줄링 로직에서만 비롯됨이 보장된다. 각 구현은 저자 공개 코드와 라인 단위로 대조했다. 엔진의 큐잉 계산 정확성도 손계산 가능한 세 toy 사례(포화 D/D/1, 멀티-GPU gang, 오버헤드 회계)와 \textbf{부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 일치함을 확인했다.
+비교군은 네 층위다. \textbf{(i) 무개입 기준선} FIFO는 모든 delta의 분모다. \textbf{(ii) Order 정책} SJF·Themis·LAS·EASY·Kueue·Lucid는 ``어떤 작업을 먼저 배치 할 것인가?''이다. SAFA와 대체 관계인 비교군인 baseline이다. \textbf{(iii) Placement 축} most-allocated·compact·round-robin·MCTS·FGD는 ``어디에 놓을지''를 푸는 다음 단계이다. SAFA와 결합성을 측정한다. 각 구현은 저자 공개 코드와 라인 단위로 대조했다. 엔진의 큐잉 계산 정확성도 손계산 가능한 세 toy 사례(포화 D/D/1, 멀티-GPU gang, 오버헤드 회계)와 \textbf{부동소수점 정밀도 내(최대 절대오차 $0.0$)}로 일치함을 확인했다.
 
 \begin{itemize}
 \item \textbf{FIFO}: 도착순 항등, 선두 미배치 시 패스 중단(\texttt{blocking}). HOL 통제군.
 \item \textbf{SJF}: 명목 실행시간 오름차순. oracle duration 가정의 평균-최적 기준.
-\item \textbf{LAS (Tiresias)}: 누적 서비스 최소 우선. 단 비선점 엔진에서는 대기 작업 attained가 0이라 \textbf{비차단 FCFS로 퇴화}하므로, 본 표 LAS 행은 그 대리다.
+\item \textbf{LAS (Tiresias)}: 누적 서비스 최소 우선. 단 비선점 엔진에서는 대기 작업 attained가 0이라 \textbf{비차단 FCFS로 퇴화}하므로, 본 표 LAS로 Tiresias를 대체 한다.
 \item \textbf{EASY}: FIFO$+$선두 예약 backfill(oracle duration). 본 표는 $T$ 이전 종료만 쓰는 보수판이며, 완전판은 단일 p1을 올리나 이종 과부하 구도는 불변이다(보충자료).
 \item \textbf{Themis}: 완료시간 공정성 $r$ 내림차순. 공개 코드 부재로 라운드 솔버를 뺀 $r$-정렬 근사이며, 큰 작업을 구제 못해 기아로 치우칠 수 있다.
 \item \textbf{Kueue}: VC 쿼타 우선 $+$ cohort borrowing(비차단). 본 표 p1은 ``한계''가 아니라 처리량-우선 구성의 비용이다(StrictFIFO로 운용하면 개선).
 \item \textbf{FGD}: 단편화 증가 $\Delta F$ 최소 노드 선택(큐 FCFS). whole-GPU gang으로 특수화해 단편화 인지 \emph{Placement}의 순효과를 분리한다.
 \item \textbf{Lucid}: 비선점 collocation(GPU 가중 SJF $+$ 공유 점수 패킹). 저자 프로파일러가 트레이스에 없어 \emph{이용률=합성·duration=oracle·감속=고정 계수}로 대체한 \textit{적응 구현}이다.
-\item \textbf{SAFA(고정 $\alpha$)/SAFA(Zero-knob)}: $P^*$(식 \eqref{eq:01}; Zero-knob은 $\alpha_{\text{eff}}$, 식 \eqref{eq:auto-alpha})로 \emph{최대 한 작업만} 올리는 단일 승급 $O(n)$. 입력은 큐 관측량뿐이며 duration 추정·프로파일·솔버를 쓰지 않는다.
 \end{itemize}
 
-기아 보장의 성격도 갈린다. EASY\cite{mualem2001backfilling}는 큐 선두 1건의 시작 시각을 backfill로 지연시키지 않음을 보장하나 실행시간 추정을 요구하고, SAFA는 큐 정체만 절단할 뿐 개별 완료는 보장하지 않으나 큐 관측 정보만 쓴다 --- 강한 보장을 강한 정보로 얻는 EASY와 약한 보장을 무정보로 얻는 SAFA의 대비다. 불가피한 적응은 둘뿐이다. (i) Lucid의 utilization 프로파일을 합성 대체(이상적 상한), (ii) 전 정책 비선점(LAS의 MLFQ 선점 생략). 둘 다 전 정책 공통이거나 명시된 한계로 특정 베이스라인만 불리하게 하지 않는다.
-
 \subsection{주 결과: 효율--공정성 지형}\label{eval:main}
-6개 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 계열·Placement 참고 정책을 평가한 결과를 표 \ref{tab:sim-single}과 그림 \ref{fig:tradeoff}(효율--공정 트레이드오프)으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 추월을 억제하면서 중앙값 대기를 FIFO 대비 크게 줄이고 Placement는 손대지 않는다.}
+6개 측정 조건 구성(256--1024 GPU $\times$ 단일·이종)에서 기준선·Order 정책 6종·SAFA 스케쥴링 정책을 평가한 결과를 표 \ref{tab:sim-single}과 그림 \ref{fig:tradeoff}(효율--공정 트레이드오프)으로 제시한다. 핵심은 하나다 --- \textbf{빠른 정보-우위 정책들이 깊은 경합에서 순서 공정성을 잃는 영역에서도, SAFA는 큐 관측 정보만으로 공정성을 최대한 지키면서 중앙값 대기를 FIFO 대비 크게 줄인다.}
 
 \paragraph{순서 공정성(p1)}
 깊은 경합에서 빠른 정보-우위 정책들의 하위 1\% 공정성 p1이 0으로 붕괴(완전 순서 역전)하는 반면, SAFA는 이를 50--54로 유지한다(이종 512에서 Lucid 포함 빠른 베이스라인 p1 0\,$\sim$\,1 대 SAFA 50.5). FIFO는 p1=100이나 선두 큰 작업이 후속을 막아 가장 느리고, 이 영역의 p1을 유지한 경량 정책은 SAFA가 유일했다. 이 공정성은 도착순 골격·blocking 해제·$R$ 나이 승급에서 나오며, SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리한다($R\equiv1$이면 FIFO와 동치로 퇴화). 부하가 0.9$\to$3.6$\times$로, 단일에서 이종으로 바뀌어도 동일 코드로 p1을 50.5--76.5로 유지하며, 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다(그림 \ref{fig:tradeoff}).
