@@ -300,7 +300,25 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \section{Experimental Evaluation}\label{sec:eval}
 
 \subsection{Scale generalization via discrete-event simulation}\label{eval:sim}
-측정 규모와 현실성을 위해 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU의 단일·이종 구성에서 평가하는 파이썬 이산 사건 시뮬레이터를 추가로 개발했다. 여기에 B200 쿠버네티스 클러스터에서 실측한 작업당 오버헤드를 추가 하여 계산 했다. 기준선 FIFO와 Order 정책 SJF·LAS·Kueue·EASY·Themis·Lucid, SAFA와 결합되는 Placement 축 참고용 FGD, KAI를 모두 충실 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조검증). 
+측정 규모와 현실성을 위해 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU의 단일·이종 구성에서 평가하는 파이썬 이산 사건 시뮬레이터를 추가로 개발했다. 여기에 B200 쿠버네티스 클러스터에서 실측한 작업당 오버헤드(표 \ref{tab:overhead})를 추가하여 계산했다. 기준선 FIFO와 Order 정책 SJF·LAS·Kueue·EASY·Themis·Lucid, SAFA와 결합되는 Placement 축 참고용 FGD, KAI를 모두 충실 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조검증).
+
+\begin{table}[htb!]
+\centering
+\caption{작업당 라이프사이클 오버헤드 --- B200$\times$8 단일노드 K8s에서 47작업·4시나리오로 계측한 \textit{실측}(가정 아님). 기동은 단독/혼잡 배치(p50 1/3초)를 구분. 명목 실행시간은 GPU 속도계수로 스케일(B200 1.0·H100 1.4·A100 2.0·A30 2.8; 혼합 gang은 가장 느린 타입 기준이라 이종에서 HOL이 심해짐). 노드 간 이주는 단일노드 측정이라 0으로 두며, 결과는 이 값들의 넓은 범위에 둔감하다.}
+\label{tab:overhead}
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{단계} & \textbf{오버헤드 (초)} \\
+\midrule
+스케줄링       & 0.5 \\
+기동 (단독 / 혼잡) & 1.5 / 3.5 \\
+종료           & 2.5 \\
+\midrule
+\textbf{합}    & \textbf{4.5--6.5} \\
+\bottomrule
+\end{tabular}
+\end{table} 
 
 Evaluation은 세 축을 비교하며, 주 결과도 이 순서로 전개한다 --- \textbf{순서 공정성}(order-fairness, 주 지표), \textbf{큐잉 지연}(도착부터 배치까지; 중앙값 \texttt{q\_p50}·최댓값 \texttt{q\_max}, 초 단위, K$=10^3$·M$=10^6$), \textbf{Alloc}(평균 GPU 할당률 --- 효율 이득이 자원을 놀려 얻은 것인지 가름). 주 지표인 순서 공정성부터 정의한다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
 \begin{equation}
@@ -540,11 +558,6 @@ FIFO blocking & 84.2 & 0.2 & 1784 \\
 (3) \textbf{지표 편향.} BSLD\cite{feitelson1998metrics}는 짧은 작업에, p1은 도착순 보존형에 구조적으로 유리할 수 있어 독립 분배 지표(표 \ref{tab:sim-single}의 Gini·p99/p50·lt50)·임계 스윕으로 교차 점검했다(과부하에서 우위 유지). 주 결과표에 셀별 CI를 싣지 않았으나 헤드라인 대비(그리디 p1$\approx$0 대 SAFA 92--95)는 자릿수 차이라 강건하다.
 
 종합하면 본 결론은 절대 순위를 단정하지 않으며, 이질성과 부하가 깊어질 때 나타나는 \textit{공정성 붕괴 대 유지의 질적 경향}에 무게를 둔다.
-
-\subsection{Lifecycle overhead model}\label{eval:overhead}
-시뮬레이터는 작업당 고정 오버헤드(스케줄링 0.5초, 기동 1.5--3.5초, 종료 2.5초; 합 4.5--6.5초)를 주입한다. 이는 가정이 아니라 B200$\times$8 단일 노드 K8s에서 47개 작업을 4 시나리오로 실행해 계측한 \textit{실측}이며, 기동은 단독(p50 1초)·혼잡(p50 3초) 배치를 구분했다. 동시 24에서 관측된 17--36초 지연은 오버헤드가 아니라 \textit{용량 대기(큐잉)}로 정책 로직이 산출하므로 고정 오버헤드에 넣지 않아 이중 계상을 막는다.
-
-명목 실행시간은 GPU 타입 속도계수로 스케일하며($\textsc{speed}$: B200 $=1.0$, H100 $\approx1.4$, A100 $\approx2.0$, A30 $\approx2.8$), 혼합 gang은 straggler 제약상 가장 느린 타입 기준이라 이종에서 느린 타입 작업이 비례 연장돼 HOL 블로킹이 심해진다. 최종 결과는 이 오버헤드 값의 넓은 범위에 둔감하며(앞의 민감도 분석), 노드 간 이주 비용은 단일 노드 측정이라 0으로 둔다.
 
 \FloatBarrier
 
