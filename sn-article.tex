@@ -468,33 +468,33 @@ SAFA(고정 $\alpha$) & 4.9 & 37.3 & 0.05 & 63.7 & 0.0 & 73.8 \\
 \label{fig:placehol}
 \end{figure}
 
-\begin{table*}[htb!]
+\begin{table}[htb!]
 \centering
-\caption{Placement$\times$\{FIFO 결합 전, SAFA 결합 후\} 7지표(256 이종 과부하, 주 결과와 동일 매트릭). 배치는 \textit{몰아넣기(consolidate)$\to$흩뿌리기(spread)} 순. 갱 공간 불가분(한 노드 통째) 하에서 \textbf{흩뿌리는 배치일수록 단편화로 FIFO의 Alloc이 떨어지고}(92.4$\to$89.4\%) $q_{p50}$가 오른다. \textbf{SAFA는 모든 Placement에서 Alloc을 95--97\%로 회복}하고 $q_{p50}$를 낮추며, 그 이득은 흩뿌리는 배치(KAI spread $+6.4$\%p)일수록 크다.}
+\caption{Placement 결합 전(FIFO)·후(SAFA) 7지표(256 이종 과부하).}
 \label{tab:placement}
-\scriptsize
-\setlength{\tabcolsep}{5pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}ll rrrrrrr@{}}
 \toprule
 \textbf{Placement} & & $q_{p50}$ & $q_{\max}$ & $p_1$ & lt50\% & \textbf{Alloc} & Gini & p99/50 \\
 \midrule
 \multirow{2}{*}{most-allocated} & FIFO & 8.60M & 19.7M & 100 & 0.0 & 92.4 & .36 & 2.28 \\
                                 & SAFA & 7.99M & 18.5M & 94.9 & 0.0 & \textbf{96.5} & .38 & 2.30 \\
-\multirow{2}{*}{KAI binpack}    & FIFO & 8.53M & 19.6M & 100 & 0.0 & 92.5 & .36 & 2.29 \\
-                                & SAFA & 7.91M & 18.3M & 92.1 & 0.0 & \textbf{96.5} & .38 & 2.30 \\
 \multirow{2}{*}{compact}        & FIFO & 8.57M & 19.7M & 100 & 0.0 & 92.4 & .36 & 2.28 \\
                                 & SAFA & 7.97M & 18.7M & 95.9 & 0.0 & \textbf{95.4} & .37 & 2.34 \\
-\multirow{2}{*}{FGD}            & FIFO & 8.62M & 19.8M & 100 & 0.0 & 92.4 & .36 & 2.29 \\
-                                & SAFA & 7.50M & 18.2M & 90.8 & 0.0 & \textbf{97.0} & .39 & 2.41 \\
-\multirow{2}{*}{MCTS}           & FIFO & 8.66M & 19.9M & 100 & 0.0 & 92.4 & .36 & 2.29 \\
-                                & SAFA & 7.74M & 18.1M & 91.6 & 0.0 & \textbf{96.9} & .38 & 2.33 \\
 \multirow{2}{*}{round-robin}    & FIFO & 8.73M & 20.1M & 100 & 0.0 & 91.8 & .36 & 2.29 \\
                                 & SAFA & 7.56M & 18.5M & 92.9 & 0.0 & \textbf{96.4} & .39 & 2.43 \\
+\multirow{2}{*}{MCTS}           & FIFO & 8.66M & 19.9M & 100 & 0.0 & 92.4 & .36 & 2.29 \\
+                                & SAFA & 7.74M & 18.1M & 91.6 & 0.0 & \textbf{96.9} & .38 & 2.33 \\
+\midrule
+\multirow{2}{*}{FGD}            & FIFO & 8.62M & 19.8M & 100 & 0.0 & 92.4 & .36 & 2.29 \\
+                                & SAFA & 7.50M & 18.2M & 90.8 & 0.0 & \textbf{97.0} & .39 & 2.41 \\
+\multirow{2}{*}{KAI binpack}    & FIFO & 8.53M & 19.6M & 100 & 0.0 & 92.5 & .36 & 2.29 \\
+                                & SAFA & 7.91M & 18.3M & 92.1 & 0.0 & \textbf{96.5} & .38 & 2.30 \\
 \multirow{2}{*}{KAI spread}     & FIFO & 9.08M & 20.8M & 100 & 0.0 & 89.4 & .35 & 2.28 \\
                                 & SAFA & 7.72M & 18.9M & 89.9 & 0.0 & \textbf{95.8} & .40 & 2.43 \\
 \bottomrule
-\end{tabular}
-\end{table*}
+\end{tabular}}
+\end{table}
 
 
 \subsection{쿠버네티스 통합 경로}\label{SAFA:k8s}
