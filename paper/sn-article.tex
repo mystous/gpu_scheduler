@@ -307,15 +307,11 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \caption{작업당 라이프사이클 오버헤드.}
 \label{tab:overhead}
 \small
-\begin{tabular}{@{}lc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{단계} & \textbf{오버헤드 (초)} \\
+\textbf{단계} & 스케줄링 & 기동(단독/혼잡) & 종료 & \textbf{합} \\
 \midrule
-스케줄링       & 0.5 \\
-기동 (단독 / 혼잡) & 1.5 / 3.5 \\
-종료           & 2.5 \\
-\midrule
-\textbf{합}    & \textbf{4.5--6.5} \\
+\textbf{오버헤드 (초)} & 0.5 & 1.5 / 3.5 & 2.5 & \textbf{4.5--6.5} \\
 \bottomrule
 \end{tabular}
 \end{table} 
