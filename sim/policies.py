@@ -367,7 +367,36 @@ POLICIES = {p.name: p for p in [FIFO, SJF, LAS, Themis, SFQA, SFQAAuto, EASY, Ku
                                 KAIonly, SAFA_KAI]}
 
 
+class SafaWrap(Policy):
+    """기존 정책의 순서 위에 SAFA-Auto의 나이×적합도 단일 승급을 얹는 기아-방지 전처리.
+    base 순서(예: SJF=duration)를 position priority P로 삼고, 굶주린 '자리 맞는' 잡 1개를
+    맨 앞으로 승급. base의 blocking을 상속(SJF/LAS=비차단 → 백필 속도 유지하며 승급)."""
+    def __init__(self, base, label):
+        self.base = base; self.name = label; self.blocking = base.blocking
+    def order(self, cand_idx, age, ar, sim):
+        if cand_idx.size == 0:
+            return cand_idx
+        bo = self.base.order(cand_idx, age, ar, sim)         # base 순서
+        Rr = np.array(_r_table_fast(sim.nodes)); Rr[Rr <= 0] = 0.5
+        gidx = np.clip(sim._arr_gpu[bo].astype(int) - 1, 0, 7)
+        rq = Rr[gidx]; rmin = max(0.1, float(rq.min()))
+        age_bo = sim._arrival_count - sim._arr_seq[bo]       # bo에 정렬된 age
+        age_rel = age_bo - age_bo.min()
+        aref = max(1.0, float(age_rel.mean()))
+        S = (float(age_rel.max()) / aref) if cand_idx.size else 0.0
+        g = min(1.0, S); alpha_eff = g / (aref * rmin)
+        n = bo.size; pos = np.arange(n)
+        P = np.where(pos < 60, 1.0 / (2.0 ** np.minimum(pos, 60)), 0.0)   # base 순서 위치=priority
+        pstar = P + alpha_eff * age_rel * rq
+        imax = int(np.argmax(pstar))
+        if imax == 0:
+            return bo
+        return np.concatenate(([bo[imax]], bo[:imax], bo[imax + 1:]))
+
+
 def make(name, **kw):
+    if name.endswith("+safa"):
+        return SafaWrap(make(name[:-5]), name)
     if name in ("sfqa",):
         return SFQA(**kw)
     if name in ("sfqa-auto",):

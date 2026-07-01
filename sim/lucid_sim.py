@@ -158,19 +158,24 @@ class LucidSim:
         self.finished.append(job)
 
     def _alloc(self, job, nodes):
-        """멀티노드 gang: free 적은 노드부터 모음(consolidate)."""
+        """갱 공간 불가분: gpu_count를 '한 노드'에 통째 배치(노드 경계 단위, 쪼개기 금지).
+        free 적은 노드부터(best-fit) free>=gpu_count인 첫 노드 선택. 없으면 None(단편화 대기).
+        노드 용량 초과 갱(멀티노드)은 완전히 빈 노드들로만 채운다."""
         cand = sorted([n for n in nodes if job.gpu_type in ("any", n.gpu_type) or n.gpu_type == "any"],
                       key=lambda n: n.free)
-        if sum(n.free for n in cand) < job.gpu_count:
-            return None
-        need, plan = job.gpu_count, []
+        g = job.gpu_count
         for n in cand:
-            if need <= 0:
-                break
-            take = min(n.free, need)
-            if take:
-                plan.append((n, take)); need -= take
-        return plan if need == 0 else None
+            if n.free >= g:
+                return [(n, g)]
+        if g > max((n.total for n in cand), default=0):
+            need, plan = g, []
+            for n in cand:
+                if need <= 0:
+                    break
+                if n.free == n.total:
+                    take = min(n.total, need); plan.append((n, take)); need -= take
+            return plan if need == 0 else None
+        return None
 
     def _find_partner(self, job, gss):
         """collocate 가능한 running solo 잡: 동일 gpu_count, SS합≤gss, 단일노드, 미packed.

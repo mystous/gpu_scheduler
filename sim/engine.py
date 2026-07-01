@@ -200,20 +200,23 @@ class Simulator:
             self.progress(len(self.finished), len(self.jobs), waiting)
 
     def _alloc(self, job):
-        """멀티노드 gang 배치 계획. 정책의 node_pref 순서로 free GPU를 모아 gpu_count 충족.
-        consolidate: 적은 노드에 몰아넣음(앞 노드부터 가능한 만큼). 불가 시 None."""
+        """갱 공간 불가분: 작업의 모든 GPU를 '한 노드'에 통째로 배치(노드 경계 단위, 쪼개기 금지).
+        node_pref 순서로 free>=gpu_count인 첫 노드 선택. 없으면 None(단편화로 대기).
+        노드 용량 초과 갱(멀티노드)은 '완전히 빈 노드'들로만 채운다(부분 노드 혼합 금지)."""
         cand = self.policy.node_pref(job, self.nodes)
-        if sum(n.free for n in cand) < job.gpu_count:
-            return None
-        need = job.gpu_count
-        plan = []
-        for n in cand:
-            if need <= 0:
-                break
-            take = min(n.free, need)
-            if take > 0:
-                plan.append((n, take)); need -= take
-        return plan if need == 0 else None
+        g = job.gpu_count
+        for n in cand:                       # 단일 노드 co-location 우선
+            if n.free >= g:
+                return [(n, g)]
+        if g > max((n.total for n in self.nodes), default=0):   # 멀티노드 갱: 빈 노드만
+            need, plan = g, []
+            for n in cand:
+                if need <= 0:
+                    break
+                if n.free == n.total:        # 완전히 빈 노드만(불가분 유지)
+                    take = min(n.total, need); plan.append((n, take)); need -= take
+            return plan if need == 0 else None
+        return None
 
     def _used(self):
         return self.total_gpu - sum(n.free for n in self.nodes)

@@ -30,6 +30,7 @@ from engine import Job, Node, Overheads, Simulator           # noqa: E402
 import policies as P                                          # noqa: E402
 import placement_prefs as PP                                  # noqa: E402
 from order_fairness import per_job_score                      # noqa: E402
+from fairness import gini                                      # noqa: E402
 
 OUT = os.path.join(HERE, "sweep_results", "placement")
 
@@ -95,13 +96,14 @@ def make_pref(placement, trace=None):
 
 
 def fair_p1(jr):
-    """order-fairness worst-1% (analyze_sweep.fairness_p1 동일 정의)."""
+    """order-fairness: (mean, worst-1% p1, lt50%) — analyze_sweep/run_kai 동일 정의."""
     jb = [(arr, start, 0) for _, arr, start, q, s, g in jr]
     if len(jb) < 100:
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0
     sc = sorted(per_job_score(jb))
     n = len(sc)
-    return sum(sc) / n, sc[int(n * .01)]      # (mean, p1)
+    lt50 = 100.0 * sum(1 for x in sc if x < 50) / n
+    return sum(sc) / n, sc[int(n * .01)], lt50      # (mean, p1, lt50)
 
 
 def run_one(placement, policy, gpu, kind, trace, no_overhead):
@@ -126,10 +128,15 @@ def run_one(placement, policy, gpu, kind, trace, no_overhead):
     qs = sorted(x[3] for x in jr)
     q_p50 = qs[min(len(qs) - 1, int(len(qs) * .5))] if qs else 0.0
     q_p99 = qs[min(len(qs) - 1, int(len(qs) * .99))] if qs else 0.0
-    fmean, fp1 = fair_p1(jr)
+    q_max = qs[-1] if qs else 0.0
+    fmean, fp1, lt50 = fair_p1(jr)
+    gini_wait = gini(qs)                          # 대기시간 분배 불평등(주 결과 동일)
+    p99p50 = (q_p99 / q_p50) if q_p50 else 0.0     # 꼬리비(=주 결과 p99/p50)
     out = dict(placement=placement, policy=policy, gpu=gpu, kind=kind,
                n=len(jr), q_p50=round(q_p50, 1), q_p99=round(q_p99, 1),
+               q_max=round(q_max, 1), lt50_pct=round(lt50, 3),
                fair_mean=round(fmean, 2), fair_p1=round(fp1, 2),
+               gini_wait=round(gini_wait, 4), p99_p50=round(p99p50, 2),
                alloc_avg=round(r.get("alloc_avg", 0.0), 1), wall_s=round(wall, 2),
                mcts_calls=(mcts_inst.calls if mcts_inst else 0),
                mcts_rollouts=(mcts_inst.scored if mcts_inst else 0))
@@ -185,7 +192,8 @@ def main():
 
     rows = []
     fields = ["scope", "config", "placement", "policy", "gpu", "kind", "n",
-              "q_p50", "q_p99", "fair_mean", "fair_p1", "alloc_avg",
+              "q_p50", "q_p99", "q_max", "lt50_pct", "fair_mean", "fair_p1",
+              "gini_wait", "p99_p50", "alloc_avg",
               "wall_s", "mcts_calls", "mcts_rollouts", "error"]
     t_all = time.time()
     with ProcessPoolExecutor(max_workers=a.workers) as ex:
