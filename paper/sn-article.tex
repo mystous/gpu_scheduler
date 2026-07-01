@@ -300,11 +300,11 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \section{Experimental Evaluation}\label{sec:eval}
 
 \subsection{Scale generalization via discrete-event simulation}\label{eval:sim}
-측정 규모와 현실성을 위해 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU의 단일·이종 구성에서 평가하는 파이썬 이산 사건 시뮬레이터를 추가로 개발했다. 여기에 B200 쿠버네티스 클러스터에서 실측한 작업당 오버헤드(표 \ref{tab:overhead})를 추가하여 계산했다. 기준선 FIFO와 Order 정책 SJF·LAS·Kueue·EASY·Themis·Lucid, SAFA와 결합되는 Placement 축 참고용 FGD, KAI를 모두 충실 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조검증).
+측정 규모와 현실성을 위해 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU의 단일·이종 구성에서 평가하는 파이썬 이산 사건 시뮬레이터를 추가로 개발했다. 여기에 B200 쿠버네티스 클러스터에서 실측한 작업당 오버헤드(표 \ref{tab:overhead})를 추가하여 계산했다. 이 오버헤드는 B200$\times$8 단일노드 K8s에서 47작업·4시나리오로 계측한 \textit{실측}이며(가정 아님, 기동은 단독/혼잡 배치 p50 1/3초 구분), 명목 실행시간은 GPU 속도계수(B200 1.0·H100 1.4·A100 2.0·A30 2.8)로 스케일한다 --- 혼합 gang은 straggler 제약상 가장 느린 타입 기준이라 이종에서 HOL이 심해진다. 노드 간 이주 비용은 단일노드 측정이라 0으로 두며, 최종 결과는 이 값들의 넓은 범위에 둔감하다. 기준선 FIFO와 Order 정책 SJF·LAS·Kueue·EASY·Themis·Lucid, SAFA와 결합되는 Placement 축 참고용 FGD, KAI를 모두 충실 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조검증).
 
 \begin{table}[htb!]
 \centering
-\caption{작업당 라이프사이클 오버헤드 --- B200$\times$8 단일노드 K8s에서 47작업·4시나리오로 계측한 \textit{실측}(가정 아님). 기동은 단독/혼잡 배치(p50 1/3초)를 구분. 명목 실행시간은 GPU 속도계수로 스케일(B200 1.0·H100 1.4·A100 2.0·A30 2.8; 혼합 gang은 가장 느린 타입 기준이라 이종에서 HOL이 심해짐). 노드 간 이주는 단일노드 측정이라 0으로 두며, 결과는 이 값들의 넓은 범위에 둔감하다.}
+\caption{작업당 라이프사이클 오버헤드.}
 \label{tab:overhead}
 \small
 \begin{tabular}{@{}lc@{}}
