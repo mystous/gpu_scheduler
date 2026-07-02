@@ -318,7 +318,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 
 \noindent\textbf{지표 용어 정의(metrics).} : \textit{Fairness} --- 하위 1\% 순서 공정성 점수(100=완전 공정, 0=완전 역전); \textit{Overtaken} --- 늦게 온 작업 과반에게 추월당한 작업 비율(\%); \textit{MedianWait}, \textit{MaxWait} --- 중앙값, 최악 큐 대기(초); \textit{Utilization} --- 평균 GPU 할당률(\%); \textit{Gini} --- 대기 시간 분배 불평등(0=균등); \textit{TailRatio} --- 99분위 대 중앙값 대기 비율.
 
-Evaluation은 세 축을 비교하며, 주 결과도 이 순서로 전개한다 --- \textbf{순서 공정성}(order-fairness, 주 지표), \textbf{도착부터 배치까지 지연 시간}; \texttt{MedianWait}, \texttt{MaxWait}, 초 단위, K$=10^3$·M$=10^6$), \textbf{Utilization}(평균 GPU 할당률 --- 효율 이득이 자원을 놀려 얻은 것인지 가름). 주 지표인 순서 공정성부터 정의한다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
+Evaluation은 세 축을 비교하며, 주 결과도 이 순서로 전개한다 --- \textbf{순서 공정성}(order-fairness, 주 지표), \textbf{도착부터 배치까지 지연 시간}; \texttt{MedianWait}, \texttt{MaxWait}, 초 단위, K$=10^3$·M$=10^6$, \textbf{Utilization}(평균 GPU 할당률 --- 효율 이득이 자원을 놀려 얻은 것인지 가름). 주 지표인 순서 공정성부터 정의한다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
 \begin{equation}
 F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr)
 \label{eq:order-fair}
