@@ -376,20 +376,14 @@ SAFA & 94 & 93 & 100 & 0.0 & 0.0 & 0.0 & 5.0M & 1.5M & 2 & 11.9M & 2.7M & 102K &
 \label{tab:sim-single}
 \end{table*}
 
-\paragraph{순서 공정성(Fairness·Overtaken)}
-깊은 경합에서 빠른 정보-우위 정책 6종(SJF·LAS·Kueue·EASY·Themis·Lucid)의 하위 1\% 공정성 Fairness이 \textbf{전부 0으로 붕괴}(완전 순서 역전)하는 반면, SAFA는 이를 \textbf{93--94로 유지}한다(256·512 단일 SAFA 94·93 대 재정렬 베이스라인 전부 0). FIFO만 Fairness=100이나 선두 큰 작업이 후속을 막아 가장 느리고, \textbf{과부하에서 순서 공정성을 지킨 경량 정책은 SAFA가 유일하다}. 같은 $F_k$ 분포의 또 다른 요약인 \textit{Overtaken}($F_k<50$, 곧 늦게 온 작업의 절반 이상에게 추월당한 작업 비율)에서도 SAFA는 0.0\%로 비차단 재정렬 베이스라인(3--10\%)를 자릿수로 앞선다. 이 공정성은 도착순 골격·blocking 해제·$R$ 나이 승급에서 나오며, SAFA \textit{고유}의 기여인 $R$ 승급은 성분 ablation이 격리한다($R\equiv1$이면 FIFO와 동치로 퇴화). 부하가 0.9$\to$3.6$\times$로 바뀌어도 동일 코드로 Fairness을 93--100으로 유지하며, 이는 다른 어떤 빠른 정책도 보이지 못한 안정성이다. 그림 \ref{fig:cliff}은 이를 시각화한다 --- x축은 부하배수(왼쪽 0.9$\times$=1024 GPU $\to$ 오른쪽 3.6$\times$=256 GPU; 오른쪽일수록 과부하), y축은 순서 공정성 \textit{Fairness}(100=완전 공정, 0=완전 역전; 하단 빨간 띠=붕괴 영역)이다. 부하가 깊어질수록 빠른 정책 6종의 \textit{Fairness}이 0으로 추락하는 반면, FIFO는 \textit{Fairness}=100을 유지하나 HOL 블로킹으로 가장 느리고, \textbf{SAFA}(굵은 파랑)만 큐 관측 정보만으로 \textit{Fairness}을 90+에 유지한다. 즉 SAFA의 차별점은 한 점의 우월이 아니라 \textit{과부하 전반에서 공정성이 무너지지 않는 견고함}이다.
+\paragraph{지표별 결과: 공정성·지연·활용도}
+\textbf{공정성.} 깊은 경합에서 빠른 정보-우위 정책 6종의 순서 공정성 \textit{Fairness}이 \textbf{전부 0으로 붕괴}(완전 순서 역전)하는 반면 SAFA만 이를 \textbf{93--94}로 유지하며(부하 0.9$\to$3.6$\times$에 걸쳐 93--100), 추월당한 작업 비율 \textit{Overtaken}도 SAFA 0.0\%로 재정렬 베이스라인(3--10\%)을 자릿수로 앞선다 --- 과부하에서 공정성을 지킨 경량 정책은 SAFA가 유일하다(그림 \ref{fig:cliff}). \textbf{지연.} 중앙값 \textit{MedianWait}는 백로그-bound라 SAFA·FIFO가 가장 느리지만 SAFA가 FIFO보다 7--13\% 짧다; 재정렬 베이스라인은 짧은 작업을 앞세워 \textit{MedianWait}가 거의 0이나 \textit{큰 작업을 굶긴 대가}이며(\textit{Fairness}=0), 그 기아는 꼬리에서 드러난다(\textit{TailRatio} 재정렬 베이스라인 수천 대 SAFA 2.3; \textit{MaxWait}도 SAFA 11.9M $<$ FIFO 13.0M). \textbf{활용도.} SAFA의 진짜 이득은 중앙값 단축이 아니라 \textbf{HOL이 낭비하던 GPU의 회복}이다 --- 갱 불가분으로 무재정렬 FIFO는 선두 큰 작업이 막히면 뒤의 작은 작업까지 막아 활용도가 92\%에 그치나(백필 정책은 98--99\%, 그 \textbf{$\sim$7\%p가 HOL 낭비}), 백필은 큰 작업을 굶겨 그 활용도를 산다(\textit{Fairness}=0). SAFA는 나이$\times$적합도 재정렬로 그 낭비를 \textbf{95--96\%까지 굶기지 않고 회복}해, 이용률$\times$공정성 평면에서 FIFO(공정하나 낭비)·재정렬 베이스라인(채우나 기아)와 달리 \textbf{홀로 우상단(공정$+$고활용)}을 차지한다(그림 \ref{fig:tradeoff}).
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_cliff.pdf}}
 \caption{부하--공정성 절벽.}
 \label{fig:cliff}
 \end{figure}
-
-\paragraph{큐잉 지연(MedianWait·MaxWait)}
-과포화 백로그가 깊어 중앙값 대기는 어느 공정 정책에서나 \textit{backlog-bound}이다 --- SAFA와 FIFO가 가장 느린 두 정책이며(작은 작업·큰 작업 모두 그 백로그를 통과해야 한다), 따라서 HOL 해소는 중앙값이 아니라 \textit{활용도}에 나타난다(앞 문단). 그럼에도 중앙값 MedianWait는 SAFA가 FIFO 대비 \textbf{7--13\% 짧다}(과부하 256·512). 단 \textbf{절대적으로 가장 빠른 것은 아니다} --- 재정렬 베이스라인 정책(SJF·Themis·Lucid·Kueue 등)은 짧은 작업을 빈 자리에 즉시 끼워넣어 MedianWait가 거의 0이나, \textit{그 대가로 큰 작업을 완전히 굶긴다}(Fairness=0). SAFA는 큰 작업을 굶기지 않으면서도 FIFO보다 빠르다(이 정보 격차가 본 평가를 관통하는 축이다). 기아는 \textbf{최악 꼬리}에서 드러난다 --- 재정렬 베이스라인의 꼬리비 TailRatio(99분위 대 중앙값)은 수천에 이르는데(256 단일 SJF 13,336·Themis 3,082·Lucid 2,179) SAFA는 2.3으로 FIFO(2.3) 수준이다(분포 공정성 문단). 최악 대기 MaxWait도 SAFA(256 단일 11.9M)가 FIFO(13.0M)보다 짧다.
-
-\paragraph{HOL 해소 = 낭비된 자원 회복(Utilization)}
-SAFA의 핵심 이득은 \textit{중앙값 단축}이 아니라 \textbf{HOL이 낭비하던 GPU의 회복}이며, 이는 활용도(Utilization)에 직접 드러난다(그림 \ref{fig:tradeoff}, 표 \ref{tab:sim-single}). 갱이 공간적으로 불가분이라, 큐 선두의 큰 작업이 맞는 빈 노드를 못 찾으면 무재정렬 FIFO는 \textit{뒤의 들어갈 수 있는 작은 작업까지 막아} GPU를 놀린다 --- 그 결과 FIFO의 활용도는 과부하 단일에서 \textbf{92\%}에 그친다. 같은 트레이스를 백필로 꽉 채우는 정책(LAS·Kueue)이 \textbf{98--99\%}에 이르는 것과 비교하면, 이 \textbf{$\sim$7\%p 격차가 곧 FIFO의 HOL 낭비}다. 단 그 백필 정책들은 큰 작업을 굶겨 그 활용도를 산다(Fairness=0). \textbf{SAFA는 나이$\times$적합도 재정렬로 그 낭비를 95--96\%까지 \textit{굶기지 않고} 회복}한다(Fairness 92--95 유지). 그림 \ref{fig:tradeoff}의 이용률--공정성 평면에서, FIFO는 좌상단(공정하나 HOL로 낭비)·재정렬 베이스라인는 우하단(채우나 기아)에 흩어지고 \textbf{SAFA만 우상단(공정$+$고활용)} 이상 영역을 차지한다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_tradeoff.pdf}}
