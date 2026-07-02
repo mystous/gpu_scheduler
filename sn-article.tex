@@ -377,7 +377,7 @@ SAFA & 94 & 93 & 100 & 0.0 & 0.0 & 0.0 & 5.0M & 1.5M & 2 & 11.9M & 2.7M & 102K &
 \end{table*}
 
 \paragraph{주 결과: 공정성과 활용도를 함께}
-SAFA의 가치는 공정성과 활용도를 함께 볼 때 드러난다(그림 \ref{fig:tradeoff}): 모든 정책은 공정하나 HOL로 GPU를 놀리거나(FIFO) 채우나 큰 작업을 굶기거는(재정렬 베이스라인) trde-off를 보이는 반면 SAFA만 우상단(공정$+$고활용)을 차지한다. 지표별로 보면 --- 공정성: 빠른 정책 6종의 Fairness이 전부 0으로 붕괴하나 SAFA만 93--94 유지(부하 전반 93--100), Overtaken도 SAFA 0.0\% 대 3--10\%로 자릿수 우위(그림 \ref{fig:cliff}). 지연: 중앙값 MedianWait는 SAFA·FIFO가 가장 느리나 재정렬 베이스라인은 리소스 요청이 큰 작업을 굶긴 대가다. 활용도: 갱 불가분으로 무재정렬 FIFO가 HOL로 낭비하는 $\sim$7\%p(활용도 92\% 대 백필 98--99\%)를 SAFA가 굶기지 않고 95--96\%로 회복한다.
+SAFA의 가치는 공정성과 활용도를 함께 볼 때 드러난다(그림 \ref{fig:tradeoff}): 모든 정책은 공정하나 HOL로 GPU를 놀리거나(FIFO) 채우나 큰 작업을 굶기거나(재정렬 베이스라인) trade-off를 보이는 반면 SAFA만 우상단(공정$+$고활용)을 차지한다. 지표별로 보면 --- 공정성: 빠른 정책 6종의 Fairness이 전부 0으로 붕괴하나 SAFA만 93--94 유지(부하 전반 93--100), Overtaken도 SAFA 0.0\% 대 3--10\%로 자릿수 우위(그림 \ref{fig:cliff}). 지연: 중앙값 MedianWait는 SAFA·FIFO가 가장 느리나 재정렬 베이스라인은 리소스 요청이 큰 작업을 굶긴 대가다. 활용도: 갱 불가분으로 무재정렬 FIFO가 HOL로 낭비하는 $\sim$7\%p(활용도 92\% 대 백필 98--99\%)를 SAFA가 굶기지 않고 95--96\%로 회복한다.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_cliff.pdf}}
