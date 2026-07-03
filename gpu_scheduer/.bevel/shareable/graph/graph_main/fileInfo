@@ -1,0 +1,410 @@
+{
+  "fileInfos" : [ {
+    "path" : "CGPUStatus.cpp",
+    "modificationInfo" : {
+      "contentHash" : -1022146929,
+      "lastModified" : 1717918041890
+    },
+    "linesOfCode" : 76
+  }, {
+    "path" : "CGPUStatus.h",
+    "modificationInfo" : {
+      "contentHash" : -989978625,
+      "lastModified" : 1715652587113
+    },
+    "linesOfCode" : 33
+  }, {
+    "path" : "CSchedulerOption.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1807812043,
+      "lastModified" : 1726907986200
+    },
+    "linesOfCode" : 159
+  }, {
+    "path" : "CSchedulerOption.h",
+    "modificationInfo" : {
+      "contentHash" : 900315008,
+      "lastModified" : 1726907986208
+    },
+    "linesOfCode" : 74
+  }, {
+    "path" : "ChildFrm.cpp",
+    "modificationInfo" : {
+      "contentHash" : -1683256215,
+      "lastModified" : 1717027457284
+    },
+    "linesOfCode" : 68
+  }, {
+    "path" : "ChildFrm.h",
+    "modificationInfo" : {
+      "contentHash" : 2122139523,
+      "lastModified" : 1715652587129
+    },
+    "linesOfCode" : 37
+  }, {
+    "path" : "MainFrm.cpp",
+    "modificationInfo" : {
+      "contentHash" : 523822892,
+      "lastModified" : 1727535929423
+    },
+    "linesOfCode" : 271
+  }, {
+    "path" : "MainFrm.h",
+    "modificationInfo" : {
+      "contentHash" : -634404256,
+      "lastModified" : 1727535929428
+    },
+    "linesOfCode" : 58
+  }, {
+    "path" : "Resource.h",
+    "modificationInfo" : {
+      "contentHash" : 1491196723,
+      "lastModified" : 1727044115426
+    },
+    "linesOfCode" : 103
+  }, {
+    "path" : "adjusting_server.cpp",
+    "modificationInfo" : {
+      "contentHash" : 754488715,
+      "lastModified" : 1727317808418
+    },
+    "linesOfCode" : 274
+  }, {
+    "path" : "adjusting_server.h",
+    "modificationInfo" : {
+      "contentHash" : -2091061244,
+      "lastModified" : 1727317808452
+    },
+    "linesOfCode" : 73
+  }, {
+    "path" : "call_back_object.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1414626033,
+      "lastModified" : 1715652587129
+    },
+    "linesOfCode" : 2
+  }, {
+    "path" : "call_back_object.h",
+    "modificationInfo" : {
+      "contentHash" : 937823300,
+      "lastModified" : 1727085487739
+    },
+    "linesOfCode" : 10
+  }, {
+    "path" : "coprocessor_server.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1219501931,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 2
+  }, {
+    "path" : "coprocessor_server.h",
+    "modificationInfo" : {
+      "contentHash" : -1798114768,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 5
+  }, {
+    "path" : "enum_definition.h",
+    "modificationInfo" : {
+      "contentHash" : -1349346770,
+      "lastModified" : 1727535929433
+    },
+    "linesOfCode" : 41
+  }, {
+    "path" : "experiment_dialog.cpp",
+    "modificationInfo" : {
+      "contentHash" : -2146813574,
+      "lastModified" : 1727573857373
+    },
+    "linesOfCode" : 510
+  }, {
+    "path" : "experiment_dialog.h",
+    "modificationInfo" : {
+      "contentHash" : 1466517442,
+      "lastModified" : 1727746352140
+    },
+    "linesOfCode" : 100
+  }, {
+    "path" : "experiment_perform.cpp",
+    "modificationInfo" : {
+      "contentHash" : 231720263,
+      "lastModified" : 1727695358448
+    },
+    "linesOfCode" : 209
+  }, {
+    "path" : "experiment_perform.h",
+    "modificationInfo" : {
+      "contentHash" : -1920610814,
+      "lastModified" : 1727535929453
+    },
+    "linesOfCode" : 60
+  }, {
+    "path" : "framework.h",
+    "modificationInfo" : {
+      "contentHash" : 1811656091,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 49
+  }, {
+    "path" : "global_definistion.h",
+    "modificationInfo" : {
+      "contentHash" : 888066593,
+      "lastModified" : 1726907692116
+    },
+    "linesOfCode" : 18
+  }, {
+    "path" : "gpu_log_dialog.cpp",
+    "modificationInfo" : {
+      "contentHash" : 698818829,
+      "lastModified" : 1716891357651
+    },
+    "linesOfCode" : 78
+  }, {
+    "path" : "gpu_log_dialog.h",
+    "modificationInfo" : {
+      "contentHash" : -1026001475,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 34
+  }, {
+    "path" : "gpu_scheduer.cpp",
+    "modificationInfo" : {
+      "contentHash" : -2010365549,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 226
+  }, {
+    "path" : "gpu_scheduer.h",
+    "modificationInfo" : {
+      "contentHash" : -2056686552,
+      "lastModified" : 1715652587145
+    },
+    "linesOfCode" : 33
+  }, {
+    "path" : "gpu_scheduerDoc.cpp",
+    "modificationInfo" : {
+      "contentHash" : 867132531,
+      "lastModified" : 1726910072647
+    },
+    "linesOfCode" : 277
+  }, {
+    "path" : "gpu_scheduerDoc.h",
+    "modificationInfo" : {
+      "contentHash" : 1006431225,
+      "lastModified" : 1717028356564
+    },
+    "linesOfCode" : 67
+  }, {
+    "path" : "gpu_scheduerView.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1724013559,
+      "lastModified" : 1727046343221
+    },
+    "linesOfCode" : 822
+  }, {
+    "path" : "gpu_scheduerView.h",
+    "modificationInfo" : {
+      "contentHash" : 23476488,
+      "lastModified" : 1727046164881
+    },
+    "linesOfCode" : 98
+  }, {
+    "path" : "job_emulator.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1108213775,
+      "lastModified" : 1728178836721
+    },
+    "linesOfCode" : 912
+  }, {
+    "path" : "job_emulator.h",
+    "modificationInfo" : {
+      "contentHash" : -150703152,
+      "lastModified" : 1731425643455
+    },
+    "linesOfCode" : 181
+  }, {
+    "path" : "job_entry.cpp",
+    "modificationInfo" : {
+      "contentHash" : 794883727,
+      "lastModified" : 1716891357713
+    },
+    "linesOfCode" : 64
+  }, {
+    "path" : "job_entry.h",
+    "modificationInfo" : {
+      "contentHash" : -810062697,
+      "lastModified" : 1728149403394
+    },
+    "linesOfCode" : 78
+  }, {
+    "path" : "job_scheduler.cpp",
+    "modificationInfo" : {
+      "contentHash" : -1730838740,
+      "lastModified" : 1728149403387
+    },
+    "linesOfCode" : 102
+  }, {
+    "path" : "job_scheduler.h",
+    "modificationInfo" : {
+      "contentHash" : 1195005104,
+      "lastModified" : 1728149403400
+    },
+    "linesOfCode" : 36
+  }, {
+    "path" : "linux_main.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1356997476,
+      "lastModified" : 1727535929474
+    },
+    "linesOfCode" : 265
+  }, {
+    "path" : "log_gen_dialog.cpp",
+    "modificationInfo" : {
+      "contentHash" : 1496716542,
+      "lastModified" : 1717036845966
+    },
+    "linesOfCode" : 190
+  }, {
+    "path" : "log_gen_dialog.h",
+    "modificationInfo" : {
+      "contentHash" : -2099987865,
+      "lastModified" : 1717036845999
+    },
+    "linesOfCode" : 44
+  }, {
+    "path" : "log_generator.cpp",
+    "modificationInfo" : {
+      "contentHash" : -421788186,
+      "lastModified" : 1731627071786
+    },
+    "linesOfCode" : 629
+  }, {
+    "path" : "log_generator.h",
+    "modificationInfo" : {
+      "contentHash" : 1736259792,
+      "lastModified" : 1723559978825
+    },
+    "linesOfCode" : 128
+  }, {
+    "path" : "pch.cpp",
+    "modificationInfo" : {
+      "contentHash" : 955447430,
+      "lastModified" : 1715652587177
+    },
+    "linesOfCode" : 5
+  }, {
+    "path" : "pch.h",
+    "modificationInfo" : {
+      "contentHash" : 2030987094,
+      "lastModified" : 1724716443933
+    },
+    "linesOfCode" : 18
+  }, {
+    "path" : "scheduler_compact.cpp",
+    "modificationInfo" : {
+      "contentHash" : -968902294,
+      "lastModified" : 1721910990486
+    },
+    "linesOfCode" : 29
+  }, {
+    "path" : "scheduler_compact.h",
+    "modificationInfo" : {
+      "contentHash" : 962833467,
+      "lastModified" : 1721910981167
+    },
+    "linesOfCode" : 10
+  }, {
+    "path" : "scheduler_fare_share.cpp",
+    "modificationInfo" : {
+      "contentHash" : -613709758,
+      "lastModified" : 1721911000040
+    },
+    "linesOfCode" : 6
+  }, {
+    "path" : "scheduler_fare_share.h",
+    "modificationInfo" : {
+      "contentHash" : -116766621,
+      "lastModified" : 1725325865909
+    },
+    "linesOfCode" : 10
+  }, {
+    "path" : "scheduler_mcts.cpp",
+    "modificationInfo" : {
+      "contentHash" : -1817445555,
+      "lastModified" : 1724718885076
+    },
+    "linesOfCode" : 194
+  }, {
+    "path" : "scheduler_mcts.h",
+    "modificationInfo" : {
+      "contentHash" : 1582050549,
+      "lastModified" : 1722218817405
+    },
+    "linesOfCode" : 46
+  }, {
+    "path" : "scheduler_mostallocated.cpp",
+    "modificationInfo" : {
+      "contentHash" : -1705595707,
+      "lastModified" : 1727692795563
+    },
+    "linesOfCode" : 96
+  }, {
+    "path" : "scheduler_mostallocated.h",
+    "modificationInfo" : {
+      "contentHash" : -899368034,
+      "lastModified" : 1721910958963
+    },
+    "linesOfCode" : 17
+  }, {
+    "path" : "scheduler_round_robin.cpp",
+    "modificationInfo" : {
+      "contentHash" : 675943239,
+      "lastModified" : 1721910947586
+    },
+    "linesOfCode" : 42
+  }, {
+    "path" : "scheduler_round_robin.h",
+    "modificationInfo" : {
+      "contentHash" : 247349271,
+      "lastModified" : 1721910922437
+    },
+    "linesOfCode" : 12
+  }, {
+    "path" : "server_entry.cpp",
+    "modificationInfo" : {
+      "contentHash" : 510276600,
+      "lastModified" : 1727535929479
+    },
+    "linesOfCode" : 139
+  }, {
+    "path" : "server_entry.h",
+    "modificationInfo" : {
+      "contentHash" : -950276521,
+      "lastModified" : 1727535929483
+    },
+    "linesOfCode" : 40
+  }, {
+    "path" : "targetver.h",
+    "modificationInfo" : {
+      "contentHash" : 1053564837,
+      "lastModified" : 1715652587223
+    },
+    "linesOfCode" : 8
+  }, {
+    "path" : "utility_class.cpp",
+    "modificationInfo" : {
+      "contentHash" : -719691428,
+      "lastModified" : 1727535929488
+    },
+    "linesOfCode" : 89
+  }, {
+    "path" : "utility_class.h",
+    "modificationInfo" : {
+      "contentHash" : 203148764,
+      "lastModified" : 1727535929494
+    },
+    "linesOfCode" : 21
+  } ],
+  "appVersion" : "1.3.0"
+}

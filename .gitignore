@@ -420,3 +420,7 @@ experiment_gpu
 sim/sweep_results/raw/
 sim/sweep_results/raw_fixed/
 sim/sweep_results/raw_indep/
+
+# Bevel/편집기 로컬 파일 (위치 무관 — 시크릿 포함 do_not_share, 편집기 개인 설정 제외)
+do_not_share/
+**/.vscode/settings.json
