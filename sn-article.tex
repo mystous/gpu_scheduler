@@ -491,27 +491,33 @@ SAFA는 7개 Placement 전부에서 모든 지표를 개선한다. 재정렬 정
 시뮬레이션이 보인 정책 구도가 실제 쿠버네티스 어드미션·바인딩 경로에서도 성립하는지 NVIDIA B200$\times$8 단일 노드 클러스터(K8s v1.31)에서 교차 검증한다. 워크로드는 Philly 층화 표본 500작업을 시간 압축해 재생하고, 각 작업은 GPU를 실제로 점유하는 sleep 스텁으로 진짜 kube-scheduler 경로(생성·게이트·바인딩)를 통과시켰다 --- 즉 어드미션·바인딩 경로의 충실도를 재며 실연산·통신은 제외한다. 실측은 두 도착 레짐으로 나눈다: (i) 균일 압축 도착(8/8 GPU 포화, 대기 큐 47) --- 정책 간 추월 불공정 대비, (ii) 원 트레이스의 도착 버스트 보존(peak 12$\times$, 대기 큐 440) --- 나이 승급이 활성인 조건에서의 기아 예방 검증.
 
 \paragraph{정책 비교(균일 도착)}
-시뮬레이션의 정책 구도가 실측에서 재현된다. 재정렬·비순서 정책은 높은 추월 불공정을 보이고(기본 kube-scheduler Overtaken 49.8\%·Themis 31.4\%·SJF 30.4\%), 예약·어드미션 정책은 이를 억제하며(EASY 1.8\%·Kueue 4.4\%), SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 FIFO-gate(6.2\%)·LAS 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준의 공정성이 실 클러스터에서도 성립한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열의 할당률이 기본 대비 7--11\%p 낮은 것은 어드미션 주기 $\Delta$가 만드는 지연 비용이지($\Delta$ 축소로 감소) 처리량 손실이 아니다(makespan 51--54분 $<$ 기본 68분).
-
-\paragraph{기아 예방(버스트 도착)}
-균일 도착에서는 나이 순서가 도착 순서와 일치해 SAFA의 나이 승급이 사실상 비활성이므로, 원 도착 버스트를 보존한 두 번째 실측으로 승급이 활성인 조건을 만들었다(표 \ref{tab:b200burst}; 반복 포함 6 run $\times$ 500작업 $=$ 3{,}000 실 Pod). SAFA는 버스트 과부하에서도 기아를 예방한다(Fairness 82.8·Overtaken 0.0\%). 결정 인자를 격리하기 위해 어드미션 규율만 바꾼 ablation --- 선두가 배치 불가능해도 자리가 나는 대로 후속을 내보내는 greedy 디스패치 --- 은 Fairness 3.8로 붕괴해, HOL-인지 어드미션(선두 미배치 시 순서 유지)이 버스트 기아 예방의 결정 인자임을 보인다. 어드미션 주기를 $\Delta{=}5$초에서 1초로 좁히면 배치가 빨라져 활용도가 오르나(59$\to$66\%) Fairness는 40.1로 낮아지는 공정성--효율 트레이드오프가 있고, 두 $\Delta$ 모두 greedy(3.8)보다 크게 공정해 핵심 대비는 주기와 무관하다. 반복 실행 편차는 SAFA $\pm$0.2점·FIFO $\pm$2.7점으로 안정적이다. 단 단일 노드에서는 상대 나이가 도착 순번에 단조라 SAFA(82.8)와 FIFO(84.2)가 사실상 동등하다 --- 이 실측이 입증하는 범위는 ``HOL-인지 어드미션이 버스트 기아를 막는다''까지이며, 나이 승급이 FIFO를 능가하는 다중 노드·단편화 레짐은 시뮬레이션(\ref{eval:main}절)이 담당한다.
+시뮬레이션의 정책 구도가 실측에서 재현된다(표 \ref{tab:b200}). 재정렬·비순서 정책(기본 kube-scheduler·Themis·SJF)은 추월 불공정이 30--50\%에 달하고, 예약·어드미션 정책(EASY·Kueue)은 이를 5\% 미만으로 억제하며, SAFA는 고정 $\alpha$·Zero-knob 모두 5.2\%로 순서-보존 기준선 FIFO-gate(6.2\%) 수준을 유지한다 --- 노브 없이 고정 $\alpha$ 수준의 공정성이 실 클러스터에서도 성립한다($n{=}500$ 단일 런이라 군 간 대비로 읽는다). 게이트 계열의 할당률이 기본 대비 7--11\%p 낮은 것은 어드미션 주기 $\Delta$가 만드는 지연 비용이지($\Delta$ 축소로 감소) 처리량 손실이 아니다(makespan 51--54분 $<$ 기본 68분).
 
 \begin{table}[htb!]
 \centering
-\caption{B200 버스트 도착 실측(나이 승급 활성). 괄호는 반복 런.}
-\label{tab:b200burst}
+\caption{B200 실측 정책 비교(균일 도착, $n{=}500$).}
+\label{tab:b200}
 \footnotesize
-\begin{tabular}{@{}l@{\hspace{0.6em}}rrrr@{}}
+\begin{tabular}{@{}llr@{}}
 \toprule
-\textbf{구성} & \textit{Fairness}$\uparrow$ & \textit{Overtaken}$\downarrow$ & \textit{MedianWait}(s) & \textit{Util}(\%) \\
+ & \textbf{정책} & \textit{Overtaken}$\downarrow$(\%) \\
 \midrule
-SAFA ($\Delta{=}5$s) & \textbf{82.8} (82.4) & 0.0 (0.2) & 1927 & 59 \\
-SAFA ($\Delta{=}1$s) & 40.1 & 4.0 & 443 & 66 \\
-\quad greedy 디스패치(ablation) & 3.8 & 5.0 & 474 & 81 \\
-FIFO & 84.2 (89.5) & 0.2 (0.2) & 1784 & 59 \\
+\multirow{3}{*}{재정렬·비순서} & 기본 kube-scheduler & 49.8 \\
+ & Themis & 31.4 \\
+ & SJF & 30.4 \\
+\midrule
+\multirow{2}{*}{예약·어드미션} & Kueue & 4.4 \\
+ & EASY & 1.8 \\
+\midrule
+\multirow{3}{*}{순서 보존} & FIFO-gate & 6.2 \\
+ & SAFA (고정 $\alpha$) & 5.2 \\
+ & SAFA (Zero-knob) & \textbf{5.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\paragraph{기아 예방(버스트 도착)}
+균일 도착에서는 나이 순서가 도착 순서와 일치해 SAFA의 나이 승급이 사실상 비활성이므로, 원 도착 버스트를 보존한 추가 실측(반복 포함 6 run $\times$ 500작업 $=$ 3{,}000 실 Pod)으로 승급이 활성인 조건을 검증했다. SAFA는 버스트 과부하에서도 추월 없이 기아를 예방했고(Fairness 82.8·Overtaken 0.0\%, 반복 편차 $\pm$0.2점), 선두의 대기를 무시하고 뒤 작업을 계속 내보내도록 바꾼 대조 실행은 Fairness 3.8로 붕괴했다 --- 표 \ref{tab:sim-single}에서 공정성을 잃던 정책들과 같은 거동으로, 선두 순서 보존이 버스트 기아 예방의 결정 인자임을 확인한다. 단 단일 노드에서는 상대 나이가 도착 순번에 단조라 SAFA(82.8)와 FIFO(84.2)가 사실상 동등하다 --- 이 실측의 입증 범위는 버스트 기아 예방까지이며, 나이 승급이 FIFO를 능가하는 다중 노드·단편화 레짐은 시뮬레이션(\ref{eval:main}절)이 담당한다.
 
 \subsection{Limitations}\label{eval:threats}
 앞의 일반화·Placement 검증과 부트스트랩 CI를 거쳤더라도 본 평가에는 다음과 같은 한계가 남아 있으므로, 결과는 절대값보다 경향으로 해석해야 한다.
