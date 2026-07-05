@@ -270,13 +270,14 @@ The fundamental limitation of a fixed $\alpha$ is that its optimum is not unique
 \label{fig:motivation}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}l*{8}{c}@{}}
 \toprule
 Distribution & Normal & Exp. & Log-normal & Gamma & Beta & Weibull & Uniform & Poisson \\
 \midrule
 Optimal $\alpha$ & 0.53 & 0.44 & 1.63 & 0.22 & 0.26 & 0.55 & 0.50 & 0.22 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \subsubsection{SAFA (Zero-knob)}\label{SAFA}
@@ -308,13 +309,14 @@ To secure measurement scale and realism, we developed a Python discrete-event si
 \caption{Per-job lifecycle overhead.}
 \label{tab:overhead}
 \small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Stage} & Scheduling & Startup (solo/congested) & Teardown & \textbf{Total} \\
 \midrule
 \textbf{Overhead (s)} & 0.5 & 1.5 / 3.5 & 2.5 & \textbf{4.5--6.5} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \noindent Metric definitions: Fairness --- bottom-1\% order-fairness score (100 = perfectly fair, 0 = fully inverted); Overtaken --- fraction of jobs overtaken by a majority of later arrivals (\%); MedianWait/MaxWait --- median/worst queue wait (s; K$=10^3$, M$=10^6$); Utilization --- average GPU allocation rate (\%); Gini --- inequality of the wait-time distribution (0 = equal); TailRatio --- ratio of the 99th-percentile to the median wait.
