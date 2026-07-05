@@ -120,8 +120,8 @@ Arena\cite{arena2026} & EuroSys'26 & 적응 병렬화(프로파일+추정) & ---
 Rubick\cite{rubick2025} & MLSys'25 & 실행 계획 재구성 & --- & 실행계획 결정변수 부재\\
 RLTune\cite{rltune2025} & SoCC'25 & RL 순서+MILP(학습 모델) & --- & 학습+솔버; Lucid·Themis 대표\\
 FFT\cite{fft2025} & ICS'25 & 라운드 cost-min(epoch 추정) & --- & 솔버+추정; Themis(FTF) 대표\\
-Tetris\cite{grandl2014multi} & SIGCOMM'14 & 다차원 자원 정렬(순서$+$배치) & --- & 1-D 통째-GPU서 퇴화; Placement 결합\\
-Maui\cite{jackson2001maui} & JSSPP'01 & 다요인 우선순위(가중 노브) & --- & 노브 가족; 순수 시간-aging은 FIFO 대표\\
+Tetris\cite{grandl2014multi} & SIGCOMM'14 & 다차원 자원 정렬(순서$+$배치) & --- & 결정변수 부재; Placement 결합\\
+Maui\cite{jackson2001maui} & JSSPP'01 & 다요인 우선순위(runtime·fairshare) & --- & 부가 정보 의존; 잔여 aging은 FIFO\\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -139,7 +139,7 @@ Kueue\cite{kueue2024}는 쿠버네티스 네이티브 큐잉 시스템으로 작
 \subsection{베이스라인 선정 근거}\label{baseline-rationale}
 의미 있는 비교가 되려면 SAFA와 베이스라인이 (i) 같은 결정 변수를 (ii) 같은 계층에서 (iii) 비교 가능한 정보·인프라 가정으로 내려야 한다. 본 연구는 사전 정보 없이(실행시간 추정·프로파일·솔버 없이) 기아를 해소하는 경량 전처리이므로, 동일 엔진 비교군을 사전 정보 의존도로 정렬한다(표 \ref{tab:related}): 큐 정보만 쓰는 FIFO·LAS·Kueue, 실행시간을 받는 SJF·EASY·Themis, 작업별 프로파일이 트레이스(gpu\_utilization)로 정의되는 Lucid를 베이스라인으로 정한다.
 
-KAI·FGD를 제외한 나머지 스케줄러는 (i)--(iii) 중 하나 이상이 어긋나 베이스라인에서 제외한다. (a) 계층 불일치: Learning-to-Rank(ms·요청 단위)·NotebookOS(대화형 복제)는 클러스터 갱 작업과 결정 객체·시간 스케일이 다르며, 전자의 원리는 완벽 예측 극한인 SJF가 대표한다. (b) 결정 변수 부재: Sia·Gavel\cite{narayanan2020gavel}·Optimus·Pollux·Arena·Rubick의 결정 변수(작업별 프로파일·내부 병렬화 계획)는 고정 요청 갱 트레이스에 존재하지 않는다(완벽한 프로파일을 줘도 그러하며, Sia를 rigid로 강등하면 FIFO·SJF와 동치가 된다). (c) 학습·솔버 의존: RLTune·FFT는 학습 모델·라운드 솔버($+$epoch 추정)를 전제해 예측을 안 쓰는 SAFA와 정보·인프라 계층이 다르다. (d) 고전 aging 선조: 자원 적합도를 순서 결정에 결합한 Tetris\cite{grandl2014multi}와 다요인 우선순위 aging을 수십 년 운용한 Maui\cite{jackson2001maui}는 SAFA의 가장 가까운 선조이나 동일 엔진 비교 대상은 아니다 --- Tetris의 다차원 자원 정렬은 단일 통째-GPU 트레이스에 결정 변수가 없어 1-D에서 FIFO/패킹으로 퇴화하고 Placement까지 결합하며(계층 불일치), Maui는 다요인 가중 노브 가족(XFactor는 실행시간 추정, fairshare는 다중 VC를 요구)이라 그 요인을 벗기면 순수 시간-aging만 남아 FIFO가 대표한다. SAFA와의 구별점(자원 적합도 $R$ 결합·큐 통계 정규화 무튜닝 계수)은 \S\ref{motivation}에서 논한다. KAI와 FGD는 Placement에 관여하므로 베이스라인이 아니라 SAFA와의 결합 대상으로 평가한다.
+KAI·FGD를 제외한 나머지 스케줄러는 (i)--(iii) 중 하나 이상이 어긋나 베이스라인에서 제외한다. (a) 계층 불일치: Learning-to-Rank(ms·요청 단위)·NotebookOS(대화형 복제)는 클러스터 갱 작업과 결정 객체·시간 스케일이 다르며, 전자의 원리는 완벽 예측 극한인 SJF가 대표한다. (b) 결정 변수 부재: Sia·Gavel\cite{narayanan2020gavel}·Optimus·Pollux·Arena·Rubick의 결정 변수(작업별 프로파일·내부 병렬화 계획)는 고정 요청 갱 트레이스에 존재하지 않는다(완벽한 프로파일을 줘도 그러하며, Sia를 rigid로 강등하면 FIFO·SJF와 동치가 된다). (c) 학습·솔버 의존: RLTune·FFT는 학습 모델·라운드 솔버($+$epoch 추정)를 전제해 예측을 안 쓰는 SAFA와 정보·인프라 계층이 다르다. (d) 고전 aging 선조 --- 부가 정보 의존: 자원 적합도를 순서 결정에 결합한 Tetris\cite{grandl2014multi}와 다요인 우선순위 aging을 수십 년 운용한 Maui\cite{jackson2001maui}는 SAFA의 가장 가까운 선조이나, 그 변별 요인이 SAFA가 쓰지 않는 부가 정보를 요구해 동일 정보 계층의 베이스라인이 아니다. Maui의 우선순위를 이루는 XFactor는 실행시간 추정을, fairshare는 다중 VC 사용량 이력을 요구하며(이 정보를 벗기면 순수 시간-aging만 남아 FIFO가 대표한다), Tetris의 다차원 자원 정렬은 단일 통째-GPU 트레이스에 없는 결정 변수를 요구하고 Placement까지 결합한다(1-D에서 FIFO/패킹으로 퇴화). SAFA와의 구별점(자원 적합도 $R$ 결합·큐 통계 정규화 무튜닝 계수)은 \S\ref{motivation}에서 논한다. KAI와 FGD는 Placement에 관여하므로 베이스라인이 아니라 SAFA와의 결합 대상으로 평가한다.
 
 
 \section{Motivation}\label{motivation}
