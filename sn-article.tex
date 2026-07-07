@@ -288,7 +288,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big)
 \label{eq:auto-alpha}
 \end{equation}
-분자·분모의 상수는 바닥(floor)과 덮개(cap) 두 클램프로 식을 안정화한다. 분모의 $\max(1,\cdot)$은 바닥으로, 큐 나이 차가 거의 없어 $\text{mean}(\tilde A)$가 0에 가까울 때 분모가 작아져 $\alpha_{\text{eff}}$가 폭주하는 것을 막는다($R_{\min}$은 갱이 노드 경계($\le 8$ GPU) 안이라 항상 $R_{\min}\ge0.2$여서 하한이 필요 없다). 여기서 상수 $1$은 나이의 \textit{단위}다 --- 나이는 제출마다 $+1$인 정수 카운터라 최소 단위가 $1$(도착 한 건)이다. 이 바닥은 나이 spread가 1 미만인 \textit{퇴화(거의 빈 큐) 경우에만} 발동하며, 결과를 측정하는 과부하 구간에서는 $\text{mean}(\tilde A)\gg1$이라 한 번도 걸리지 않는다 --- 따라서 보고된 수치는 이 값에 무감하고 탐색할 대상이 없다. 요컨대 ``무튜닝(Zero-knob)''은 상수가 전무하다는 뜻이 아니라 \textit{워크로드마다 다시 맞출 상수가 없다}는 뜻이다. $g$의 $\min(1,\cdot)$은 덮개(cap)로, $g$가 1을 넘어 승급을 증폭하지 못하게 한다. 최대 상대 나이는 평균 이상($A_{\max}\ge\text{mean}(\tilde A)$)이므로 큐에 나이 차가 조금이라도 있으면 $g=1$이고, $g$가 1보다 작아지는 경우는 모든 상대 나이가 0인($\tilde A_j\!\equiv\!0$, 이때 보너스도 0) 자명한 경우뿐이라 결과를 바꾸지 않는다. 따라서 실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$다. 나이 정규화는 두 단계로 이루어진다: (1) $\tilde A_j=A_j-\min_k A_k$로 최소 나이를 빼 과부하에서 무한 누적되는 \textit{절대 오프셋}을 없애고, (2) 상대 나이의 평균 $A_{\text{ref}}$로 나눠 남은 spread의 \textit{스케일}을 없앤다. 두 단계 모두 필요하다 --- 절대 나이를 그 평균으로 바로 나누면 공통 오프셋이 커서 작업 간 차이가 묻히므로(예: 나이 $[1000,1002,1005]$를 평균으로 나누면 모두 $\approx1$이 되어 구별이 사라진다) 반드시 min을 먼저 빼야 한다. 그 결과 $\tilde A_j/A_{\text{ref}}$는 ``큐 평균 대비 몇 배 늙었나''라는, 워크로드·부하에 무관한 무차원 값이 된다. 큐 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되므로 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다. 이 정규화가 갖는 뜻은 보너스 항을 두 상대 비율의 곱으로 풀면 분명해진다:
+분자·분모의 상수는 바닥(floor)과 덮개(cap) 두 클램프로 식을 안정화한다. 분모의 $\max(1,\cdot)$은 바닥으로, 큐 나이 차가 거의 없어 $\text{mean}(\tilde A)$가 0에 가까울 때 분모가 작아져 $\alpha_{\text{eff}}$가 폭주하는 것을 막는다($R_{\min}$은 갱이 노드 경계($\le 8$ GPU) 안이라 항상 $R_{\min}\ge0.2$여서 하한이 필요 없다). 여기서 상수 $1$은 나이의 \textit{단위}다 --- 나이는 제출마다 $+1$인 정수 카운터라 최소 단위가 $1$(도착 한 건)이다. 이 바닥은 나이 spread가 1 미만인 \textit{퇴화(거의 빈 큐) 경우에만} 발동하며, 결과를 측정하는 과부하 구간에서는 $\text{mean}(\tilde A)\gg1$이라 한 번도 걸리지 않는다. $g$의 $\min(1,\cdot)$은 덮개(cap)로, $g$가 1을 넘어 승급을 증폭하지 못하게 한다. 최대 상대 나이는 평균 이상($A_{\max}\ge\text{mean}(\tilde A)$)이므로 큐에 나이 차가 조금이라도 있으면 $g=1$이고, $g$가 1보다 작아지는 경우는 모든 상대 나이가 0인($\tilde A_j\!\equiv\!0$, 이때 보너스도 0) 자명한 경우뿐이라 결과를 바꾸지 않는다. 따라서 실효 형태는 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$다. 나이 정규화는 두 단계로 이루어진다: (1) $\tilde A_j=A_j-\min_k A_k$로 최소 나이를 빼 과부하에서 무한 누적되는 \textit{절대 오프셋}을 없애고, (2) 상대 나이의 평균 $A_{\text{ref}}$로 나눠 남은 spread의 \textit{스케일}을 없앤다. 두 단계 모두 필요하다 --- 절대 나이를 그 평균으로 바로 나누면 공통 오프셋이 커서 작업 간 차이가 묻히므로(예: 나이 $[1000,1002,1005]$를 평균으로 나누면 모두 $\approx1$이 되어 구별이 사라진다) 반드시 min을 먼저 빼야 한다. 그 결과 $\tilde A_j/A_{\text{ref}}$는 ``큐 평균 대비 몇 배 늙었나''라는, 워크로드·부하에 무관한 무차원 값이 된다. 큐 멤버가 바뀌면 $\min_k A_k$ 갱신으로 나이가 자동 재기준되므로 과부하에서 절대 나이가 누적돼도 $\tilde A$는 현재 큐 spread로 제한돼 안정적이다. 이 정규화가 갖는 뜻은 보너스 항을 두 상대 비율의 곱으로 풀면 분명해진다:
 
 \begin{equation}
 \alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \underbrace{\frac{\tilde A_j}{A_{\text{ref}}}}_{\text{큐 평균 대비 나이}} \;\times\; \underbrace{\frac{R_j}{R_{\min}}}_{\text{최악 적합 대비 적합도}}
@@ -297,12 +297,12 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 
 즉 승급 압력은 나이 비율($\tilde A_j/A_{\text{ref}}$)과 적합 비율($R_j/R_{\min}$)의 곱으로, 평균 대비 나이와 최악 적합 대비 적합도가 함께 반영된다. HOL 주범인 가장 큰 작업($R_{\min}$)은 적합도가 낮아 승급되지 않는다. $A_{\text{ref}}$가 도착과 함께 자라 승급 압력이 $R$ 차등에 비례해 포화하므로, 이는 ``나이로 기아를 막는'' 방식이 아니라 ``나이-정규화된 자리 적합도의 조합으로 기아를 방지하는'' 방식이다.
 
-나이로 우선순위를 올리는 발상 자체는 새롭지 않다(OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}, Slurm multifactor age factor). 본 기여는 aging 메커니즘 자체가 아니라 그 가중을 무엇으로 정하는가에 있으며, 다음 세 가지로 갈린다. (i) 불가분 갱 자원에 대한 $R$ 결합 --- 나이 보너스가 자원 적합도 $R_j$와 곱해져 지금 비는 자리에 맞는 굶은 작업만 올리므로 HOL 주범인 가장 큰 작업($R_{\min}$)은 스스로 올라오지 않는다. (ii) 절대 시간이 아닌 상대 나이 --- $\tilde A_j$·$A_{\text{ref}}$ 정규화로 시간 단위를 소거해 워크로드가 바뀌어도 재튜닝이 불필요하다. (iii) 고정 상수가 아니라 큐 통계에서 계산되는 계수 --- SAFA의 가중 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 외부 상수 없이 현재 큐의 나이 분포에서 직접 계산된다. 
+나이로 우선순위를 올리는 발상 자체는 새롭지 않다(OS priority aging, Linux CFS의 vruntime 균등화, Tiresias\cite{gu2019tiresias}, Slurm multifactor age factor). 본 연구의 차별점은 aging 메커니즘 자체가 아니라 그 가중을 무엇으로 정하는가에 있으며, 다음 세 가지로 갈린다. (i) 불가분 갱 자원에 대한 $R$ 결합 --- 나이 보너스가 자원 적합도 $R_j$와 곱해져 지금 비는 자리에 맞는 굶은 작업만 올리므로 HOL은 우선 순위가 자연스럽게 내려 간다. . (ii) 절대 시간이 아닌 상대 나이 --- $\tilde A_j$·$A_{\text{ref}}$ 정규화로 시간 단위를 소거해 측정 단위나 주기가 변경 되어도 별다른 변환 없이 사용 가능하다. (iii) 고정 상수가 아니라 큐 통계에서 계산되는 계수 --- SAFA의 가중 $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$는 외부 상수 없이 현재 큐의 나이 분포에서 직접 계산된다. 
 
 \section{Experimental Evaluation}\label{sec:eval}
 
 \subsection{이산 사건 시뮬레이션 기반 규모 검증}\label{eval:sim}
-측정 규모와 현실성을 확보하기 위해, Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU 단일 구성에서 재생하는 파이썬 이산 사건 시뮬레이터를 개발했다. 시뮬레이션에는 B200$\times$8 단일 노드 쿠버네티스에서 47작업·4시나리오로 계측한 작업당 오버헤드(표 \ref{tab:overhead})를 반영했다. 베이스라인 FIFO, Order 정책 6종(SJF·LAS·Kueue·EASY·Themis·Lucid), SAFA와 결합되는 Placement 정책 FGD·KAI를 모두 직접 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조 검증).
+측정 규모와 현실성을 확보하기 위해, 파이썬 이산 사건 시뮬레이터를 개발하여 Philly 트레이스\cite{jeon2019philly} 전체(약 111k 작업, 최대 요청 8 GPU = 노드 경계 단위)를 256·512·1024 GPU 클러스터에서 재생 했다. 시뮬레이션에는 B200$\times$8 단일 노드 쿠버네티스에서 계측한 작업당 오버헤드(표 \ref{tab:overhead})를 반영했다. 베이스라인 FIFO, Order 정책 6종(SJF·LAS·Kueue·EASY·Themis·Lucid), SAFA와 결합되는 Placement 정책 FGD·KAI를 모두 직접 구현했다(저자 공개 코드가 있는 Tiresias·Kueue·FGD·Lucid는 원 알고리즘과 대조 검증).
 
 \begin{table}[htb!]
 \centering
@@ -318,9 +318,9 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \end{tabular}
 \end{table} 
 
-\noindent 지표 정의: Fairness --- 하위 1\% 순서 공정성 점수(100=완전 공정, 0=완전 역전); Overtaken --- 늦게 온 작업 과반에게 추월당한 작업 비율(\%); MedianWait·MaxWait --- 중앙값·최악 큐 대기(초, K$=10^3$·M$=10^6$); Utilization --- 평균 GPU 할당률(\%); Gini --- 대기 시간 분배의 불평등도(0=균등); TailRatio --- 99분위 대 중앙값 대기 비율.
+\noindent 지표 정의: Fairness --- 하위 1\% 순서 공정성 점수(100=완전 공정, 0=완전 역전); Overtaken --- 늦게 온 작업 과반에게 추월당한 작업 비율(\%); MedianWait·MaxWait --- 큐 대기 중앙값·최대값 (초, K$=10^3$·M$=10^6$); Utilization --- 평균 GPU 할당률(\%); Gini --- 대기 시간 분배의 불평등도(0=균등); TailRatio --- 99분위 대 중앙값 대기 비율.
 
-평가는 세 축 --- 순서 공정성(주 지표), 도착부터 배치까지의 큐잉 지연(MedianWait·MaxWait), 자원 활용도(Utilization; 효율 이득이 단순히 자원을 놀려서 얻은 것인지를 가른다) --- 를 기준으로 비교하며, 주 결과도 이 순서로 전개한다. 먼저 주 지표인 순서 공정성을 정의한다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
+평가는 공정성과 활용도간 trade-off, 대기 시간의 분포를 비교하며, 주 결과도 이와 관련된 지표로 표기 한다. 이를 위해 순서 공정성을 먼저 정의한다. 작업 $k$보다 늦게 도착했으나 먼저 시작(추월)한 작업 수를 $o_k$, $k$보다 늦게 도착한 전체를 $\ell_k$라 하면
 \begin{equation}
 F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr)
 \label{eq:order-fair}
@@ -329,18 +329,17 @@ $F_k=100$은 완전 순서 보존, $F_k=0$은 완전 역전이며, $\ell_k=0$이
 
 $F_k$ 정의는 도착 순서 위반을 불공정으로 보는 Sabin--Sadayappan\cite{sabin2005unfairness}의 고전 정의에 대응한다. 
 
-Gini는 대기를 오름차순 정렬한 값 $w_{(1)}\le\cdots\le w_{(n)}$으로 다음과 같이 정의한다. 
+Gini는 대기 시간을 오름차순 정렬한 값 $w_{(1)}\le\cdots\le w_{(n)}$을 활용하여 다음과 같이 정의한다. 
 \begin{equation}
 G = \frac{2\sum_{j=1}^{n} j\,w_{(j)}}{n\sum_{j=1}^{n} w_{(j)}} - \frac{n+1}{n}
 \label{eq:gini}
 \end{equation}
 $G=0$은 모든 작업의 대기가 같은 완전 균등, $G$가 1에 가까울수록 소수 작업에 대기가 쏠림을 뜻한다. 
 \subsection{베이스라인 구현과 충실도}\label{eval:impl}
-비교군은 세 층위다. (i) 무개입 베이스라인 FIFO는 모든 개선폭의 분모다. (ii) Order 정책(SJF·Themis·LAS·EASY·Kueue·Lucid)은 ``어떤 작업을 먼저 배치할 것인가''를 결정하며, SAFA와 대체 관계인 직접 비교군이다. (iii) Placement 축(most-allocated·compact·round-robin·MCTS·FGD)은 ``어디에 놓을지''를 푸는 다음 단계로, SAFA와의 결합성을 측정한다. 각 구현을 저자 공개 코드와 라인 단위로 대조했다. 엔진의 큐잉 계산도 손계산 가능한 세 toy 사례(포화 D/D/1, 멀티-GPU gang, 오버헤드 회계)와 부동소수점 정밀도 내(최대 절대오차 $0.0$)에서 일치함을 확인했다.
-
+비교군은 세가지 분류이다. (i) 무개입 베이스라인 FIFO는 모든 개선폭의 기준이다. (ii) Order 정책(SJF·Themis·LAS·EASY·Kueue·Lucid)은 ``어떤 작업을 먼저 배치할 것인가''를 결정하며, SAFA와 대체 관계인 직접 비교군이다. (iii) Placement 축(most-allocated·compact·round-robin·MCTS·FGD)은 ``어디에 놓을지''를 푸는 다음 단계로, SAFA와의 결합성을 측정한다. 각 구현을 저자 공개 코드와 라인 단위로 대조했다. 
 \begin{itemize}
-\item FIFO: 도착순 항등, 선두 미배치 시 패스 중단(blocking). HOL 통제군.
-\item SJF: 명목 실행시간 오름차순. oracle duration 가정의 평균-최적 기준.
+\item FIFO: 도착순 배치, 선두 미배치 시 배치 중단(blocking).
+\item SJF: 실행시간 오름차순으로 우선 순위 배정.
 \item LAS (Tiresias): 누적 서비스 최소 우선. 단 비선점 엔진에서는 대기 작업의 누적 서비스가 0이라 도착순 처리로 퇴화하므로, 본 평가에서는 LAS가 Tiresias를 대표한다.
 \item EASY: FIFO$+$선두 예약 backfill(oracle duration). 본 평가는 $T$ 이전 종료만 쓰는 보수판이며, 완전판은 단일 구성의 Fairness를 올리나 과부하 구도는 바꾸지 못한다(보충자료).
 \item Themis: 완료시간 공정성 $r$ 내림차순. 공개 코드 부재로 라운드 솔버를 뺀 $r$-정렬 근사이며, 큰 작업을 구제 못해 기아로 치우칠 수 있다.
