@@ -239,7 +239,7 @@ SAFA는 Placement보다 한 발 앞서 동작하며 대기 큐와 서버 풀의 
 이 절은 $\alpha$가 제어하는 트레이드오프와 그 최적값을 정의하고, 최적 $\alpha$가 워크로드에 따라 크게 달라져 고정 계수에 단일 최적값이 없음을 보인 뒤, 계수 결정을 큐 통계에 위임한 SAFA(Zero-knob)를 유도한다.
 
 \subsubsection{트레이드오프 분석과 지표 정의}
-$\alpha$가 크면 막혔던 작업이 과도하게 추월해 새 불공정을 낳으므로, 적절한 값을 정하려면 이 트레이드오프를 정량화해야 한다. 작업 누적 대기 시간을 요청 가속기 수별로 묶어 그 변화량을 누적 거리(accumulated distance, AD)로 정의한다. $WT_k=\sum_{j\in C_k} w_j$는 적용 전 대기 합, $C_k$는 요청 가속기 $k$개 클래스, $WT'_k$는 적용 후다. 가중 $1/2^{8-k}$는 요청 가속기 수가 큰 클래스에 더 큰 비중을 주기 위한 것이다. 이 가중의 임의성 자체가 무튜닝(Zero-knob)의 동기 중 하나다.
+$\alpha$가 크면 막혔던 작업이 과도하게 추월해 새 불공정을 낳으므로, 적절한 값을 정하려면 이 트레이드오프를 정량화해야 한다. 작업 누적 대기 시간을 요청 가속기 수별로 묶어 그 변화량을 누적 거리(accumulated distance, AD)로 정의한다. $WT_k=\sum_{j\in C_k} w_j$는 적용 전 대기 합, $C_k$는 요청 가속기 $k$개 클래스, $WT'_k$는 적용 후다. 가중 $1/2^{8-k}$는 요청 가속기 수가 큰 클래스에 더 큰 비중을 주기 위한 것이다. 
 \begin{equation}
 AD = \sum_{k=1}^8 \frac{(WT'_k - WT_k)}{2^{8-k}}
 \label{eq:07}
@@ -253,7 +253,7 @@ AMD = \sum_{k=1}^8 \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k
 \vspace{2pt}
 \end{equation}
 
-$w_j$, $w'_j$는 적용 전·후의 대기 시간이다. 이 두 지표와 그 min--max 정규화 합(식 \eqref{eq:09})은 $\alpha$ 탐색의 목적함수일 뿐 평가 지표가 아니며, 가중·정규화 선택에 따라 최적 $\alpha$가 달라진다는 점이 고정 계수의 한계를 한층 더 뒷받침한다. AD는 전반적 대기 쏠림을, AMD는 특정 클래스의 최악 대기를 잡으므로, 둘을 함께 최소화하면 평균 공정성과 기아 억제를 동시에 겨냥한다.
+$w_j$, $w'_j$는 적용 전·후의 대기 시간이다. 이 두 지표와 min--max 정규화 합(식 \eqref{eq:09})은 $\alpha$ 탐색의 목적함수일 뿐 평가 지표가 아니며, 가중·정규화 선택에 따라 최적 $\alpha$가 달라진다는 점이 고정 계수의 한계를 한층 더 뒷받침한다. AD는 전반적 대기 쏠림을, AMD는 특정 클래스의 최악 대기를 잡으므로, 둘을 함께 최소화하면 평균 공정성과 기아 억제를 동시에 겨냥한다.
 
 $\alpha$는 0.01--1.99(0.01 간격)에서 탐색하며, 세 지표(makespan·AD·AMD)를 min--max 정규화해 합한 목적 함수를 최소화하는 값을 고른다.
 
@@ -264,7 +264,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \end{equation}
 
 \subsubsection{고정 계수의 한계}\label{coeff:limit}
-고정 $\alpha$의 근본 한계는 최적값이 단일하지 않다는 것이다. 8가지 분포(정규·지수·로그정규·감마·베타·Weibull·균등·푸아송)로 각 1,000작업을 합성해 \eqref{eq:09}를 최소화하는 분포별 최적 $\alpha$를 구하면(표 \ref{fig:motivation}) 0.22(감마·푸아송)에서 1.63(로그정규)까지 달라진다. 모든 워크로드를 만족하는 단일 $\alpha$는 없으므로, 고정 $\alpha$는 특정 워크로드에 대한 타협일 뿐이며 워크로드가 바뀌면 그리드 탐색을 다시 해야 한다.
+고정 $\alpha$의 근본 한계는 최적값이 단일하지 않다는 것이다. 8가지 분포(정규·지수·로그정규·감마·베타·Weibull·균등·푸아송)로 각 1,000작업을 합성해 식\eqref{eq:09}를 최소화하는 분포별 최적 $\alpha$를 구하면(표 \ref{fig:motivation}) 0.22(감마·푸아송)에서 1.63(로그정규)까지 달라진다. 모든 워크로드를 만족하는 단일 $\alpha$는 없으므로, 고정 $\alpha$는 특정 워크로드에 대한 타협일 뿐이며 워크로드가 바뀌면 그리드 탐색을 다시 해야 한다.
 
 \begin{table}[htb!]
 \centering
@@ -282,7 +282,7 @@ Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
 \end{table}
 
 \subsubsection{SAFA(Zero-knob)}\label{SAFA}
-고정 $\alpha$는 워크로드마다 다시 맞춰야 한다. 이를 없애기 위해 식 \eqref{eq:01}의 $\alpha$를 대기 큐 통계에서 매 패스 계산하는 $\alpha_{\text{eff}}$로 바꾼다. 그 통계는 식 \eqref{eq:01}의 상대 나이 $\tilde A_j = A_j - \min_k A_k$에서 유도한다: 큐의 나이 스케일을 나타내는 평균 $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, 최대 상대 나이 $A_{\max}=\max_k \tilde A_k$, 그리고 자리에 가장 안 맞는 작업의 적합도 $R_{\min}=\max(0.1,\min_k R_k)$다. 이들로 계수를 다음과 같이 정의한다:
+워크로드마다 다시 맞춰야 하는 고정 $\alpha$ 대신 식 \eqref{eq:01}의 $\alpha$를 대기 큐 통계에서 매 패스 계산하는 $\alpha_{\text{eff}}$로 바꾼다. 대기 큐 통계는 식 \eqref{eq:01}의 상대 나이 $\tilde A_j = A_j - \min_k A_k$에서 유도한다: 큐의 나이 스케일을 나타내는 평균 $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, 최대 상대 나이 $A_{\max}=\max_k \tilde A_k$, 그리고 자리에 가장 안 맞는 작업의 적합도 $R_{\min}=\max(0.1,\min_k R_k)$다. 이들로 계수를 다음과 같이 정의한다:
 
 \begin{equation}
 \alpha_{\text{eff}} = \frac{g}{A_{\text{ref}}\,R_{\min}},\qquad g=\min\!\Big(1,\;\frac{A_{\max}}{A_{\text{ref}}}\Big)
