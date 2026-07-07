@@ -336,7 +336,7 @@ G = \frac{2\sum_{j=1}^{n} j\,w_{(j)}}{n\sum_{j=1}^{n} w_{(j)}} - \frac{n+1}{n}
 \end{equation}
 $G=0$은 모든 작업의 대기가 같은 완전 균등, $G$가 1에 가까울수록 소수 작업에 대기가 쏠림을 뜻한다. 
 \subsection{베이스라인 구현과 충실도}\label{eval:impl}
-비교군은 세 층위로 나뉜다. (i) 무개입 베이스라인 FIFO는 모든 개선폭의 기준이다. (ii) Order 정책(SJF·Themis·LAS·EASY·Kueue·Lucid)은 ``어떤 작업을 먼저 배치할 것인가''를 결정하며, SAFA와 대체 관계인 직접 비교군이다. (iii) Placement 축(most-allocated·compact·round-robin·MCTS·FGD)은 ``어디에 놓을지''를 푸는 다음 단계로, SAFA와의 결합성을 측정한다. 각 구현을 저자 공개 코드와 라인 단위로 대조했다. 
+비교군은 다음 세 부류로 나뉜다. (i) 무개입 베이스라인 FIFO는 모든 개선폭의 기준이다. (ii) Order 정책(SJF·Themis·LAS·EASY·Kueue·Lucid)은 ``어떤 작업을 먼저 배치할 것인가''를 결정하며, SAFA와 대체 관계인 직접 비교군이다. (iii) Placement 축(most-allocated·compact·round-robin·MCTS·FGD)은 ``어디에 놓을지''를 푸는 다음 단계로, SAFA와의 결합성을 측정한다. 각 구현을 저자 공개 코드와 라인 단위로 대조했다. 
 \begin{itemize}
 \item FIFO: 도착한 순서대로 작업을 배치하며, 선두 작업이 자리를 얻지 못하면 그 뒤 작업까지 막는다(blocking).
 \item SJF: 실행시간이 짧은 작업부터 우선순위를 매긴다.
