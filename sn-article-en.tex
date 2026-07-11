@@ -1,9 +1,8 @@
-% SAFA --- IEEE format (IEEEtran). English version of sn-article.tex.
+% SAFA --- IEEE Open Journal template (IEEE-open-journal-template.zip: ieeetj.cls,
+% tj-template-s1.tex conventions). English version of sn-article.tex.
 % Terminology follows GLOSSARY.md — keep the two versions consistent.
-% IEEEtran.cls is a standard TeX Live/Overleaf class (no upload needed).
-% For the OFFICIAL IEEE Access class (ieeeaccess.cls): obtain it from Overleaf's
-% "IEEE Access" template, then switch to the ieeeaccess front matter preserved
-% in git commit f4aea99 (\documentclass{ieeeaccess} + \history/\doi/\address/\corresp).
+% ieeetj.cls is included in the repo (identical to the zip). Uppercase section
+% titles, \IEEEPARstart, and front matter follow the template conventions.
 \documentclass{ieeetj}
 
 \usepackage{graphicx}
@@ -42,7 +41,7 @@
 \currentdate{XX Month, XXXX}
 \doiinfo{XXXX.XXXX.0000000}
 
-\markboth{Cho et al.: SAFA: Lightweight Queue-Only Reordering for GPU Gang Scheduling}{Cho et al.: SAFA: Lightweight Queue-Only Reordering for GPU Gang Scheduling}
+\markboth{SAFA: Keeping the Efficiency--Fairness Balance with Lightweight, Queue-Only Reordering}{Cho \MakeLowercase{et al.}}
 
 \title{SAFA: Keeping the Efficiency--Fairness Balance with Lightweight, Queue-Only Reordering}
 
@@ -62,8 +61,8 @@ Head-of-line blocking, GPU gang scheduling, queue reordering, order fairness, tu
 
 \maketitle
 
-\section{Introduction}\label{sec1}
-Job scheduling for GPU clusters has long been studied as a key problem that governs operating and research costs. Large organizations build ``hyper-clusters'' that tie hundreds to thousands of GPUs together with high-bandwidth interconnects, and as jobs with disparate GPU request counts and JCTs are submitted endlessly, resources become fragmented\cite{athlur2022varuna}. Fragmentation grows even more severe in shared environments that use fractional GPUs: hundreds of GPUs may sit idle cluster-wide yet cannot be assigned to new jobs\cite{weng2023beware}. Nor can scheduling fully solve this---queue assignment of jobs whose completion times cannot be known in advance is NP-hard combinatorial optimization\cite{ullman1975np}, and real scheduling maps onto flow shop, job shop, single machine, open shop, and $k$-machine parallel scheduling\cite{b1}, so approximation algorithms are usually relied upon\cite{b2}.
+\section{INTRODUCTION}\label{sec1}
+\IEEEPARstart{J}{ob} scheduling for GPU clusters has long been studied as a key problem that governs operating and research costs. Large organizations build ``hyper-clusters'' that tie hundreds to thousands of GPUs together with high-bandwidth interconnects, and as jobs with disparate GPU request counts and JCTs are submitted endlessly, resources become fragmented\cite{athlur2022varuna}. Fragmentation grows even more severe in shared environments that use fractional GPUs: hundreds of GPUs may sit idle cluster-wide yet cannot be assigned to new jobs\cite{weng2023beware}. Nor can scheduling fully solve this---queue assignment of jobs whose completion times cannot be known in advance is NP-hard combinatorial optimization\cite{ullman1975np}, and real scheduling maps onto flow shop, job shop, single machine, open shop, and $k$-machine parallel scheduling\cite{b1}, so approximation algorithms are usually relied upon\cite{b2}.
 
 Despite these difficulties, scheduler research for deep-learning jobs has advanced steadily. Ye et al.\cite{b3} organize the field along two axes: one classifies by workload type, such as training or inference, and the other by objective, such as efficiency, fairness, and deadlines. They single out Sia\cite{b4}, which leads across utilization, fairness, and completion time, and Lucid\cite{b5}, which boosts performance with multi-state profiling, as representative SOTA schedulers, and view most of today's GPU schedulers as variants of this lineage. These schedulers, however, share one common burden: whenever workload characteristics change, the policy or the scheduler must be re-fit.
 
@@ -82,7 +81,7 @@ The rest of this paper is organized as follows. Section \ref{Related} reviews re
 
 Throughout this paper, `GPU' refers to a datacenter GPU. The precise term is `datacenter GPU', shortened for brevity.
 
-\section{Related Works}\label{Related}
+\section{RELATED WORKS}\label{Related}
 To compare SAFA fairly, this work distinguishes prior studies along two aspects. The first aspect is the stage at which a scheduler intervenes. Scheduling stages can be divided in many ways, but broadly into an Order stage that decides which job to serve first and a Placement stage that decides where to put the selected job. The second aspect is what information the decision uses: does it operate only on information directly observable in the queue---waiting time, resource demand, queue position, observed attained service---or does it rely on auxiliary information beyond that? Auxiliary information splits into three kinds---first, runtime estimation or rank prediction (SJF, EASY backfilling, learning-to-rank); second, per-job performance/throughput profiles (Optimus, Lucid, Sia, Pollux, Arena, Rubick); third, round solvers or auction bids (Themis, FFT, RLTune).
 
 
@@ -140,7 +139,7 @@ For a comparison to be meaningful, SAFA and the baselines must decide (i) over t
 The remaining schedulers other than KAI and FGD violate at least one of (i)--(iii) and are excluded from the baselines. (a) Layer mismatch: Learning-to-Rank (ms, request granularity) and NotebookOS (interactive replication) differ from cluster gang jobs in decision object and time scale, and the former's principle is represented by SJF, its perfect-prediction limit. (b) Missing decision variables: the decision variables of Sia, Gavel\cite{narayanan2020gavel}, Optimus, Pollux, Arena, and Rubick (per-job profiles, internal parallelization plans) do not exist in fixed-request gang traces (this holds even given perfect profiles, and demoting Sia to rigid makes it equivalent to FIFO/SJF). (c) Learning/solver dependence: RLTune and FFT presuppose learned models and round solvers ($+$epoch estimates), placing them at a different information/infrastructure layer from SAFA, which uses no prediction. KAI and FGD engage in Placement, so they are evaluated not as baselines but as composition targets for SAFA.
 
 
-\section{Motivation}\label{motivation}
+\section{MOTIVATION}\label{motivation}
 The progress of deep learning owes much to container-based\cite{b7} reproducible, shared training environments. Docker Hub\cite{b8} and Hugging Face\cite{b9} make ML frameworks, libraries, and architectures easy to share, letting researchers focus on algorithms. This abstraction, however, hides a model's GPU-dependent components and, paradoxically, breeds inefficiency in GPU server pools.
 
 Because GPU access is abstracted at card granularity, containers usually occupy GPUs exclusively. Consequently, even when the hardware supports time slicing that could raise the allocation rate, it is hard to exploit flexibly during training or server-pool operation. Meanwhile, as model sizes grow, it has become common for a single job to demand multiple GPUs simultaneously. Jobs with disparate completion times and GPU demands are submitted to an operating server pool without pause, and combined with exclusive GPU occupancy this deepens the fragmentation inside the pool. How fragmentation arises can be illustrated with the following example.
@@ -173,7 +172,7 @@ The HOL problem cannot be solved by algorithms alone. Even offline scheduling of
 
 To analyze and iteratively develop this mechanism we built our own simulator---it parses job logs, replays them under multiple policies, and composes the new methodology without touching existing mechanisms. This composability shows that queue adjustment operates independently of Placement.
 
-\section{Resolving Head-of-Line Blocking in the Job Queue}\label{algo:intro}
+\section{RESOLVING HEAD-OF-LINE BLOCKING IN THE JOB QUEUE}\label{algo:intro}
 We propose SAFA (Starvation-Aware Fair Aging), which resolves HOL blocking in the job wait queue. In this paper, ``gang'' denotes a fixed GPU request allocated simultaneously in an all-or-nothing manner (a rigid job in the Feitelson--Rudolph taxonomy\cite{feitelson1996toward}), distinct from Ousterhout-style gang scheduling\cite{ousterhout1982gang}, i.e., coordinated time slicing.
 \subsection{Starvation-Aware Queue Adjustment}
 A collapse of order fairness is starvation itself---if later arrivals keep overtaking the queue, a large job's turn never comes and it never completes. Indeed, fast policies that chase only the median wait obtain their low medians at the price of permanently starving large jobs (Fairness 0). Order fairness is therefore not a ``nice-to-have'' property but a production requirement that guarantees no job is excluded indefinitely. The goal of queue adjustment is not throughput improvement but to reduce the queue delay of HOL-blocked jobs while preserving arrival-order fairness as much as possible. That is, what it prevents is the state in which the queue is blocked indefinitely by one job and successors pile up forever---not a completion guarantee for an individual large job. Since arbitrary priority adjustment causes unfairness, we control that trade-off with an age-weighting coefficient.
@@ -299,7 +298,7 @@ Promotion pressure is thus the product of the age ratio ($\tilde A_j/A_{\text{re
 Raising priority by age is not new in itself (OS priority aging, Linux CFS's vruntime equalization, Tiresias\cite{gu2019tiresias}, Slurm's multifactor age factor). Our contribution lies not in the aging mechanism itself but in what determines its weight, and it splits three ways. (i) Coupling $R$ for indivisible gang resources---the age bonus is multiplied by the resource fitness $R_j$, promoting only starved jobs that fit currently vacant slots, so the largest job, the HOL culprit ($R_{\min}$), does not rise on its own. (ii) Relative rather than absolute age---normalizing by $\tilde A_j$ and $A_{\text{ref}}$ cancels the time unit, so no re-tuning is needed as workloads change. (iii) A coefficient computed from queue statistics rather than a fixed constant---SAFA's weight $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$ is computed directly from the current queue's age distribution with no external constant.
 
 
-\section{Experimental Evaluation}\label{sec:eval}
+\section{EXPERIMENTAL EVALUATION}\label{sec:eval}
 
 \subsection{Scale Validation via Discrete-Event Simulation}\label{eval:sim}
 To secure measurement scale and realism, we developed a Python discrete-event simulator that replays the entire Philly trace\cite{jeon2019philly} (about 111k jobs; maximum request 8 GPUs, i.e., the node-boundary unit) on single configurations of 256, 512, and 1024 GPUs. The simulation incorporates per-job overheads (Table \ref{tab:overhead}) measured with 47 jobs across 4 scenarios on B200$\times$8 single-node Kubernetes. We implemented everything ourselves---the baseline FIFO, six Order policies (SJF, LAS, Kueue, EASY, Themis, Lucid), and the Placement policies FGD and KAI that compose with SAFA (Tiresias, Kueue, FGD, and Lucid, whose authors released code, were cross-checked against the original algorithms).
@@ -510,7 +509,7 @@ Overall, our conclusion asserts no absolute ranking; instead, it emphasizes the 
 
 \FloatBarrier
 
-\section{Conclusions and Future Works}\label{conclu}
+\section{CONCLUSIONS AND FUTURE WORKS}\label{conclu}
 
 This work proposed SAFA, a layer in charge of Order alone --- the first stage of scheduling --- to resolve HOL-blocking starvation in GPU server pools. The evaluation was carried out with a discrete-event simulator replaying three traces (Philly, Helios, Alibaba PAI) (on 256--1024-GPU single clusters, comparing against FIFO and six Order policies and validating composition with seven Placements) and with real measurements on NVIDIA B200$\times$8 Kubernetes (cross-validation). Unlike a variety of recent scheduler policies that require runtime estimation, performance profiles, or solvers, SAFA resolves queue-head HOL with queue-observable information only (waiting time, resource demand, relative age) and operates on top of a range of schedulers.
 
@@ -523,17 +522,10 @@ Since this work is limited to GPU gang traces (Philly, Helios, Alibaba), extendi
 The B200 measurements confirmed that on the real Kubernetes admission-and-binding path SAFA prevents burst-overload starvation (Fairness 82.8, Overtaken 0.0\%) and that the decisive factor is head-order preservation. However, the multi-node, fragmented conditions under which age promotion surpasses FIFO do not form on a single node, so the most important future work is expanding the real-cluster measurements.
 
 \FloatBarrier
-\section*{Acknowledgment}
+\section*{ACKNOWLEDGMENT}
 The authors received no financial support from any institution for this work.
 
 Disclosure of generative-AI use. Following IEEE recommendations, the authors disclose that generative-AI tools were used in an auxiliary capacity in preparing this paper. AI was used only for sentence polishing and language editing, figure generation and scripts for reproducing experiments, and assistance in organizing results; the conception of the research, algorithm design, and the execution and interpretation of experiments were carried out by the authors themselves. The authors reviewed and revised all content after using AI tools and bear full responsibility for the content of the publication.
-
-%%===========================================================================================%%
-%% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
-%% system, please include the references within the manuscript file itself. You may do this  %%
-%% by copying the reference list from your .bbl file, paste it into the main manuscript .tex %%
-%% file, and delete the associated \verb+\bibliography+ commands.                            %%
-%%===========================================================================================%%
 
 \bibliographystyle{IEEEtran}
 \bibliography{sn-bibliography}
