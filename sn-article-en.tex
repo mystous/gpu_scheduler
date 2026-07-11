@@ -22,6 +22,7 @@
 \usepackage{placeins}         % \FloatBarrier — keep figures inside section/bibliography boundaries
 \usepackage{subcaption}       % 2x2 concept diagram (subfigures)
 \usepackage[hidelinks]{hyperref}
+\usepackage{orcidlink}       % author ORCID icons (\orcidlink)
 \AtBeginDocument{\definecolor{tmlcncolor}{cmyk}{0.93,0.59,0.15,0.02}\definecolor{NavyBlue}{RGB}{0,86,125}}
 \def\OJlogo{\vspace{-4pt}}
 \def\seclogo{\vspace{10pt}}
@@ -45,7 +46,7 @@
 
 \title{SAFA: Keeping the Efficiency--Fairness Balance with Lightweight, Queue-Only Reordering}
 
-\author{Kyunam~Cho\authorrefmark{1}\authorrefmark{2}, YoungHwan~Jin\authorrefmark{2}, and Heonchang~Yu\authorrefmark{1}}
+\author{Kyunam~Cho\authorrefmark{1}\authorrefmark{2}\,\orcidlink{0000-0002-8300-8192}, YoungHwan~Jin\authorrefmark{2}, and Heonchang~Yu\authorrefmark{1}\,\orcidlink{0000-0003-2216-595X}}
 \affil{Department of Computer Science and Engineering, Korea University, Seoul, Republic of Korea}
 \affil{LG Uplus Corp., Seoul, Republic of Korea}
 \corresp{Corresponding author: Heonchang Yu (e-mail: yuhc@korea.ac.kr).}
@@ -531,4 +532,20 @@ Disclosure of generative-AI use. Following IEEE recommendations, the authors dis
 \bibliography{sn-bibliography}
 %% if required, the content of .bbl file can be included here once bbl is generated
 %%\input sn-article.bbl
+
+% Author biographies --- to add a photo, replace IEEEbiographynophoto with
+% \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{photo}}]{Name}.
+% Fill in the XXXX/XX placeholders with actual degrees and years.
+\begin{IEEEbiographynophoto}{Kyunam Cho}
+received the B.S. degree in XX from XX University in XXXX and the M.S. degree in XX from XX University in XXXX. He is currently pursuing the Ph.D. degree with the Department of Computer Science and Engineering, Korea University, Seoul, Republic of Korea, and works at LG Uplus Corp., Seoul. His research interests include GPU cluster job scheduling, datacenter resource management, and cloud computing.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{YoungHwan Jin}
+received the B.S. degree in XX from XX University in XXXX. He currently works at LG Uplus Corp., Seoul, Republic of Korea. His research interests include GPU cluster operations, datacenter infrastructure, and cloud computing.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Heonchang Yu}
+received the Ph.D. degree in XX from XX University in XXXX. He is currently a Professor with the Department of Computer Science and Engineering, Korea University, Seoul, Republic of Korea. His research interests include cloud computing, distributed and parallel computing, virtualization, and resource management.
+\end{IEEEbiographynophoto}
+
 \end{document}
