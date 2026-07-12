@@ -83,7 +83,7 @@ Head-of-line blocking, GPU gang scheduling, queue reordering, order fairness, tu
 
 본 논문의 `GPU'는 데이터센터 GPU를 가리킨다. 정확한 용어는 `데이터센터 GPU'이나 간결성을 위해 줄여 쓴다.
 
-\section{RELATED WORKS}\label{Related}
+\section{RELATED WORK}\label{Related}
 본 연구는 SAFA를 공정하게 비교하기 위하여 선행 연구를 두 측면에서 구별한다. 첫 번째 측면은 스케줄러가 관여하는 단계다. 스케줄링 단계는 여러 갈래로 나눌 수 있지만, 크게는 어떤 작업을 먼저 처리할지 정하는 Order 단계와, 선택한 작업을 어디에 놓을지 판단하는 Placement 단계로 간단히 나눌 수 있다. 두 번째 측면은 의사결정에 어떤 정보를 쓰는가다. 큐에서 직접 관측되는 정보, 곧 대기 시간·자원 요구량·큐 위치·관측된 누적 정보만으로 동작하는가, 아니면 그 이외의 부차 정보에 의존하는가 이다. 부차 정보는 다시 세 갈래로 나뉜다 --- 첫째는 실행시간 추정이나 순위 예측(SJF·EASY 백필링·learning-to-rank), 둘째는 작업별 성능·throughput 프로파일(Optimus·Lucid·Sia·Pollux·Arena·Rubick), 셋째는 라운드 솔버나 경매 입찰(Themis·FFT·RLTune)이다.
 
 
@@ -515,7 +515,7 @@ SAFA는 7개 Placement 전부에서 모든 지표를 개선한다. 재정렬 정
 
 \FloatBarrier
 
-\section{CONCLUSIONS AND FUTURE WORKS}\label{conclu}
+\section{CONCLUSIONS AND FUTURE WORK}\label{conclu}
 
 본 연구는 GPU 서버 풀의 HOL 블로킹 기아를 해소하기 위해 스케줄링 첫 단계 Order만 담당하는 SAFA를 제안했다. 평가는 세 트레이스(Philly·Helios·Alibaba PAI)를 재생하는 이산 사건 시뮬레이터(256--1024 GPU 단일 클러스터에서 FIFO와 Order 정책 6종과 비교하고 Placement 7종과의 결합을 검증)와 NVIDIA B200$\times$8 쿠버네티스 실측(교차 검증)으로 수행했다. 다양한 최신 스케줄러 정책이 실행시간 추정·성능 프로파일·솔버를 요구하는 것과 달리, SAFA는 큐 관측 정보(대기 시간·자원 요구량·상대 나이)만으로 큐 선두 HOL을 해소해 여러 스케줄러 위에서 동작한다.
 
