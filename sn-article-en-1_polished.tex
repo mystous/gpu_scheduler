@@ -463,7 +463,7 @@ Since SAFA acts before Placement, it can sit in front of any Placement policy. F
 
 Fragmentation costs something under every placement, and the amount tracks how widely the policy scatters jobs. Under FIFO, utilization falls from 91.9\% with most-allocated to 89.3\% with KAI spread, and the median wait rises from 5.8M\,s to 6.2M\,s, because scattered free GPUs leave no node able to hold an 8-GPU gang in full.
 
-SAFA improves every metric under all seven policies. Filling vacant node slots with jobs that fit brings utilization back to 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, cuts the median wait by 11 to 18\%, and holds Fairness at 92 to 94. The recovery is largest where the placement scatters most aggressively. Under KAI spread, utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It returns the utilization that fragmentation took, and it does so most where fragmentation is worst.
+SAFA improves every metric under all seven policies. Filling vacant node slots with jobs that fit brings utilization back to 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, cuts the median wait by 11 to 18\%, and holds Fairness at 91.8 to 93.7. The recovery is largest where the placement scatters most aggressively. Under KAI spread, utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It returns the utilization that fragmentation took, and it does so most where fragmentation is worst.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_placement_hol.pdf}}
@@ -480,21 +480,21 @@ SAFA improves every metric under all seven policies. Filling vacant node slots w
 \toprule
 \textbf{Placement} & & \textit{MedianWait} & \textit{MaxWait} & \textit{Fairness} & Overtaken & \textbf{Utilization} & Gini & TailRatio \\
 \midrule
-\multirow{2}{*}{most-allocated} & FIFO & 5.8M & 13.0M & 100 & 0.0 & 91.9 & .36 & 2.23 \\
-                                & SAFA & 5.0M & 11.9M & 93 & 0.0 & \textbf{96.0} & .38 & 2.36 \\
-\multirow{2}{*}{compact}        & FIFO & 5.8M & 13.0M & 100 & 0.0 & 91.8 & .36 & 2.23 \\
-                                & SAFA & 5.2M & 12.0M & 93 & 0.0 & \textbf{95.5} & .38 & 2.32 \\
-\multirow{2}{*}{round-robin}    & FIFO & 6.1M & 13.8M & 100 & 0.0 & 89.1 & .36 & 2.24 \\
-                                & SAFA & 5.1M & 12.4M & 92 & 0.0 & \textbf{94.7} & .39 & 2.42 \\
-\multirow{2}{*}{MCTS}           & FIFO & 5.8M & 13.1M & 100 & 0.0 & 91.6 & .36 & 2.24 \\
-                                & SAFA & 5.1M & 12.1M & 94 & 0.0 & \textbf{95.8} & .38 & 2.35 \\
+\multirow{2}{*}{most-allocated} & FIFO & 5.8M & 13.0M & 100.0 & 0.0 & 91.9 & .36 & 2.23 \\
+                                & SAFA & 5.0M & 11.9M & 93.5 & 0.0 & \textbf{96.0} & .38 & 2.36 \\
+\multirow{2}{*}{compact}        & FIFO & 5.8M & 13.0M & 100.0 & 0.0 & 91.8 & .36 & 2.23 \\
+                                & SAFA & 5.2M & 12.0M & 93.1 & 0.0 & \textbf{95.5} & .38 & 2.32 \\
+\multirow{2}{*}{round-robin}    & FIFO & 6.1M & 13.8M & 100.0 & 0.0 & 89.1 & .36 & 2.24 \\
+                                & SAFA & 5.1M & 12.4M & 91.8 & 0.0 & \textbf{94.7} & .39 & 2.42 \\
+\multirow{2}{*}{MCTS}           & FIFO & 5.8M & 13.1M & 100.0 & 0.0 & 91.6 & .36 & 2.24 \\
+                                & SAFA & 5.1M & 12.1M & 93.7 & 0.0 & \textbf{95.8} & .38 & 2.35 \\
 \midrule
-\multirow{2}{*}{FGD}            & FIFO & 5.8M & 13.1M & 100 & 0.0 & 91.9 & .36 & 2.24 \\
-                                & SAFA & 5.0M & 12.0M & 94 & 0.0 & \textbf{96.5} & .38 & 2.37 \\
-\multirow{2}{*}{KAI binpack}    & FIFO & 5.8M & 13.0M & 100 & 0.0 & 91.9 & .36 & 2.23 \\
-                                & SAFA & 5.0M & 11.9M & 93 & 0.0 & \textbf{96.0} & .38 & 2.36 \\
-\multirow{2}{*}{KAI spread}     & FIFO & 6.2M & 13.8M & 100 & 0.0 & 89.3 & .35 & 2.23 \\
-                                & SAFA & 5.1M & 12.3M & 92 & 0.0 & \textbf{95.1} & .39 & 2.42 \\
+\multirow{2}{*}{FGD}            & FIFO & 5.8M & 13.1M & 100.0 & 0.0 & 91.9 & .36 & 2.24 \\
+                                & SAFA & 5.0M & 12.0M & 93.5 & 0.0 & \textbf{96.5} & .38 & 2.37 \\
+\multirow{2}{*}{KAI binpack}    & FIFO & 5.8M & 13.0M & 100.0 & 0.0 & 91.9 & .36 & 2.23 \\
+                                & SAFA & 5.0M & 11.9M & 93.5 & 0.0 & \textbf{96.0} & .38 & 2.36 \\
+\multirow{2}{*}{KAI spread}     & FIFO & 6.2M & 13.8M & 100.0 & 0.0 & 89.3 & .35 & 2.23 \\
+                                & SAFA & 5.1M & 12.3M & 91.8 & 0.0 & \textbf{95.1} & .39 & 2.42 \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -523,7 +523,7 @@ These conclusions do not rank the policies absolutely. They show where the fairn
 
 This paper presented SAFA, a reordering layer that works only at the Order stage to prevent the indefinite exclusion that HOL blocking causes in GPU server pools. We evaluated it in a discrete-event simulator across three traces (Philly, Helios, and Alibaba PAI) on clusters of 256 to 1024 GPUs, against FIFO and six Order policies, composed it with seven Placement policies, and cross-validated on an NVIDIA B200$\times$8 Kubernetes cluster. Unlike recent scheduling policies that require runtime estimates, performance profiles, or solvers, SAFA reads only quantities available at the scheduling instant, namely queue position, resource demand, relative age, and current server occupancy, and it layers over a wide range of schedulers.
 
-Under the heaviest overload, the Fairness of all six Order policies falls to 0 while SAFA holds 92 to 94 across configurations and Placement policies. It cuts the median wait by 7 to 13\% against FIFO and lifts utilization from 92\% to 95 or 96\%, so the fairness costs no throughput. The same pattern recurs on Helios and Alibaba. Under light contention the picture differs, and collocation policies such as Lucid can be both faster and fairer. It is as load rises that reordering policies lose order fairness and size-selective policies starve large jobs, and SAFA is the only policy here that holds both dimensions without predicting anything.
+Under the heaviest overload, the Fairness of all six Order policies falls to 0 while SAFA holds 91.8 to 93.7 across configurations and Placement policies. It cuts the median wait by 7 to 13\% against FIFO and lifts utilization from 92\% to 95 or 96\%, so the fairness costs no throughput. The same pattern recurs on Helios and Alibaba. Under light contention the picture differs, and collocation policies such as Lucid can be both faster and fairer. It is as load rises that reordering policies lose order fairness and size-selective policies starve large jobs, and SAFA is the only policy here that holds both dimensions without predicting anything.
 
 The coefficient $\alpha$ is the mechanism behind that balance. A fixed value has to be searched for, and its optimum moves substantially with the workload. Zero-knob computes it instead from the relative ages already in the queue and the resource fitness $R$ already read from the pool, so it adapts to workload change without a new grid search.
 
