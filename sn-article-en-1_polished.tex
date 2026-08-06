@@ -1,6 +1,6 @@
 % SAFA --- IEEE Open Journal template (IEEE-open-journal-template.zip: ieeetj.cls,
 % tj-template-s1.tex conventions). English version of sn-article.tex.
-% Terminology follows GLOSSARY.md — keep the two versions consistent.
+% Keep terminology consistent with the Korean version.
 % ieeetj.cls is included in the repo (identical to the zip). Uppercase section
 % titles, \IEEEPARstart, and front matter follow the template conventions.
 \documentclass{ieeetj}
@@ -53,7 +53,7 @@
 \authornote{K. Cho e-mail: mystous@korea.ac.kr. Y. Jin e-mail: yhjin@korea.ac.kr.}
 
 \begin{abstract}
-Most training jobs in production GPU clusters now ask for several GPUs at once, and often for an entire node. A gang-scheduled job of this kind cannot start until every GPU it asked for is free at the same time. As jobs of different sizes come and go, the free GPUs scatter across nodes. A cluster can then hold plenty of idle capacity and still have no single node with room for a large job. That job waits at the front of the queue, and because the queue is served in order, every job behind it waits too. This is Head-of-Line (HOL) blocking. It leaves GPUs idle that the waiting jobs could have used, and a large job can be passed over for so long that it never runs at all. Schedulers decide two things in turn. The Order stage picks which queued job to consider next. The Placement stage picks where that job runs. We present SAFA (Starvation-Aware Fair Aging), which changes only the Order stage. SAFA looks at four numbers it can read directly when it makes a decision, namely where a job sits in the queue, how many GPUs it wants, how long it has waited compared with its neighbors, and how many GPUs each server has free. It predicts nothing, profiles nothing, and solves nothing. Reordering too aggressively would trade one kind of unfairness for another, so a coefficient governs how far a waiting job may be promoted. SAFA derives this coefficient from the queue's own statistics, so it needs no retuning when the workload changes. On the 111k-job Philly trace under heavy overload, the six Order policies we compare against all drop to an order-fairness score of 0 out of 100, even though several of them are handed exact job runtimes that SAFA never receives. SAFA scores 92 to 95. It also shortens the median queue wait by 7 to 13\% against FIFO and lifts average GPU utilization from 92\% to 95 or 96\%, so the fairness comes at no cost in throughput. Two further traces, Helios and Alibaba, show the same pattern, and a live NVIDIA B200$\times$8 Kubernetes cluster confirms that SAFA keeps large jobs from being passed over. Because SAFA never touches placement, it sits in front of any of seven Placement policies, raising the allocation rate by 4.0 to 5.8 percentage points, most of all under KAI spread.
+Most training jobs in production GPU clusters now ask for several GPUs at once, and often for an entire node. A gang-scheduled job of this kind cannot start until every GPU it asked for is free at the same time. As jobs of different sizes come and go, the free GPUs scatter across nodes. A cluster can then hold plenty of idle capacity and still have no single node with room for a large job. That job waits at the front of the queue, and because the queue is served in order, every job behind it waits too. This is Head-of-Line (HOL) blocking. It leaves GPUs idle that the waiting jobs could have used, and a large job can be passed over for so long that it never runs at all. Schedulers decide two things in turn. The Order stage picks which queued job to consider next. The Placement stage picks where that job runs. We present SAFA (Starvation-Aware Fair Aging), which changes only the Order stage. SAFA looks at four numbers it can read directly when it makes a decision, namely where a job sits in the queue, how many GPUs it wants, how long it has waited compared with its neighbors, and how many GPUs each server has free. It predicts nothing, profiles nothing, and solves nothing. Reordering too aggressively would trade one kind of unfairness for another, so a coefficient governs how far a waiting job may be promoted. SAFA derives this coefficient from the queue's own statistics, so it needs no retuning when the workload changes. On the 111k-job Philly trace under heavy overload, the six Order policies we compare against all drop to an order-fairness score of 0 out of 100, even though several of them are handed exact job runtimes that SAFA never receives. SAFA scores 92.7 to 93.5. It also shortens the median queue wait by 7 to 13\% against FIFO and lifts average GPU utilization from 92\% to 95 or 96\%, so the fairness comes at no cost in throughput. Two further traces, Helios and Alibaba, show the same pattern, and a live NVIDIA B200$\times$8 Kubernetes cluster confirms that SAFA keeps large jobs from being passed over. Because SAFA never touches placement, it sits in front of any of seven Placement policies, raising the allocation rate by 3.7 to 5.8 percentage points, most of all under KAI spread.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -72,7 +72,7 @@ To address these drawbacks, this work proposes Starvation-Aware Fair Aging (SAFA
 
 \begin{enumerate}
 \item Prediction-free reordering that prevents indefinite exclusion: SAFA reorders the queue from queue position, accumulated age, resource demand, and current server occupancy alone, cutting HOL-induced queueing delay without discarding arrival order. Because the reordering weighs each job's accumulated age against its fitness for the currently vacant slots, a large job is never excluded outright. Jobs that fit the vacant slots move up, while the large job keeps accumulating age and rises in priority relative to the rest of the queue.
-\item Placement composability: SAFA handles only the Order stage, which determines which job is served first, and leaves the Placement stage, which determines where the selected job is placed, unchanged. It can therefore sit unchanged ahead of diverse Placement policies and does not require replacement of the core scheduler. This composability holds across all seven Placement policies (most-allocated, compact, round-robin, MCTS, FGD, KAI binpack, KAI spread), and the more strongly a placement policy scatters jobs and induces fragmentation, the more resources SAFA recovers from HOL blocking.
+\item Placement composability: SAFA handles only the Order stage, which determines which job is served first, and leaves the Placement stage, which determines where the selected job is placed, unchanged. It can therefore sit unchanged ahead of diverse Placement policies and does not require replacement of the core scheduler. This composability holds across all seven Placement policies (most-allocated, compact, round-robin, MCTS, FGD, KAI binpack, and KAI spread), and the more strongly a placement policy scatters jobs and induces fragmentation, the more resources SAFA recovers from HOL blocking.
 \item Tuning-free coefficient (Zero-knob): A coefficient $\alpha$ governs how far a waiting job may be promoted, and thus the trade-off between resolving HOL blocking and preserving fairness. Because $\alpha$ is normalized using observed queue-age statistics and resource fitness and determined dynamically, SAFA eliminates the tuning knob and adapts to workload change without a new grid search.
 \end{enumerate}
 
@@ -129,14 +129,14 @@ Maui\cite{jackson2001maui} & JSSPP'01 & multi-factor priority (runtime, fairshar
 \subsection{Techniques by Scheduling Stage}
 We begin with the Order stage. Kueue\cite{kueue2024} is a Kubernetes-native queueing system that suspends and resumes jobs and provides quota-based fair sharing. Because it operates purely as a gating layer without replacing the core scheduler, it serves as this paper's most direct production-standard baseline. Its fairness mechanism, however, is limited to quota distribution and addresses neither HOL starvation nor fragmentation. Moreover, quota fairness becomes relevant only under multi-Virtual-Cluster (VC) contention, and within a single VC Kueue reduces to non-blocking FIFO. LAS in Tiresias\cite{gu2019tiresias} is a prediction-free discipline that favors jobs with the least accumulated resource usage and, when combined with multi-level feedback queues and preemption, reduces the mean JCT. Under non-preemptive GPU operation, however, pending jobs retain an accumulated resource usage of 0, so the ordering key carries no information and LAS likewise reduces to non-blocking FIFO. This behavior may differ from the original Tiresias setting, in which preemption is central.
 
-Two methods lie on the Placement axis. FGD\cite{weng2023beware}, designed for shared clusters heavily fragmented by partial GPU occupancy (21--42\% in traces), estimates the probability that a randomly drawn job cannot be scheduled, places each job on the node that produces the smallest increase $\Delta F$ in that probability, and reduces unallocated GPUs by up to 49\%. Like SAFA, it decides from queue state and node occupancy alone and predicts nothing. It differs in the stage it occupies. FGD chooses where a job goes once the job has been selected, and therefore cannot help a head job for which no node is large enough. That case is what SAFA addresses, so the two are complementary rather than competing, and we evaluate FGD as a composition target. The production scheduler KAI\cite{kai2025} provides binpack and spread modes. Its default binpack mode assigns higher scores ($\text{score}\propto 1-(\text{free}-\min)/(\max-\min)$) to nodes with fewer unallocated GPUs, thereby consolidating jobs and preserving empty nodes for large gangs.
+Two methods lie on the Placement axis. FGD\cite{weng2023beware}, designed for shared clusters heavily fragmented by partial GPU occupancy (21 to 42\% in traces), estimates the probability that a randomly drawn job cannot be scheduled, places each job on the node that produces the smallest increase $\Delta F$ in that probability, and reduces unallocated GPUs by up to 49\%. Like SAFA, it decides from queue state and node occupancy alone and predicts nothing. It differs in the stage it occupies. FGD chooses where a job goes once the job has been selected, and therefore cannot help a head job for which no node is large enough. That case is what SAFA addresses, so the two are complementary rather than competing, and we evaluate FGD as a composition target. The production scheduler KAI\cite{kai2025} provides binpack and spread modes. Its default binpack mode assigns higher scores ($\text{score}\propto 1-(\text{free}-\min)/(\max-\min)$) to nodes with fewer unallocated GPUs, thereby consolidating jobs and preserving empty nodes for large gangs.
 
 \subsection{Techniques Relying on Derived Quantities}
 We group techniques that depend on quantities unavailable at decision time into three categories, namely (i) runtime estimation and rank prediction, (ii) per-job performance or throughput profiles, and (iii) round solvers and auction bids. These categories are ordered by increasing acquisition cost, counting estimation error, profiling overhead, and dedicated infrastructure.
 
 (i) Runtime estimation and rank prediction. EASY backfilling\cite{mualem2001backfilling} is the standard HPC technique that reserves resources for the queue head while advancing later jobs only when doing so does not disturb the reservation. It depends on runtime estimates, and user-supplied estimates are commonly off by 2–10$\times$. Learning-to-Rank\cite{fu2024efficient} approximates SJF/SRTF in LLM serving using only the relative rank of output lengths, but it still depends on predicting future information, the output length, and operates at request (iteration) granularity.
 
-(ii) Per-job performance or throughput profiles. Lucid\cite{b5} collocates small jobs according to per-job utilization profiles to reduce the mean JCT. The elastic, profile-driven schedulers Optimus\cite{peng2018optimus}, Sia\cite{b4}, Pollux\cite{qiao2021pollux}, Arena\cite{arena2026}, and Rubick\cite{rubick2025} optimize GPU count or type, batch size, or parallelization plans in every round and require per-job goodput or throughput profiles. Such profiling carries both cost and error. Linear throughput extrapolation can incur up to 2.12$\times$ error, and bypassing profiles can reduce JCT by 13--20\%\cite{schedmate2025}. NotebookOS\cite{notebookos2026} schedules on-demand replication for interactive notebooks, a workload that is inherently different from batch training.
+(ii) Per-job performance or throughput profiles. Lucid\cite{b5} collocates small jobs according to per-job utilization profiles to reduce the mean JCT. The elastic, profile-driven schedulers Optimus\cite{peng2018optimus}, Sia\cite{b4}, Pollux\cite{qiao2021pollux}, Arena\cite{arena2026}, and Rubick\cite{rubick2025} optimize GPU count or type, batch size, or parallelization plans in every round and require per-job goodput or throughput profiles. Such profiling carries both cost and error. Linear throughput extrapolation can incur up to 2.12$\times$ error, and bypassing profiles can reduce JCT by 13 to 20\%\cite{schedmate2025}. NotebookOS\cite{notebookos2026} schedules on-demand replication for interactive notebooks, a workload that is inherently different from batch training.
 
 (iii) Round solvers and auctions. Themis\cite{mahajan2020themis} introduces finish-time fairness $r$, the ratio of a job's completion time on the shared cluster to its completion time on a dedicated $1/N$ cluster, as a long-term fairness metric. A central ARBITER minimizes the maximum $r$ through round auctions, in which applications bid using estimated $r$, and strategy-proofness and Pareto efficiency are guaranteed. However, the method relies on solver-based auctions (a p95 latency of 1,398\,ms under contention) and application-submitted $r$ estimates. FFT\cite{fft2025} and RLTune\cite{rltune2025} presuppose a round cost-minimization solver ($+$epoch estimates) and learned RL priorities ($+$MILP node mapping), respectively.
 
@@ -230,7 +230,7 @@ Two of the three inputs, $pos_j$ and $\tilde A_j$, come from the queue, and the 
     \ENDFOR
 \ENDFOR
 \STATE {}
-\STATE $\tilde A_i \gets A_i - \min_k A_k,\ \forall i$ \COMMENT{re-base relative ages}
+\STATE $\tilde A_i \gets A_i - \min_k A_k,\ \forall i$ \COMMENT{rebase relative ages}
 \FOR{ $i \gets 0$ to $l_{wq}-1$}
     \STATE $P_i \gets 1/\text{base}^{\,i}$ \COMMENT{$\text{base}=2$}
     \STATE $P_i^* \gets P_i + \alpha\, \tilde A_i \cdot R_{a_{t_i}}$
@@ -361,7 +361,7 @@ The comparators fall into three groups. Blocking FIFO is the reference against w
 \end{itemize}
 
 \subsection{Main Results: the Efficiency and Fairness Landscape}\label{eval:main}
-We evaluate the FIFO baseline, the six Order policies, and SAFA under three cluster configurations, namely 256, 512, and 1024 GPUs. Table~\ref{tab:sim-single} and Fig.~\ref{fig:cliff} present the results.
+We evaluate the FIFO baseline, the six Order policies, and SAFA under three cluster configurations, namely 256, 512, and 1024 GPUs. Table~\ref{tab:sim-single} and Fig.~\ref{fig:cliff} present the results. The table reports SAFA twice. The SAFA (fixed $\alpha$) row holds one coefficient, $\alpha=0.13889$, across all three configurations, so it shows what a single value fitted once and left alone achieves as the cluster changes. The SAFA row is Zero-knob, which recomputes its coefficient from queue statistics at every pass.
 
 \begin{table*}[htb!]
 \centering
@@ -382,15 +382,15 @@ Kueue & 0 & 0 & 100 & 7.2 & 3.8 & 0.0 & 19K & 2.1K & 2 & 12.2M & 4.9M & 224K & 9
 EASY & 0 & 0 & 100 & 4.4 & 3.4 & 0.0 & 5.0M & 1.3M & 2 & 12.3M & 2.8M & 86K & 92 & 93 & 77 & 0.40 & 0.41 & 0.85 & 2.4 & 2.0 & 37,687 \\
 Themis & 0 & 8 & 99 & 6.4 & 1.7 & 0.0 & 3.5K & 378 & 2 & 12.0M & 4.4M & 162K & 97 & 94 & 76 & 0.94 & 0.97 & 0.94 & 3,082 & 7,665 & 5,438 \\
 Lucid & 0 & 97 & 100 & 3.4 & 0.0 & 0.0 & 2.2K & 0 & 0 & 8.3M & 818K & 2 & 99 & 85 & 48 & 0.94 & 0.93 & 0.75 & 2,179 & 0.0 & 0.0 \\
-SAFA (fixed $\alpha$) & 88.8 & 79 & 100 & 0.0 & 0.0 & 0.0 & 4.4M & 1.2M & 2 & 11.2M & 2.5M & 94K & 98 & 97 & 77 & 0.39 & 0.36 & 0.82 & 2.5 & 1.9 & 36,752 \\
-SAFA & 93.5 & 92.7 & 100 & 0.0 & 0.0 & 0.0 & 5.0M & 1.5M & 2 & 11.9M & 2.7M & 102K & 96 & 95 & 77 & 0.38 & 0.34 & 0.80 & 2.4 & 1.8 & 45,416 \\
+SAFA (fixed $\alpha{=}0.13889$) & 88.8 & 79.0 & 99.9 & 0.0 & 0.0 & 0.0 & 4.4M & 1.2M & 2 & 11.2M & 2.5M & 94K & 98 & 97 & 77 & 0.39 & 0.36 & 0.82 & 2.5 & 1.9 & 36,752 \\
+SAFA & 93.5 & 92.7 & 100.0 & 0.0 & 0.0 & 0.0 & 5.0M & 1.5M & 2 & 11.9M & 2.7M & 102K & 96 & 95 & 77 & 0.38 & 0.34 & 0.80 & 2.4 & 1.8 & 45,416 \\
 \bottomrule
 \end{tabular}}
 \label{tab:sim-single}
 \end{table*}
 
 \paragraph{Fairness and utilization}
-Fig.~\ref{fig:tradeoff} places every policy on the two axes at once. The existing policies split along a trade-off. FIFO holds Fairness at 100 but gives up GPU utilization to HOL blocking, while the others raise utilization by starving large jobs. SAFA occupies neither corner. Across the three configurations, all six baseline policies fall to a Fairness of 0 under the heaviest load, whereas SAFA holds 92.7 to 93.5. Overtaken is 0.0\% for SAFA against 3 to 10\% for the baselines (Fig.~\ref{fig:cliff}). FIFO gives up about 7 percentage points of utilization to indivisible gangs, running at 92\% where backfilling policies reach 98 to 99\%, and SAFA recovers most of that gap at 95 to 96\% without losing order.
+Fig.~\ref{fig:tradeoff} places every policy on the two axes at once. The existing policies split along a trade-off. FIFO holds Fairness at 100 but gives up GPU utilization to HOL blocking, while the others raise utilization by starving large jobs. SAFA occupies neither corner. Across the three configurations, all six baseline policies fall to a Fairness of 0 under the heaviest load, whereas SAFA holds 92.7 to 93.5. Overtaken is 0.0\% for SAFA against 3 to 8\% for the baselines (Fig.~\ref{fig:cliff}). FIFO gives up about 7 percentage points of utilization to indivisible gangs, running at 92\% where backfilling policies reach 98 to 99\%, and SAFA recovers most of that gap at 95 to 96\% without losing order.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_cliff.pdf}}
@@ -409,7 +409,7 @@ Fairness reads the tail of the order violations, so we also check the whole wait
 
 \begin{table}[htb!]
 \centering
-\caption{Comparison with grid-searched $\alpha$}
+\caption{Best fixed $\alpha$ found by grid search, refitted per configuration, versus Zero-knob}
 \label{tab:ablation-grid}
 \footnotesize
 \begin{tabular}{@{}ll@{\hspace{0.8em}}rr@{\hspace{0.8em}}rr@{}}
@@ -420,18 +420,18 @@ Fairness reads the tail of the order violations, so we also check the whole wait
 \midrule
  & 256  & 88.8\,(0.14) & 4.4M & \textbf{93.5} & 5.0M \\
                      & 512  & 90.6\,(0.9)  & 1.3M & \textbf{92.7} & 1.5M \\
-                     & 1024 & 100\,(0.01)  & 2    & 100           & 2    \\
+                     & 1024 & 100.0\,(0.01) & 2    & \textbf{100.0} & 2    \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Zero-knob effect}
-Table~\ref{tab:ablation-grid} reports, for each configuration on the Philly trace, the fixed $\alpha$ that minimizes Eq.~\eqref{eq:09}, alongside Zero-knob. Zero-knob matches or exceeds the grid-searched value in every configuration, at 93.5 against 88.8, 92.7 against 90.6, and 100 against 100. The score gap is not the point. The optimum itself moves from 0.14 to 0.9 to 0.01 as the cluster size changes, so a fixed $\alpha$ has to be refitted for each configuration, while Zero-knob reads its value from the queue and needs no such search. Section~\ref{eval:robust:trace} shows the same on workloads it was never fitted to.
+Table~\ref{tab:ablation-grid} compares Zero-knob against the best fixed $\alpha$ a grid search can find. At each configuration on the Philly trace we sweep $\alpha$ over sixteen points from 0.01 to 2.0 and keep the one that reaches the highest Fairness, which is the strongest result any fixed coefficient can reach there. Zero-knob still leads in every configuration, at 93.5 against 88.8, 92.7 against 90.6, and 100.0 against 100.0. The score gap is not the point. The best $\alpha$ itself moves from 0.14 to 0.9 to 0.01 as the cluster size changes, so a fixed coefficient has to be refitted for each configuration, while Zero-knob reads its value from the queue and needs no such search. What refitting is worth is visible in Table~\ref{tab:sim-single}. The single $\alpha=0.13889$ used there is the best available choice at 256 GPUs, where it scores 88.8, but carrying that same value to 512 GPUs scores 79.0, against 90.6 for a coefficient refitted to that configuration. Zero-knob reaches 92.7 at 512 GPUs without being told anything about it. Section~\ref{eval:robust:trace} shows the same on workloads it was never fitted to.
 
 \subsection{Generalization to Independent Traces}\label{eval:robust:trace}
 The results so far come from one trace. We therefore repeat the evaluation on two further public traces that share no lineage with Philly. The first is the Venus cluster trace from the Helios\cite{hu2021helios} datacenter (SenseTime, SC'21, 125,303 jobs, one overloaded 80-GPU configuration). We use 123,969 jobs after excluding 1{,}334 that exceed the 80-GPU capacity and therefore cannot be placed by any policy. The pattern repeats. Every reordering baseline falls to a Fairness of 0 with Overtaken between 6.4 and 22.8\%, while SAFA holds Fairness at 97.6 with Overtaken at 0.0, and fixed $\alpha$ reaches 92.5. The second is the Alibaba PAI\cite{weng2022mlaas} trace (NSDI'22), a seed-42 16.4\% subsample of 120,105 jobs with the load multiplier matched to Philly, and it behaves the same way.
 
-Table~\ref{tab:trace3} collects all three. Under a single overloaded configuration the reordering baselines reach double-digit Overtaken, from 7 to 26\%, while SAFA keeps Overtaken at 0.0 and Fairness at 93.5, 97.6, and 99.9 on Philly, Helios, and Alibaba respectively. No retuning was performed between traces.
+Table~\ref{tab:trace3} collects all three. Under a single overloaded configuration the reordering baselines run from 3.4 to 22.8\% Overtaken, reaching double digits on Helios and Alibaba, while SAFA keeps Overtaken at 0.0 and Fairness at 93.5, 97.6, and 99.9 on Philly, Helios, and Alibaba respectively. No retuning was performed between traces.
 
 \begin{table}[htb!]
 \centering
@@ -439,6 +439,7 @@ Table~\ref{tab:trace3} collects all three. Under a single overloaded configurati
 \label{tab:trace3}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}l@{\hspace{0.6em}}rr@{\hspace{0.9em}}rr@{\hspace{0.9em}}rr@{}}
 \toprule
  & \multicolumn{2}{c}{\textbf{Philly}} & \multicolumn{2}{c}{\textbf{Helios}} & \multicolumn{2}{c}{\textbf{Alibaba}} \\
@@ -451,10 +452,10 @@ LAS/Kueue     & 7 to 8  & 0    & 22.8 & 0    & 10.6 & 0 \\
 EASY          & 4.4   & 0    & 8.9  & 0    & 13.4 & 0 \\
 Themis        & 6.4   & 0    & 15.2 & 0    & 6.6  & 0 \\
 Lucid         & 3.4   & 0    & 6.4  & 0    & 5.7  & 0 \\
-SAFA (fixed $\alpha$) & 0.0 & 88.8 & 0.0 & 92.5 & 0.0 & 94.7 \\
+SAFA (fixed $\alpha{=}0.13889$) & 0.0 & 88.8 & 0.0 & 92.5 & 0.0 & 94.7 \\
 \textbf{SAFA} & \textbf{0.0} & \textbf{93.5} & \textbf{0.0} & \textbf{97.6} & \textbf{0.0} & \textbf{99.9} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \subsection{Placement Composability}\label{eval:robust:placement}
@@ -462,7 +463,7 @@ Since SAFA acts before Placement, it can sit in front of any Placement policy. F
 
 Fragmentation costs something under every placement, and the amount tracks how widely the policy scatters jobs. Under FIFO, utilization falls from 91.9\% with most-allocated to 89.3\% with KAI spread, and the median wait rises from 5.8M\,s to 6.2M\,s, because scattered free GPUs leave no node able to hold an 8-GPU gang in full.
 
-SAFA improves every metric under all seven policies. Filling vacant node slots with jobs that fit brings utilization back to 95 to 96\% in every case, a gain of 4 to 6 percentage points, cuts the median wait by 14 to 18\%, and holds Fairness at 92 to 94. The recovery is largest where the placement scatters most aggressively. Under KAI spread, utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It returns the utilization that fragmentation took, and it does so most where fragmentation is worst.
+SAFA improves every metric under all seven policies. Filling vacant node slots with jobs that fit brings utilization back to 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, cuts the median wait by 11 to 18\%, and holds Fairness at 92 to 94. The recovery is largest where the placement scatters most aggressively. Under KAI spread, utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It returns the utilization that fragmentation took, and it does so most where fragmentation is worst.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_placement_hol.pdf}}
