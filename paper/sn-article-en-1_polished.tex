@@ -13,6 +13,8 @@
 \usepackage{mathrsfs}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{tabularx}         % Table 1: auto-width wrapping columns (keeps it inside \textwidth)
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -91,7 +93,7 @@ Two forms of FIFO recur throughout this paper and must be kept apart. Blocking F
 \label{tab:related}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lllcl@{}}
+\begin{tabularx}{\textwidth}{@{}llYcY@{}}
 \toprule
 \textbf{System} & \textbf{Venue} & \textbf{Decision axis (information assumption)} & \textbf{Exp.} & \textbf{Rationale / representative baseline} \\
 \midrule
@@ -102,7 +104,7 @@ LAS (Tiresias)\cite{gu2019tiresias} & NSDI'19 & queue order (attained service) &
 Kueue\cite{kueue2024} & k8s & quota gate (observed only) & $\checkmark$ & production standard\\
 EASY\cite{mualem2001backfilling} & HPC & reservation+backfill (oracle duration) & $\checkmark$ & perfect-estimate variant (not an upper bound)\\
 Themis\cite{mahajan2020themis} & NSDI'20 & FTF ordering (oracle duration, $\pm20\%$; solver omitted) & $\checkmark$(adapted) & fairness axis; round auction not reproduced\\
-Lucid\cite{b5} & ASPLOS'23 & profile packing & $\checkmark$(adapted) & \shortstack[l]{synthetic utilization, duration-oracle injection ---\\a single scalar bounds the synthesis distortion}\\
+Lucid\cite{b5} & ASPLOS'23 & profile packing & $\checkmark$(adapted) & synthetic utilization, duration-oracle injection --- a single scalar bounds the synthesis distortion\\
 \textbf{SAFA (Zero-knob)} & --- & queue order + node occupancy (observed only) & $\checkmark$ & this work (prediction-free)\\
 \midrule
 \multicolumn{5}{@{}l}{\textit{Orthogonal Placement axis --- prediction-free like SAFA, composed rather than compared}}\\
@@ -123,7 +125,7 @@ FFT\cite{fft2025} & ICS'25 & round cost-min (epoch estimates) & --- & solver+est
 Tetris\cite{grandl2014multi} & SIGCOMM'14 & multi-dimensional resource alignment (order$+$placement) & --- & decision variables absent; couples Placement\\
 Maui\cite{jackson2001maui} & JSSPP'01 & multi-factor priority (runtime, fairshare) & --- & requires estimates and usage history; residual aging reduces to FIFO\\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table*}
 
 \subsection{Techniques by Scheduling Stage}
