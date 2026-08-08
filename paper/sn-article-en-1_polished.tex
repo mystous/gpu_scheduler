@@ -59,7 +59,7 @@ Most training jobs in production GPU clusters now ask for several GPUs at once, 
 \end{abstract}
 
 \begin{IEEEkeywords}
-Datacenter GPU, GPU gang scheduling, head-of-line blocking, order fairness, placement-agnostic reordering layer, prediction-free scheduling, queue reordering, tuning-free scheduling.
+Datacenter GPU, GPU gang scheduling, head-of-line blocking, order fairness, pre-placement reordering layer, prediction-free scheduling, queue reordering, tuning-free scheduling.
 \end{IEEEkeywords}
 
 \maketitle
@@ -105,7 +105,7 @@ Kueue\cite{kueue2024} & k8s & quota gate (observed only) & $\checkmark$ & produc
 EASY\cite{mualem2001backfilling} & HPC & reservation+backfill (oracle duration) & $\checkmark$ & perfect-estimate variant (not an upper bound)\\
 Themis\cite{mahajan2020themis} & NSDI'20 & FTF ordering (oracle duration, $\pm20\%$; solver omitted) & $\checkmark$(adapted) & fairness axis; round auction not reproduced\\
 Lucid\cite{b5} & ASPLOS'23 & profile packing & $\checkmark$(adapted) & synthetic utilization, duration-oracle injection --- a single scalar bounds the synthesis distortion\\
-\textbf{SAFA (tuning-free)} & --- & queue order + node occupancy (observed only) & $\checkmark$ & this work (prediction-free)\\
+\textbf{SAFA} & --- & queue order + node occupancy (observed only) & $\checkmark$ & this work (prediction-free)\\
 \midrule
 \multicolumn{5}{@{}l}{\textit{Orthogonal Placement axis --- prediction-free like SAFA, composed rather than compared}}\\
 FGD\cite{weng2023beware} & ATC'23 & Placement (fragmentation avoidance; observed only) & $\checkmark$ & complementary stage; SAFA$\oplus$FGD composition\\
@@ -185,12 +185,12 @@ To analyze and iteratively refine this mechanism, we developed a simulator that 
 \section{RESOLVING HEAD-OF-LINE BLOCKING IN THE JOB QUEUE}\label{algo:intro}
 Throughout this paper, ``gang'' refers to a fixed GPU request in the sense of a rigid job in the Feitelson and Rudolph taxonomy\cite{feitelson1996toward}. It is distinct from Ousterhout-style gang scheduling\cite{ousterhout1982gang}, which refers to coordinated time slicing.
 
-\subsection{Starvation-Aware Queue Reordering}
+\subsection{SAFA Queue Reordering}
 Section~\ref{motivation} identified two ways a large job can fail. It can wait for a contiguous slot that never opens, and it can be overtaken by later arrivals so often that its turn never comes. The first is a property of the pool and lies outside the Order stage. The second is a property of the queue, and it is what a Fairness of 0 records. A policy that optimizes the median wait alone can post a low median while permanently displacing every large job.
 
-Queue reordering targets the second failure. It reduces the queueing delay that HOL blocking imposes on the jobs behind the head while disturbing arrival order as little as the first goal permits. It keeps one blocked job from stalling the queue indefinitely, but it does not guarantee that any particular large job completes, since that still depends on a slot opening. Promoting jobs without restraint would simply relocate the unfairness rather than remove it, so an age-weighting coefficient bounds how far any promotion can go.
+Queue reordering targets the second failure. It reduces the queueing delay that HOL blocking imposes on the jobs behind the head while disturbing arrival order as little as the first goal permits. It keeps one blocked job from stalling the queue indefinitely, but it does not guarantee that any particular large job completes, since that still depends on a slot opening. Promoting jobs without restraint would simply relocate the unfairness rather than remove it, so a coefficient $\alpha$ bounds how far any promotion can go.
 
-Algorithm~\ref{alg:adjust_wait_queue} runs at every scheduling pass and has three blocks. The first sweeps the server pool and updates resource fitness $R$ for each request size. The second rebases the relative ages of pending jobs and computes each adjusted priority $P^*$. The third moves the job with the largest $P^*$ to the queue head.
+SAFA reorders the wait queue with the procedure in Algorithm~\ref{alg:reorder}, which runs at every scheduling pass and has three blocks. The first sweeps the server pool and updates resource fitness $R$ for each request size. The second rebases the relative ages of pending jobs and computes each adjusted priority $P^*$. The third moves the job with the largest $P^*$ to the queue head.
 
 Resource fitness $R_j$ summarizes how well a $j$-GPU request fits the pool at the current instant. For each server $S_i$ with idle count $f_{S_i}$, a request of size $j\in\{1,\dots,M_i\}$ that fits ($j\le f_{S_i}$) scores $R_j=1$. A request that does not fit loses $0.1$ per GPU of shortfall, and the best score across all servers is retained. $R_j$ therefore ranges over $[0,1]$, and it is the one input SAFA draws from outside the queue.
 
@@ -211,7 +211,7 @@ The third block finds the position $i_{\max}$ of the largest $P^*$ and, unless t
 Two of the three inputs, $pos_j$ and $\tilde A_j$, come from the queue, and the third, $R_j$, comes from the current allocation state of the server pool. All are read at the scheduling instant and none is estimated. The linear form resembles Kleinrock's time-dependent priority\cite{kleinrock1976queueing}, but only in shape. Kleinrock's conservation law assumes preemption, a single server, and steady state, none of which holds in a non-preemptive, space-shared, oversaturated gang setting. What SAFA adds to that classical form is indivisible-gang resource fitness $R$ and a coefficient normalized by queue statistics.
 
 \begin{algorithm}
-\caption{Starvation-Aware Queue Reordering}\label{alg:adjust_wait_queue}
+\caption{SAFA queue reordering}\label{alg:reorder}
 \textbf{Input:} \\
 \hspace*{4mm} Servers $S_i$ ($i{<}n$): accelerator count $M_i$, idle count $f_{S_i}$ \\
 \hspace*{4mm} Pending jobs $t_i$ ($i{<}l_{wq}$): accelerator request $a_{t_i}$, age $A_i$ \\
@@ -245,10 +245,10 @@ Two of the three inputs, $pos_j$ and $\tilde A_j$, come from the queue, and the 
 \end{algorithmic}
 \end{algorithm}
 
-SAFA runs immediately before Placement and reads nothing beyond the wait queue and the current allocation state of the server pool. It is therefore a preprocessor that reorders the queue without touching the core scheduler, except where that scheduler performs its own queue scheduling or depends on cumulative metrics or contextual information. Because $P^*$ is computed once per job, the pass costs $O(l_{wq})$, and computing $R$ is linear in the number of servers.
+SAFA runs immediately before Placement and reads nothing beyond the wait queue and the current allocation state of the server pool. It is therefore a pre-placement reordering layer that leaves the core scheduler untouched, except where that scheduler performs its own queue scheduling or depends on cumulative metrics or contextual information. Because $P^*$ is computed once per job, the pass costs $O(l_{wq})$, and computing $R$ is linear in the number of servers.
 
 \subsection{Setting the Coefficient $\alpha$ without Tuning}\label{sec:coeff}
-This section defines the trade-off that $\alpha$ controls, shows that its optimum shifts far enough across workloads that no fixed value serves them all, and derives the dynamic coefficient $\alpha_{\text{eff}}$ that reads its value from queue statistics.
+This section defines the trade-off that $\alpha$ controls, shows that its optimum shifts far enough across workloads that no fixed value serves them all, and derives the tuning-free coefficient $\alpha_{\text{eff}}$ that reads its value from queue statistics.
 
 \subsubsection{Trade-off Analysis and Metric Definitions}
 A large $\alpha$ lets blocked jobs overtake aggressively enough to create fresh unfairness, so choosing a value means quantifying what is traded. We group cumulative waiting times by requested accelerator count and define the resulting change as accumulated distance (AD). Let $C_k$ be the class of jobs requesting $k$ accelerators, $WT_k=\sum_{j\in C_k} w_j$ the sum of waiting times before reordering, and $WT'_k$ the sum afterward. The weight $1/2^{8-k}$ gives more importance to classes with larger requests.
@@ -294,7 +294,7 @@ Optimal $\alpha$ & 0.53 & 0.44 & 1.63 & 0.22 & 0.26 & 0.55 & 0.50 & 0.22 \\
 \end{tabular}}
 \end{table}
 
-\subsubsection{Deriving the Dynamic Coefficient $\alpha_{\text{eff}}$}\label{SAFA}
+\subsubsection{Deriving the Tuning-Free Coefficient $\alpha_{\text{eff}}$}\label{alphaeff}
 Rather than refit a fixed $\alpha$ for every workload, we replace $\alpha$ in Eq.~\eqref{eq:01} with $\alpha_{\text{eff}}$, recomputed at every pass from wait-queue statistics. Three quantities enter, all derived from the relative age $\tilde A_j = A_j - \min_k A_k$ and the fitness values already computed. The mean $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$ gives the queue's age scale, the maximum relative age is $A_{\max}=\max_k \tilde A_k$, and the fitness of the worst-fitting job is $R_{\min}=\min_k R_k$.
 
 \begin{equation}
@@ -363,7 +363,7 @@ The comparators fall into three groups. Blocking FIFO is the reference against w
 \end{itemize}
 
 \subsection{Main Results: the Efficiency and Fairness Landscape}\label{eval:main}
-We evaluate the FIFO baseline, the six Order policies, and SAFA under three cluster configurations, namely 256, 512, and 1024 GPUs. Table~\ref{tab:sim-single} and Fig.~\ref{fig:cliff} present the results. The table reports SAFA twice. The SAFA (fixed $\alpha$) row holds one coefficient, $\alpha=0.13889$, across all three configurations, so it shows what a single value fitted once and left alone achieves as the cluster changes. The SAFA row is the tuning-free coefficient, which SAFA recomputes from queue statistics at every pass.
+We evaluate the FIFO baseline, the six Order policies, and SAFA under three cluster configurations, namely 256, 512, and 1024 GPUs. Table~\ref{tab:sim-single} and Fig.~\ref{fig:cliff} present the results. The table reports SAFA twice. The SAFA (fixed $\alpha$) row holds one coefficient, $\alpha=0.13889$, across all three configurations, so it shows what a single value fitted once and left alone achieves as the cluster changes. The SAFA row uses the tuning-free coefficient $\alpha_{\text{eff}}$, recomputed from queue statistics at every pass.
 
 \begin{table*}[htb!]
 \centering
@@ -416,7 +416,7 @@ Fairness reads the tail of the order violations, so we also check the whole wait
 \footnotesize
 \begin{tabular}{@{}ll@{\hspace{0.8em}}rr@{\hspace{0.8em}}rr@{}}
 \toprule
- & & \multicolumn{2}{c}{\textbf{Optimal fixed $\alpha$}} & \multicolumn{2}{c}{\textbf{SAFA (tuning-free)}} \\
+ & & \multicolumn{2}{c}{\textbf{Optimal fixed $\alpha$}} & \multicolumn{2}{c}{\textbf{SAFA}} \\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
  & \textbf{GPU} & Fairness\,($\alpha^\ast$) & MedianWait & Fairness & MedianWait \\
 \midrule
@@ -523,7 +523,7 @@ These conclusions do not rank the policies absolutely. They show where the fairn
 
 \section{CONCLUSIONS AND FUTURE WORK}\label{conclu}
 
-This paper presented SAFA, a reordering layer that works only at the Order stage to prevent the indefinite exclusion that HOL blocking causes in GPU server pools. We evaluated it in a discrete-event simulator across three traces (Philly, Helios, and Alibaba PAI) on clusters of 256 to 1024 GPUs, against FIFO and six Order policies, composed it with seven Placement policies, and cross-validated on an NVIDIA B200$\times$8 Kubernetes cluster. Unlike recent scheduling policies that require runtime estimates, performance profiles, or solvers, SAFA reads only quantities available at the scheduling instant, namely queue position, resource demand, relative age, and current server occupancy, and it layers over a wide range of schedulers.
+This paper presented SAFA, a pre-placement reordering layer that touches only the Order stage to prevent the indefinite exclusion that HOL blocking causes in GPU server pools. We evaluated it in a discrete-event simulator across three traces (Philly, Helios, and Alibaba PAI) on clusters of 256 to 1024 GPUs, against FIFO and six Order policies, composed it with seven Placement policies, and cross-validated on an NVIDIA B200$\times$8 Kubernetes cluster. Unlike recent scheduling policies that require runtime estimates, performance profiles, or solvers, SAFA reads only quantities available at the scheduling instant, namely queue position, resource demand, relative age, and current server occupancy, and it layers over a wide range of schedulers.
 
 Under the heaviest overload, the Fairness of all six Order policies falls to 0 while SAFA holds 91.8 to 93.7 across configurations and Placement policies. It cuts the median wait by 7 to 13\% against FIFO and lifts utilization from 92\% to 95 or 96\%, so the fairness costs no throughput. The same pattern recurs on Helios and Alibaba. Under light contention the picture differs, and collocation policies such as Lucid can be both faster and fairer. It is as load rises that the Order baselines lose order fairness and size-selective policies starve large jobs, and SAFA is the only policy here that holds both dimensions without predicting anything.
 
