@@ -183,7 +183,7 @@ Prediction does not resolve it either. Arrival and completion times are unknown 
 What remains open is therefore a mechanism that acts after HOL blocking occurs, reads only what the scheduling instant provides, namely queue position, resource demand, relative age, and current server occupancy, and sets its own aging weight from queue statistics instead of an operator's knob. Section~\ref{algo:intro} constructs such a mechanism, and Section~\ref{eval:robust:placement} tests whether its gains survive across Placement policies.
 
 \section{RESOLVING HEAD-OF-LINE BLOCKING IN THE JOB QUEUE}\label{algo:intro}
-A gang, in this paper, is a fixed GPU request that must be met in full and at once, what the Feitelson and Rudolph taxonomy\cite{feitelson1996toward} calls a rigid job. The word does not refer to Ousterhout's gang scheduling\cite{ousterhout1982gang}, which coordinates time slicing rather than allocation.
+Throughout this paper, ``gang'' refers to a fixed GPU request in the sense of a rigid job in the Feitelson and Rudolph taxonomy\cite{feitelson1996toward}. It is distinct from Ousterhout-style gang scheduling\cite{ousterhout1982gang}, which refers to coordinated time slicing.
 
 \subsection{SAFA Queue Reordering}
 Section~\ref{motivation} identified two ways a large job can fail. It can wait for a contiguous slot that never opens, and it can be overtaken by later arrivals so often that its turn never comes. The first is a property of the pool and lies outside the Order stage. The second is a property of the queue, and it is what a Fairness of 0 records. A policy that optimizes the median wait alone can post a low median while permanently displacing every large job.
