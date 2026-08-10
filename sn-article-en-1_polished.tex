@@ -183,7 +183,7 @@ Prediction does not resolve it either. Arrival and completion times are unknown 
 What remains open is therefore a mechanism that acts after HOL blocking occurs, reads only what the scheduling instant provides, namely queue position, resource demand, relative age, and current server occupancy, and sets its own aging weight from queue statistics instead of an operator's knob. Section~\ref{algo:intro} constructs such a mechanism, and Section~\ref{eval:robust:placement} tests whether its gains survive across Placement policies.
 
 \section{RESOLVING HEAD-OF-LINE BLOCKING IN THE JOB QUEUE}\label{algo:intro}
-Throughout this paper, ``gang'' refers to a fixed GPU request in the sense of a rigid job in the Feitelson and Rudolph taxonomy\cite{feitelson1996toward}. It is distinct from Ousterhout-style gang scheduling\cite{ousterhout1982gang}, which refers to coordinated time slicing.
+A gang, in this paper, is a fixed GPU request that must be met in full and at once, what the Feitelson and Rudolph taxonomy\cite{feitelson1996toward} calls a rigid job. The word does not refer to Ousterhout's gang scheduling\cite{ousterhout1982gang}, which coordinates time slicing rather than allocation.
 
 \subsection{SAFA Queue Reordering}
 A collapse in order fairness is starvation by another name. If later arrivals keep overtaking a large job, its turn never comes and it never completes. A policy that optimizes the median wait alone can post a low median while permanently displacing every large job, which is what a Fairness of 0 records. Order fairness is therefore not a nice-to-have property but a production requirement, the guarantee that no job is excluded indefinitely.
