@@ -186,7 +186,7 @@ What remains open is therefore a mechanism that acts after HOL blocking occurs, 
 A gang, in this paper, is a fixed GPU request that must be met in full and at once, what the Feitelson and Rudolph taxonomy\cite{feitelson1996toward} calls a rigid job. The word does not refer to Ousterhout's gang scheduling\cite{ousterhout1982gang}, which coordinates time slicing rather than allocation.
 
 \subsection{SAFA Queue Reordering}
-A job that later arrivals keep overtaking never reaches its turn, so a policy can hold a low median wait and still leave that job unfinished. Order fairness is therefore not a nice-to-have property but a production requirement, the guarantee that no job is excluded indefinitely.
+A job that later arrivals keep overtaking never reaches its turn. The median queue wait does not show this, because it reflects the many jobs that fit rather than the few that do not. A policy can report a low median and still never run those jobs. Order fairness is therefore not a nice-to-have but a production requirement: no job may be excluded indefinitely.
 
 The goal of queue reordering is not throughput. It is to cut the queueing delay that HOL blocking imposes on the jobs behind the head while giving up as little arrival order as that cut allows. What it prevents is a queue stalled indefinitely behind one job while the backlog grows, not the completion of any particular large job, which still depends on a slot opening. Promoting jobs without restraint would simply relocate the unfairness rather than remove it, so a coefficient $\alpha$ bounds how far any promotion can go.
 
