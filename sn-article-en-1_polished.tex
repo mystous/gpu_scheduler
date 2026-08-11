@@ -267,7 +267,7 @@ AMD = \sum_{k=1}^8 \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k
 
 Here $w_j$ and $w'_j$ denote waiting times before and after reordering. AD captures the overall skew in waiting times and AMD captures the worst wait within each class, so minimizing both at once targets average fairness and starvation suppression together. Both quantities, along with their min to max normalized sum in Eq.~\eqref{eq:09}, serve to build objective functions for the $\alpha$ search rather than to evaluate results. That the optimal $\alpha$ moves when the weighting or normalization changes is itself further evidence against fixed coefficients.
 
-We search $\alpha$ over 0.01 to 1.99 in steps of 0.01 and take the value minimizing the sum of three min to max normalized metrics, namely makespan, AD, and AMD.
+The makespan is the time at which the last job in the trace completes. We search $\alpha$ over 0.01 to 1.99 in steps of 0.01 and take the value minimizing the sum of three min to max normalized metrics, namely makespan, AD, and AMD.
 
 \begin{equation}
 Obj_i^{sfa} = makespan_i^{norm} + AD_i^{norm} + AMD_i^{norm}
