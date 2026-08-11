@@ -240,7 +240,7 @@ $pos_j$ and $\tilde A_j$ are read straight from the queue, and $R_j$ combines th
 \STATE {}
 \STATE $(P_{i_{\max}}^*, i_{\max}) \gets \max(P^*)$
 \IF{$i_{\max} \neq 0$}
-    \STATE $WQ \gets [\,t_{i_{\max}},\ t_0,\ \ldots,\ t_{i_{\max}-1},\ t_{i_{\max}+1},\ \ldots,\ t_{l-1}\,]$
+    \STATE $WQ \gets [\,t_{i_{\max}}\,] \,\Vert\, WQ[0{:}i_{\max}) \,\Vert\, WQ[i_{\max}{+}1{:}l_{wq})$ \COMMENT{$\Vert$: concatenation; slices are half-open}
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
