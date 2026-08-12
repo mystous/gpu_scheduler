@@ -295,21 +295,25 @@ Optimal $\alpha$ & 0.53 & 0.44 & 1.63 & 0.22 & 0.26 & 0.55 & 0.50 & 0.22 \\
 \end{table}
 
 \subsubsection{Deriving the Tuning-Free Coefficient} \label{alphaeff}
-Rather than refit a fixed $\alpha$ for every workload, we replace $\alpha$ in Eq.~\eqref{eq:01} with $\alpha_{\text{eff}}$, recomputed at every pass from wait-queue statistics. Two quantities enter, both derived from the relative age $\tilde A_j = A_j - \min_k A_k$ and the fitness values already computed. The mean $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$ gives the queue's age scale, and the fitness of the worst-fitting job is $R_{\min}=\min_k R_k$.
+The starvation index $\alpha\,\tilde A_j R_j$ of Eq.~\eqref{eq:01} is what moves a job up the queue, and $\alpha$ fixes its size. Base priorities run from 1 at the head down toward 0, so a promotion has to make up a difference of at most 1. An index much smaller than 1 moves nothing, and one much larger erases arrival order. A fixed $\alpha$ cannot hold that balance, because $\tilde A_j$ grows as a queue backs up while $R_j$ depends on what the pool looks like at that instant.
+
+We take both scales from the queue itself. The mean relative age $A_{\text{ref}} = \max(1,\text{mean}(\tilde A))$, with $\tilde A_j = A_j - \min_k A_k$, is the age at which a job is ordinary for the present queue, and the lower limit of 1 keeps it positive when every pending job carries the same age. The fitness $R_{\min}=\min_k R_k$ belongs to the request that fits worst, and it falls as the pool grows congested.
+
+Dividing the index by both scales gives the coefficient.
 
 \begin{equation}
 \alpha_{\text{eff}} = \frac{1}{A_{\text{ref}}\,R_{\min}}
 \label{eq:auto-alpha}
 \end{equation}
 
-The $\max(1,\cdot)$ in the denominator floors the age scale, which keeps $\alpha_{\text{eff}}$ finite when queue ages nearly coincide and keeps it defined when they coincide exactly. Subtracting the minimum age removes the absolute offset and dividing by $A_{\text{ref}}$ removes the scale, so $\tilde A_j/A_{\text{ref}}$ is dimensionless and expresses a job's age as a multiple of the queue mean, independent of workload and load. As jobs enter and leave, updates to $\min_k A_k$ rebase the ages automatically. Writing the bonus term as a product of two ratios makes the normalization explicit.
+Substituted into the index, the coefficient separates it into two ratios.
 
 \begin{equation}
-\alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \underbrace{\frac{\tilde A_j}{A_{\text{ref}}}}_{\text{age vs. queue mean}} \;\times\; \underbrace{\frac{R_j}{R_{\min}}}_{\text{fitness vs. worst fit}}
+\alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \underbrace{\frac{\tilde A_j}{A_{\text{ref}}}}_{\text{waited vs.\ average}} \;\times\; \underbrace{\frac{R_j}{R_{\min}}}_{\text{fit vs.\ congestion}}
 \label{eq:alphaeff-define}
 \end{equation}
 
-Promotion pressure is thus the age ratio times the fitness ratio, weighing a job's age against the queue mean and its fit against the worst fit. The job with $R_{\min}$, which is the one blocking the head, sits at the bottom of the fitness ratio and is not promoted. Because $A_{\text{ref}}$ grows as jobs arrive while promotion pressure saturates in proportion to differences in $R$, age by itself does not lift a job out of starvation. The lift comes from normalized age and slot fitness acting together.
+The first ratio asks how much longer than average this job has waited. The second asks how much better its request fits than the one that fits worst, a gap that widens as the pool congests. A job is promoted when both are large, so age alone does not lift a job out of starvation. A job of ordinary age whose request fits worst scores exactly 1 on both, which is the priority of the head, and every other job sits relative to that point. The index therefore lands in the same range as the base priorities however deep the queue is and however long its jobs have waited, and this is what leaves nothing to tune.
 
 Raising priority with age is not new. Operating-system priority aging, vruntime equalization in Linux CFS, Tiresias\cite{gu2019tiresias}, and Slurm's multifactor age factor all do it. What differs here is how the weight is set. First, the age bonus is coupled to gang resource fitness $R_j$, which keeps the HOL culprit's priority low without a special case. Second, relative age cancels the time unit, so changing the measurement unit or period requires no conversion. Third, $\alpha_{\text{eff}}=1/(A_{\text{ref}}R_{\min})$ comes straight from queue statistics with no external constant.
 
