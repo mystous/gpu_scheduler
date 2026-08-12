@@ -1,0 +1,13 @@
+[17:07:30] policy=sjf run=m_sjf extra=''
+[run:m_sjf] 층화 샘플 1000/111586 (GPU·duration 분포 보존)
+[run:m_sjf] 1000 jobs, peak 29 GPU (3.6× capacity)
+[metrics] → /raid/squad/runs/m_sjf/metrics.csv (period 3.0s)
+[run:m_sjf] 1000 jobs 제출 완료, 완료 대기...
+[run:m_sjf] 완료. JCT/큐잉 추출...
+
+===== m_sjf (policy=sjf) =====
+  jobs=1000 완료=1000
+  큐잉지연(s) p50=34.0 p90=463.0 max=2300.0
+  JCT(s)      p50=44.0 p90=474.0 max=2311.0
+  결과: /raid/squad/runs/m_sjf/
+[17:54:44] DONE rc=0

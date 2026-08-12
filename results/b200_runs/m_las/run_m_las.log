@@ -1,0 +1,13 @@
+[17:58:18] policy=las run=m_las extra=''
+[run:m_las] 층화 샘플 1000/111586 (GPU·duration 분포 보존)
+[run:m_las] 1000 jobs, peak 29 GPU (3.6× capacity)
+[metrics] → /raid/squad/runs/m_las/metrics.csv (period 3.0s)
+[run:m_las] 1000 jobs 제출 완료, 완료 대기...
+[run:m_las] 완료. JCT/큐잉 추출...
+
+===== m_las (policy=las) =====
+  jobs=1000 완료=1000
+  큐잉지연(s) p50=64.0 p90=510.0 max=1722.0
+  JCT(s)      p50=73.0 p90=521.0 max=1723.0
+  결과: /raid/squad/runs/m_las/
+[18:44:30] DONE rc=0

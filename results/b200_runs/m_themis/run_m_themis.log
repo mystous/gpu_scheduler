@@ -1,0 +1,13 @@
+[20:28:06] policy=themis run=m_themis extra=''
+[run:m_themis] 층화 샘플 1000/111586 (GPU·duration 분포 보존)
+[run:m_themis] 1000 jobs, peak 29 GPU (3.6× capacity)
+[metrics] → /raid/squad/runs/m_themis/metrics.csv (period 3.0s)
+[run:m_themis] 1000 jobs 제출 완료, 완료 대기...
+[run:m_themis] 완료. JCT/큐잉 추출...
+
+===== m_themis (policy=themis) =====
+  jobs=1000 완료=1000
+  큐잉지연(s) p50=91.0 p90=304.0 max=1539.0
+  JCT(s)      p50=99.0 p90=306.0 max=1550.0
+  결과: /raid/squad/runs/m_themis/
+[21:14:46] DONE rc=0
