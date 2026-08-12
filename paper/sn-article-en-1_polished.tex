@@ -320,7 +320,7 @@ Raising priority with age is not new. Operating-system priority aging, vruntime 
 \section{EXPERIMENTAL EVALUATION}\label{sec:eval}
 
 \subsection{Scale Validation via Discrete-Event Simulation}\label{eval:sim}
-We built a Python discrete-event simulator and replayed the entire Philly trace\cite{jeon2019philly}, about 111k jobs with a maximum request of 8 GPUs, which is the node boundary, on clusters of 256, 512, and 1024 GPUs. The simulation carries the per-job overheads in Table~\ref{tab:overhead}, measured on a single-node B200$\times$8 Kubernetes cluster. We implemented every policy ourselves, namely the FIFO baseline, the six Order policies (SJF, LAS, Kueue, EASY, Themis, Lucid), and the Placement policies FGD and KAI that compose with SAFA. For Tiresias, Kueue, FGD, and Lucid, whose authors released code, we cross-checked our implementations against the originals.
+We built a Python discrete-event simulator and replayed the entire Philly trace\cite{jeon2019philly}, about 111k jobs with a maximum request of 8 GPUs, which is the node boundary, on clusters of 256, 512, and 1024 GPUs. The simulation carries the per-job overheads in Table~\ref{tab:overhead}, measured on a single-node B200$\times$8 Kubernetes cluster. We implemented every policy ourselves, namely the FIFO baseline, the six Order policies (SJF, LAS, Kueue, EASY, Themis, Lucid), and the Placement policies FGD and KAI that compose with SAFA. For Tiresias, Kueue, FGD, KAI, and Lucid, whose authors released code, we cross-checked our implementations against the originals.
 
 \begin{table}[htb!]
 \centering
@@ -346,15 +346,15 @@ F_k = 100\cdot\Bigl(1 - \frac{o_k}{\ell_k}\Bigr)
 \end{equation}
 $F_k=100$ means order was preserved and $F_k=0$ means it was fully inverted. When $\ell_k=0$ we set $F_k=100$. The reported Fairness is the 1st percentile of $F_k$, that is, the score of the 1\% of jobs most severely overtaken, so higher is better. This definition follows Sabin and Sadayappan\cite{sabin2005unfairness}, who treat violations of arrival order as unfairness.
 
-The Gini coefficient is taken over waiting times sorted in ascending order, $w_{(1)}\le\cdots\le w_{(n)}$.
+The Gini coefficient is taken over the $n$ jobs of a run. Let $u_1\le\cdots\le u_n$ be their waiting times in ascending order, so that $u_i$ is the $i$-th shortest wait and its rank $i$ serves as its weight.
 \begin{equation}
-G = \frac{2\sum_{j=1}^{n} j\,w_{(j)}}{n\sum_{j=1}^{n} w_{(j)}} - \frac{n+1}{n}
+G = \frac{2\sum_{i=1}^{n} i\,u_i}{n\sum_{i=1}^{n} u_i} - \frac{n+1}{n}
 \label{eq:gini}
 \end{equation}
 $G=0$ means every job waits the same, and as $G$ approaches 1 the waiting concentrates on fewer jobs.
 
 \subsection{Baseline Implementation and Fidelity}\label{eval:impl}
-The comparators fall into three groups. Blocking FIFO is the reference against which every improvement is measured. The six Order policies (SJF, Themis, LAS, EASY, Kueue, Lucid) decide which job is served first and are direct alternatives to SAFA. The Placement axis (most-allocated, compact, round-robin, MCTS, FGD) decides where a selected job runs and serves to test composability. Each implementation was checked line by line against author-released code.
+The comparators fall into three groups. Blocking FIFO is the reference against which every improvement is measured. The six Order policies (SJF, Themis, LAS, EASY, Kueue, Lucid) decide which job is served first and are direct alternatives to SAFA. The Placement axis (most-allocated, compact, round-robin, MCTS, FGD, and KAI in its binpack and spread modes) decides where a selected job runs and serves to test composability. Each implementation was checked line by line against author-released code.
 \begin{itemize}
 \item FIFO (blocking): dispatches jobs in strict arrival order, so a head job that cannot obtain a slot halts the jobs behind it. This is the blocking form defined in Section~\ref{Related}.
 \item SJF: gives priority to jobs with shorter runtimes, taken as oracle durations from the trace.
@@ -363,6 +363,7 @@ The comparators fall into three groups. Blocking FIFO is the reference against w
 \item Themis: gives priority to the job with the largest, and thus most disadvantaged, finish-time-fairness metric $r$. No public code is available, so we sort on $r$ without the round solver and inject the runtime information with 20\% random error. The approximation cannot rescue large jobs and may therefore be biased toward starvation.
 \item Kueue: prioritizes VC quotas while borrowing spare resources through cohort borrowing, and is non-blocking. Its low Fairness here is the cost of that throughput-first configuration rather than a defect, and Fairness improves under StrictFIFO.
 \item FGD: selects the node that produces the smallest fragmentation increase $\Delta F$ while the queue stays FCFS. We specialize it to whole-GPU gangs to isolate the effect of fragmentation-aware Placement.
+\item KAI: ranks nodes by their unallocated GPU count, ascending under binpack so that jobs consolidate and empty nodes stay free for large gangs, and descending under spread. The published node score is monotone in that count, so ranking on the count alone reproduces the original selection. KAI also pipelines resources for a gang that does not yet fit, which our engine approximates with blocking admission. The reservation-respecting backfill this omits would raise KAI's throughput, not its order fairness. KAI applies no GPU-type preference, so unlike most-allocated it does not favour faster accelerators.
 \item Lucid: performs non-preemptive collocation by sorting jobs with GPU-weighted SJF and packing them by sharing score. The authors' profiler is unavailable for this trace, so our implementation substitutes synthetic utilization, oracle durations, and a fixed slowdown coefficient.
 \end{itemize}
 
