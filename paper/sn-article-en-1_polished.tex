@@ -468,13 +468,13 @@ SAFA (fixed $\alpha{=}0.13889$) & 0.0 & 88.8 & 0.0 & 58.0 & 0.0 & 94.7 \\
 \subsection{Placement Composability}\label{eval:robust:placement}
 Since SAFA acts before Placement, it can sit in front of any Placement policy. For each of the seven, namely most-allocated, compact, round-robin, MCTS, FGD, KAI binpack, and KAI spread, we measure the policy under FIFO and then under SAFA (Table~\ref{tab:placement}, one 256-GPU configuration, same seven metrics as the main results).
 
-Fragmentation costs something under every placement, and the amount tracks how widely the policy scatters jobs. Under FIFO, utilization falls from 91.9\% with most-allocated to 89.3\% with KAI spread, and the median wait rises from 5.8M\,s to 6.2M\,s, because scattered free GPUs leave no node able to hold an 8-GPU gang in full.
+Under FIFO the seven placements do not perform alike. Round-robin and KAI spread reach 89.1\% and 89.3\% utilization while the other five reach between 91.6 and 91.9\%, and those same two carry the longest median waits at 6.1M and 6.2M\,s against 5.8M\,s for the rest.
 
-SAFA raises utilization and shortens the wait under all seven policies. Filling vacant node slots with jobs that fit brings utilization back to 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, and cuts the median wait by 11 to 18\%. Order fairness is what it spends: Fairness falls from FIFO's 100 to 91.8 to 93.7, while Gini moves from 0.36 to 0.39 and TailRatio from 2.23 to 2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The recovery is largest where the placement scatters most aggressively. Under KAI spread, utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It returns the utilization that fragmentation took, and it does so most where fragmentation is worst.
+SAFA raises utilization and shortens the wait under all seven policies. Utilization reaches 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, and the median wait falls by 11 to 18\%. What it spends is order fairness. Fairness falls from FIFO's 100 to between 91.8 and 93.7, Gini moves from 0.36 to 0.39, and TailRatio from 2.23 to 2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The gain is largest where the FIFO baseline was lowest. Under KAI spread utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It improves every one, and most where the baseline left the most GPUs idle.
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_placement_hol.pdf}}
-\caption{HOL recovery under varying levels of fragmentation.}
+\caption{HOL recovery across placement policies.}
 \label{fig:placehol}
 \end{figure}
 
