@@ -1,7 +1,7 @@
 # SAFA 논문 — Main Flow
 
 > 논문의 논증을 한눈에 파악하기 위한 흐름·주장 정리.
-> 본문은 `sn-article.tex`. 수치·주장은 본문 기준.
+> 본문은 `sn-article-en-1_polished.tex`. 수치·주장은 본문 기준.
 
 ---
 
