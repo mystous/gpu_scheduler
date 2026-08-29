@@ -18,7 +18,8 @@
 \usepackage{xcolor}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\usepackage{algcompatible}   % uppercase macros \STATE \IF \FOR etc. (Algorithm 1)
+\usepackage{algcompatible}   % uppercase macros \STATE \IF \FOR etc. (Algorithms 1-2)
+\renewcommand{\algorithmiccomment}[1]{// #1}  % 교수 코멘트: {..} 대신 // 주석 표기
 \providecommand{\RETURN}{\State \Return}  % some TeXLive algcompatible lacks \RETURN -> supply (ignored if defined)
 \usepackage{cite}
 \usepackage{placeins}         % \FloatBarrier — keep figures inside section/bibliography boundaries
@@ -170,7 +171,7 @@ Time slicing could raise the allocation rate, but exploiting it flexibly during 
 
 Figures~\ref{fig:concept}(a) and (b) show the states of the GPU server pool and the job wait queue, respectively. In this state, a most-allocated scheduler can allocate jobs $\textit{t}_{0}$ and $\textit{t}_{1}$. Job $\textit{t}_{2}$, however, cannot be placed until other jobs complete and release GPU slots, as shown in Fig.~\ref{fig:concept}(c). Because the queue is served in strict arrival order, which is the blocking FIFO of Section~\ref{Related}, the subsequent jobs $\textit{t}_{3}$, $\textit{t}_{4}$, and $\textit{t}_{5}$ can be scheduled only after $\textit{t}_{2}$ has been scheduled.
 
-The problem is that the pool already contains enough free GPU slots to satisfy the combined demand of $\textit{t}_{2}$ and $\textit{t}_{3}$. This is precisely HOL blocking, caused by fragmentation of the GPU server pool by previously allocated jobs. Such fragmentation forms and dissipates continuously during operation, and the worst case occurs when every GPU server has 7 free GPUs while the HOL-blocked job requests 8.
+The problem is that the pool already contains enough free GPU slots to satisfy the combined demand of $\textit{t}_{2}$ and $\textit{t}_{3}$. This is precisely HOL blocking, caused by fragmentation of the GPU server pool by previously allocated jobs. Such fragmentation forms and dissipates continuously during operation, and the worst case occurs when the HOL-blocked job needs all $M$ accelerators a server holds while every server has only $M-1$ free.
 
 The cause is that allocation is both spatial and indivisible. Moreover, non-preemption is the de facto standard for GPU jobs, since training jobs incur high checkpoint-and-reload costs and reshaping the resource pool is either impossible or prohibitively expensive. Starvation is therefore relieved only when a contiguous slot large enough for the job becomes available. The scheduler cannot make that slot open any sooner. What it can do is keep the large job near the head of the queue, so that when the slot finally opens, the job is in position to take it.
 
@@ -188,9 +189,9 @@ A job that later arrivals keep overtaking never reaches its turn. The median que
 
 The goal of queue reordering is not throughput. It is to cut the queueing delay that HOL blocking imposes on the jobs behind the head while giving up as little arrival order as that cut allows. What it prevents is a queue stalled indefinitely behind one job while the backlog grows, not the completion of any particular large job, which still depends on a slot opening. Promoting jobs without restraint would simply relocate the unfairness rather than remove it, so a single weight controls how far a job's accumulated age may override its arrival order.
 
-SAFA reorders the wait queue with the procedure in Algorithm~\ref{alg:reorder}, which runs at every scheduling pass and has three blocks. The first sweeps the server pool and updates resource fitness $R$ for each request size. The second rebases the relative ages of pending jobs and computes each adjusted priority $P^*$. The third moves the job with the largest $P^*$ to the queue head.
+SAFA reorders the wait queue with Algorithms~\ref{alg:priority} and~\ref{alg:reorder}, which run in sequence at every scheduling pass. Algorithm~\ref{alg:priority} produces the adjusted priorities in two blocks. The first sweeps the server pool and updates resource fitness $R$ for each request size. The second rebases the relative ages of pending jobs and computes each adjusted priority $P^*$. Algorithm~\ref{alg:reorder} then moves the job with the largest $P^*$ to the queue head.
 
-Resource fitness $R_j$ summarizes how well a $j$-GPU request fits the pool at the current instant. For each server $S_i$ with idle count $f_{S_i}$, a request of size $j\in\{1,\dots,M_i\}$ that fits ($j\le f_{S_i}$) scores $R_j=1$. A request that does not fit loses $0.1$ per GPU of shortfall, and the best score across all servers is retained. $R_j$ therefore ranges over $[0,1]$, and it is the one input SAFA draws from outside the queue.
+Resource fitness $R_j$ summarizes how well a $j$-GPU request fits the pool at the current instant. For each server $S_i$ with idle count $f_{S_i}$, a request of size $j\in\{1,\dots,M_i\}$ that fits ($j\le f_{S_i}$) scores $R_j=1$. A request that does not fit loses $0.1$ per GPU of shortfall, and the best score across all servers is retained. Fitness is defined for every request size up to $M=\max_i M_i$, the largest gang a single server can hold. $R_j$ therefore ranges over $[0,1]$, and it is the one input SAFA draws from outside the queue.
 
 The second block computes priorities. The age $A_j$ is a non-negative integer incremented by 1 whenever a new job is submitted, so it counts arrivals rather than elapsed time. Subtracting the minimum age in the queue gives the relative age $\tilde A_j=A_j-\min_k A_k$, from which each pending job's $P^*$ follows.
 
@@ -200,22 +201,22 @@ P^*_j = P_j + \alpha\, \tilde A_j \cdot R_j
 \vspace{2pt}
 \end{equation}
 
-The first term $P_j=1/\text{base}^{\,pos_j}$ is the arrival priority. With $\text{base}=2$, positions $pos_j=0,1,2$ yield $1$, $0.5$, and $0.25$, and larger values rank higher. The second term $\alpha\,\tilde A_j R_j$ is the priority adjustment, which multiplies how long a job has waited by how well it fits the vacant slots. The coefficient $\alpha$ sets how quickly that product can override arrival order. To put a number on that, suppose arrivals are steady enough that one age unit corresponds to ten minutes, and consider the second job in the queue, which starts at $P_j=0.5$. For it to gain $0.5$ within six hours at $R_j=1$, we need $\alpha\ge0.013889$, since $0.013889\times36\times1=0.5$.
+The first term $P_j=1/\text{base}^{\,pos_j}$ is the arrival priority. With $\text{base}=2$, positions $pos_j=0,1,2$ yield $1$, $0.5$, and $0.25$, and larger values rank higher. The second term $\alpha\,\tilde A_j R_j$ is the priority adjustment, which multiplies how long a job has waited by how well it fits the vacant slots. The coefficient $\alpha$ sets how quickly that product can override arrival order. To put a number on that, consider an example in which arrivals are steady enough that one age unit corresponds to ten minutes, and take the second job in the queue, which starts at $P_j=0.5$. For it to gain $0.5$ within six hours at $R_j=1$, we need $\alpha\ge0.013889$, since $0.013889\times36\times1=0.5$.
 
 This example, however, is a simplification that ignores the head's own adjustment. In reality the head also carries $\alpha\,\tilde A_0 R_0$, so a true inversion occurs only when the difference in the two jobs' $\tilde A\cdot R$ products exceeds the difference in their arrival priorities, that is, only when slot fitness $R$ differs between them.
 
-The third block finds the position $i_{\max}$ of the largest $P^*$ and, unless that job already sits at the head, moves it to the front while leaving every other job in its existing relative position. Each pass moves only the single job with the highest adjusted priority to the front of the queue, because placing that job changes the pool's free slots and thereby invalidates $R$, and with it every other job's $P^*$. That job is the one that has starved the most and best fits the currently vacant GPU slots, and the positions of the remaining jobs are largely preserved.
+Algorithm~\ref{alg:reorder} finds the position $i_{\max}$ of the largest $P^*$ and, unless that job already sits at the head, moves it to the front while leaving every other job in its existing relative position. Each pass moves only the single job with the highest adjusted priority to the front of the queue, because placing that job changes the pool's free slots and thereby invalidates $R$, and with it every other job's $P^*$. That job is the one that has starved the most and best fits the currently vacant GPU slots, and the positions of the remaining jobs are largely preserved.
 
 $pos_j$ and $\tilde A_j$ are read straight from the queue, and $R_j$ combines the job's accelerator request with the free-slot count on each server into a single fitness value. All are read at the scheduling instant and none is estimated. The linear form resembles Kleinrock's time-dependent priority\cite{kleinrock1976queueing}, but only in shape. Kleinrock's conservation law assumes preemption, a single server, and steady state, none of which holds in a non-preemptive, space-shared, oversaturated gang setting. What SAFA adds to that classical form is indivisible-gang resource fitness $R$ and a coefficient normalized by queue statistics.
 
 \begin{algorithm}
-\caption{SAFA queue reordering}\label{alg:reorder}
+\caption{SAFA adjusted priority}\label{alg:priority}
 \textbf{Input:} \\
 \hspace*{4mm} Servers $S_i$ ($i{<}n$): accelerator count $M_i$, idle count $f_{S_i}$ \\
-\hspace*{4mm} Pending jobs $t_i$ ($i{<}l_{wq}$): accelerator request $a_{t_i}$, age $A_i$ \\
-\hspace*{4mm} Resource fitness $R_j$ ($j\in\{1,\ldots,8\}$, initially 0)
+\hspace*{4mm} Pending jobs $t_i$ ($i{<}l_{wq}$): accelerator request $a_i$, age $A_i$ \\
+\hspace*{4mm} Resource fitness $R_j$ ($j\in\{1,\ldots,M\}$, initially 0)
 \begin{flushleft}
-\textbf{Procedure:} Updated wait queue
+\textbf{Output:} Adjusted priorities $P^*$
 \end{flushleft}
 \begin{algorithmic}[1]
 \STATE $R \gets 0$
@@ -223,7 +224,8 @@ $pos_j$ and $\tilde A_j$ are read straight from the queue, and $R_j$ combines th
 \FOR{ $i \gets 0$ to $n-1$}
     \FOR{$j \gets 1$ to $M_i$}
         \IF{$j > f_{S_i}$}
-            \STATE $R_j \gets \max\{R_j,\ 1 - ( j - f_{S_i} ) \times 0.1\}$ \COMMENT{request $j$ exceeds availability $f_{S_i}$, decrease 0.1 per shortfall}
+            \STATE $R'_j \gets 1 - ( j - f_{S_i} ) \times 0.1$ \COMMENT{request $j$ exceeds availability $f_{S_i}$, decrease 0.1 per shortfall}
+            \STATE $R_j \gets \max\{R_j,\ R'_j\}$
         \ELSE
             \STATE $R_j \gets 1$ \COMMENT{sufficient availability, perfect fit}
         \ENDIF
@@ -232,14 +234,27 @@ $pos_j$ and $\tilde A_j$ are read straight from the queue, and $R_j$ combines th
 \STATE {}
 \STATE $\tilde A_i \gets A_i - \min_k A_k,\ \forall i$ \COMMENT{rebase relative ages}
 \FOR{ $i \gets 0$ to $l_{wq}-1$}
-    \STATE $P_i \gets 1/\text{base}^{\,i}$ \COMMENT{$\text{base}=2$}
-    \STATE $P_i^* \gets P_i + \alpha\, \tilde A_i \cdot R_{a_{t_i}}$
+    \STATE $P_i \gets 1/\text{base}^{\,i}$
+    \STATE $P_i^* \gets P_i + \alpha\, \tilde A_i \cdot R_{a_i}$
 \ENDFOR
-\STATE {}
+\STATE \textbf{return} $P^*$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{SAFA queue reordering}\label{alg:reorder}
+\textbf{Input:} \\
+\hspace*{4mm} Wait queue $WQ=[\,t_0,\ldots,t_{l_{wq}-1}\,]$ in arrival order \\
+\hspace*{4mm} Adjusted priorities $P^*$ from Algorithm~\ref{alg:priority}
+\begin{flushleft}
+\textbf{Output:} Updated wait queue
+\end{flushleft}
+\begin{algorithmic}[1]
 \STATE $(P_{i_{\max}}^*, i_{\max}) \gets \max(P^*)$
 \IF{$i_{\max} \neq 0$}
     \STATE $WQ \gets [\,t_{i_{\max}}\,] \,\Vert\, WQ[0{:}i_{\max}) \,\Vert\, WQ[i_{\max}{+}1{:}l_{wq})$ \COMMENT{$\Vert$: concatenation; slices are half-open}
 \ENDIF
+\STATE \textbf{return} $WQ$
 \end{algorithmic}
 \end{algorithm}
 
@@ -249,16 +264,16 @@ SAFA runs immediately before Placement and reads nothing beyond the wait queue a
 This section defines the trade-off that $\alpha$ controls, shows that its optimum shifts far enough across workloads that no fixed value serves them all, and derives the tuning-free coefficient $\alpha_{\text{eff}}$ that reads its value from queue statistics.
 
 \subsubsection{Trade-off Analysis and Metric Definitions}
-A large $\alpha$ lets blocked jobs overtake aggressively enough to create fresh unfairness, so choosing a value means quantifying what is traded. We group cumulative waiting times by requested accelerator count and define the resulting change as accumulated distance (AD). Let $C_k$ be the class of jobs requesting $k$ accelerators, $WT_k=\sum_{j\in C_k} w_j$ the sum of waiting times before reordering, and $WT'_k$ the sum afterward. The weight $1/2^{8-k}$ gives more importance to classes with larger requests.
+A large $\alpha$ lets blocked jobs overtake aggressively enough to create fresh unfairness, so choosing a value means quantifying what is traded. We group cumulative waiting times by requested accelerator count and define the resulting change as accumulated distance (AD). Let $C_k$ be the class of jobs requesting $k$ accelerators, $WT_k=\sum_{j\in C_k} w_j$ the sum of waiting times before reordering, and $WT'_k$ the sum afterward. The weight $1/2^{M-k}$ gives more importance to classes with larger requests.
 \begin{equation}
-AD = \sum_{k=1}^8 \frac{(WT'_k - WT_k)}{2^{8-k}}
+AD = \sum_{k=1}^{M} \frac{(WT'_k - WT_k)}{2^{M-k}}
 \label{eq:07}
 \end{equation}
 
 Applying the same weights to the change in the worst wait per class yields the accumulated maximum distance (AMD).
 
 \begin{equation}
-AMD = \sum_{k=1}^8 \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k} w_j}{2^{8-k}}
+AMD = \sum_{k=1}^{M} \frac{\max\limits_{j\in C_k} w'_j \;-\; \max\limits_{j\in C_k} w_j}{2^{M-k}}
 \label{eq:08}
 \vspace{2pt}
 \end{equation}
@@ -307,7 +322,7 @@ We set the coefficient to the reciprocal of the two scales.
 Substituted into the adjustment, the coefficient separates it into two ratios.
 
 \begin{equation}
-\alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \underbrace{\frac{\tilde A_j}{A_{\text{ref}}}}_{\text{waited vs.\ average}} \;\times\; \underbrace{\frac{R_j}{R_{\min}}}_{\text{fit vs.\ congestion}}
+\alpha_{\text{eff}}\,\tilde A_j\, R_j \;=\; \frac{\tilde A_j}{A_{\text{ref}}} \;\times\; \frac{R_j}{R_{\min}}
 \label{eq:alphaeff-define}
 \end{equation}
 
