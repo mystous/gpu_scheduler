@@ -204,7 +204,7 @@ The first term $P_j=1/\text{base}^{\,pos_j}$ is the arrival priority. With $\tex
 
 This example, however, is a simplification that ignores the head's own adjustment. In reality the head also carries $\alpha\,\tilde A_0 R_0$, so a true inversion occurs only when the difference in the two jobs' $\tilde A\cdot R$ products exceeds the difference in their arrival priorities, that is, only when slot fitness $R$ differs between them.
 
-Algorithm~\ref{alg:reorder} finds the position $i_{\max}$ of the largest $P^*$ and, unless that job already sits at the head, moves it to the front while leaving every other job in its existing relative position. Each pass moves only the single job with the highest adjusted priority to the front of the queue, because placing that job changes the pool's free slots and thereby invalidates $R$, and with it every other job's $P^*$. That job is the one that has starved the most and best fits the currently vacant GPU slots, and the positions of the remaining jobs are largely preserved.
+Algorithm~\ref{alg:reorder} finds the position $i_{\max}$ of the largest $P^*$ and, unless that job already sits at the head, moves it to the front while leaving every other job in its existing relative position. Each pass moves only the single job with the highest adjusted priority to the front of the queue, because placing that job changes the pool's free slots and thereby invalidates $R$, and with it every other job's $P^*$. That job is the one that has starved the most and best fits the currently vacant GPU slots.
 
 $pos_j$ and $\tilde A_j$ are read straight from the queue, and $R_j$ combines the job's accelerator request with the free-slot count on each server into a single fitness value. All are read at the scheduling instant and none is estimated. The linear form resembles Kleinrock's time-dependent priority\cite{kleinrock1976queueing}, but only in shape. Kleinrock's conservation law assumes preemption, a single server, and steady state, none of which holds in a non-preemptive, space-shared, oversaturated gang setting. What SAFA adds to that classical form is indivisible-gang resource fitness $R$ and a coefficient normalized by queue statistics.
 
@@ -366,7 +366,7 @@ G = \frac{2\sum_{i=1}^{n} i\,u_i}{n\sum_{i=1}^{n} u_i} - \frac{n+1}{n}
 $G=0$ means every job waits the same, and as $G$ approaches 1 the waiting concentrates on fewer jobs.
 
 \subsection{Baseline Implementation and Fidelity}\label{eval:impl}
-The comparators fall into three groups. Blocking FIFO is the reference against which every improvement is measured. The six Order policies (SJF, Themis, LAS, EASY, Kueue, Lucid) decide which job is served first and are direct alternatives to SAFA. The Placement axis (most-allocated, compact, round-robin, MCTS, FGD, and KAI in its binpack and spread modes) decides where a selected job runs and serves to test composability. Each implementation was checked line by line against author-released code.
+The comparators fall into three groups. Blocking FIFO is the reference against which every improvement is measured. The six Order policies (SJF, Themis, LAS, EASY, Kueue, Lucid) decide which job is served first and are direct alternatives to SAFA. The Placement axis (most-allocated, compact, round-robin, MCTS, FGD, and KAI in its binpack and spread modes) decides where a selected job runs and serves to test composability.
 \begin{itemize}
 \item FIFO (blocking): dispatches jobs in strict arrival order, so a head job that cannot obtain a slot halts the jobs behind it. This is the blocking form defined in Section~\ref{Related}.
 \item SJF: gives priority to jobs with shorter runtimes, taken as oracle durations from the trace.
@@ -482,7 +482,7 @@ Since SAFA acts before Placement, it can sit in front of any Placement policy. F
 
 Under FIFO the seven placements do not perform alike. Round-robin and KAI spread reach 89.1\% and 89.3\% utilization while the other five reach between 91.6 and 91.9\%, and those same two carry the longest median waits at 6.1M and 6.2M\,s against 5.8M\,s for the rest.
 
-SAFA raises utilization and shortens the wait under all seven policies. Utilization reaches 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, and the median wait falls by 11 to 18\%. What it spends is order fairness. Fairness falls from FIFO's 100 to between 91.8 and 93.7, Gini moves from 0.36 to 0.39, and TailRatio from 2.23 to 2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The gain is largest where the FIFO baseline was lowest. Under KAI spread utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}). SAFA therefore does more than tolerate the placement policy beneath it. It improves every one, and most where the baseline left the most GPUs idle.
+SAFA raises utilization and shortens the wait under all seven policies. Utilization reaches 94.7 to 96.5\%, a gain of 3.7 to 5.8 percentage points, and the median wait falls by 11 to 18\%. What it spends is order fairness. Fairness falls from FIFO's 100 to between 91.8 and 93.7, Gini moves from 0.36 to 0.39, and TailRatio from 2.23 to 2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The gain is largest where the FIFO baseline was lowest. Under KAI spread utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}).
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_placement_hol.pdf}}
@@ -492,7 +492,7 @@ SAFA raises utilization and shortens the wait under all seven policies. Utilizat
 
 \begin{table}[htb!]
 \centering
-\caption{Metrics before and after composing SAFA with Placement policies (single overloaded 256-GPU configuration)}
+\caption{Metrics before and after composing SAFA with Placement policies (single 256-GPU configuration)}
 \label{tab:placement}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}ll rrrrrrr@{}}
@@ -540,7 +540,7 @@ At 256 GPUs, the Fairness of all six Order policies falls to 0 while SAFA holds 
 
 The coefficient $\alpha$ is the mechanism behind that balance. A fixed value has to be searched for, and its optimum moves substantially with the workload. SAFA computes it instead from the relative ages already in the queue and the resource fitness $R$ already read from the pool, so it adapts to workload change without a new grid search.
 
-Two directions follow. This work covers GPU gang traces only, so extending the evaluation to classical parallel-job traces in the Standard Workload Format would connect it to the HPC batch-scheduling literature. More pressing, the B200 measurements confirm that SAFA prevents burst-overload exclusion on the real admission and binding path, at a Fairness of 82.8 with Overtaken at 0.0\%, but a single node cannot reproduce multi-node fragmentation. Expanding the real-cluster measurement to several nodes is the most important next step.
+Two directions follow. This work covers GPU gang traces only, so extending the evaluation to classical parallel-job traces in the Standard Workload Format would connect it to the HPC batch-scheduling literature. More pressing, the B200 validation ran on a single node, which cannot reproduce multi-node fragmentation, so extending it to several nodes is the most important next step.
 
 \FloatBarrier
 \section*{ACKNOWLEDGMENT}
