@@ -402,7 +402,7 @@ We evaluate the FIFO baseline, the six Order policies, and SAFA under three clus
 
 \begin{table*}[htb!]
 \centering
-\caption{Main results: order fairness (Fairness and Overtaken), queueing delay, resource utilization, and distributional fairness (Gini and TailRatio). MedianWait and MaxWait are rounded to two significant figures; percentages in the text use unrounded values.}
+\caption{Main results: order fairness (Fairness and Overtaken), queueing delay, resource utilization, and distributional fairness (Gini and TailRatio). Percentages quoted in the text are computed from unrounded values.}
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \resizebox{\textwidth}{!}{%
@@ -538,7 +538,7 @@ SAFA raises utilization and shortens the wait under all seven policies. Utilizat
 \end{table}
 
 \subsection{Real-Cluster Validation (B200)}\label{eval:b200}
-The simulator models the queue but not the Kubernetes admission and binding path, so we cross-validate on a single-node NVIDIA B200$\times$8 cluster running K8s v1.31. The workload is a 500-job Philly sample replayed with the time axis compressed and nothing else changed, which preserves the bursty submission pattern of the original. At peak 440 of the 500 jobs wait at once. Each job ran as a sleep stub that held real GPUs and traversed creation, gating, and binding, giving 6 runs $\times$ 500 jobs $=$ 3{,}000 real Pods across all policies and repetitions. The experiment tests the admission and binding path and excludes computation and communication.
+The simulator models the queue but not the Kubernetes admission and binding path, so we cross-validate on a single-node NVIDIA B200$\times$8 cluster running K8s v1.31 with a 5\,s controller period. The workload is a 500-job Philly sample replayed with the time axis compressed and nothing else changed, which preserves the bursty submission pattern of the original. At peak 440 of the 500 jobs wait at once. Each job ran as a sleep stub that held real GPUs and traversed creation, gating, and binding, giving 5 runs $\times$ 500 jobs $=$ 2{,}500 real Pods across all policies and repetitions. The experiment tests the admission and binding path and excludes computation and communication.
 
 The queue behavior carries over. SAFA held Fairness at 82.8 and 82.4 over two runs, with Overtaken at 0.0 and 0.2\%, and blocking FIFO, which preserves arrival order by construction, held 84.2 and 89.5. A control run that kept dispatching later jobs regardless of the head's wait collapsed to 3.8 with Overtaken at 5.0\%. What separates that run from the other two is whether the head keeps its place, so what this measurement establishes is that SAFA is safe to run on the real admission path, not that its age promotion improves on plain FIFO.
 
