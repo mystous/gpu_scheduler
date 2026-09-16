@@ -402,7 +402,7 @@ We evaluate the FIFO baseline, the six Order policies, and SAFA under three clus
 
 \begin{table*}[htb!]
 \centering
-\caption{Main results: order fairness (Fairness and Overtaken), queueing delay, resource utilization, and distributional fairness (Gini and TailRatio). Percentages quoted in the text are computed from unrounded values.}
+\caption{Main results by cluster size (percentages in the text use unrounded values)}
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \resizebox{\textwidth}{!}{%
@@ -431,7 +431,7 @@ Fig.~\ref{fig:tradeoff} places every policy on the two axes at once. The existin
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_cliff.pdf}}
-\caption{Load and fairness cliff.}
+\caption{Fairness cliff across cluster sizes}
 \label{fig:cliff}
 \end{figure}
 
@@ -440,13 +440,13 @@ Fairness reads only the tail of the order violations, so we also examine the who
 
 \begin{figure}[htb!]
 \centerline{\includegraphics[width=\columnwidth]{Pic/Fig_tradeoff.pdf}}
-\caption{Utilization and fairness trade-off.}
+\caption{Utilization and fairness trade-off}
 \label{fig:tradeoff}
 \end{figure}
 
 \begin{table}[htb!]
 \centering
-\caption{Best fixed $\alpha$ found by grid search, refitted per configuration, versus the tuning-free coefficient}
+\caption{Grid-searched fixed $\alpha$ versus the tuning-free coefficient}
 \label{tab:ablation-grid}
 \footnotesize
 \resizebox{\columnwidth}{!}{%
@@ -505,7 +505,7 @@ SAFA raises utilization and shortens the wait under all seven policies. Utilizat
 
 \begin{table}[htb!]
 \centering
-\caption{Metrics before and after composing SAFA with Placement policies (single 256-GPU configuration)}
+\caption{SAFA composed with each Placement policy (256 GPUs)}
 \label{tab:placement}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}ll rrrrrrr@{}}
