@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Figure 2 (부하--공정성 절벽) 생성 — legend는 그래프 아래(외부) 배치.
+"""Figure 2 (구성별 공정성 절벽) 생성 — legend는 그래프 아래(외부) 배치.
+본문이 부하 배수·overload 표현을 쓰지 않으므로 축도 클러스터 GPU 수로만 표기한다.
 데이터: sim/sweep_results/fixed_sweep_table.csv (single, fair_p1 = Fairness)."""
 import csv
 import os
@@ -30,8 +31,8 @@ a.grid(alpha=0.3)
 a.set_ylabel("Fairness")
 a.set_xlim(-0.15, 2.15)
 a.set_xticks(xs)
-a.set_xticklabels(["0.9×\n1024", "1.8×\n512", "3.6×\n256"])
-a.set_xlabel("load (overload →)")
+a.set_xticklabels(["1024", "512", "256"])
+a.set_xlabel("cluster size (GPUs)  —  smaller cluster, deeper backlog →")
 # legend를 그래프 아래(축 외부)로 — 그래프를 가리지 않음
 a.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=5,
          fontsize=8, framealpha=0.9, columnspacing=1.0, handletextpad=0.5)
