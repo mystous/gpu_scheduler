@@ -501,7 +501,13 @@ Because SAFA acts before Placement, it can precede any Placement policy. For eac
 
 Under FIFO the seven placements do not perform similarly. Round-robin and KAI spread reach 89.1\% and 89.3\% utilization while the other five reach between 91.6\% and 91.9\%, and those same two carry the longest median waits at 6.1M\,s and 6.2M\,s against 5.8M\,s for the rest.
 
-SAFA raises utilization and shortens the wait under all seven policies. Utilization reaches 94.7\%--96.5\%, a gain of 3.7 to 5.8 percentage points, and the median wait falls by 11\%--18\%. What it spends is order fairness. Fairness falls from FIFO's 100 to between 91.8 and 93.7, Gini moves from 0.35--0.36 to 0.38--0.39, and TailRatio from 2.23--2.24 to 2.32--2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The gain is largest where the FIFO baseline was lowest. Under KAI spread utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points.
+SAFA raises utilization and shortens the wait under all seven policies. Utilization reaches 94.7\%--96.5\%, a gain of 3.7 to 5.8 percentage points, and the median wait falls by 11\%--18\%. What it spends is order fairness. Fairness falls from FIFO's 100 to between 91.8 and 93.7, Gini moves from 0.35--0.36 to 0.38--0.39, and TailRatio from 2.23--2.24 to 2.32--2.42. Those are small displacements next to the 0 that every Order baseline records in Table~\ref{tab:sim-single}. The gain is largest where the FIFO baseline was lowest. Under KAI spread utilization rises from 89.3\% to 95.1\%, a gain of 5.8 percentage points (Fig.~\ref{fig:placehol}).
+
+\begin{figure}[htb!]
+\centerline{\includegraphics[width=\columnwidth]{Pic/Fig_placement_hol.pdf}}
+\caption{HOL recovery across placement policies}
+\label{fig:placehol}
+\end{figure}
 
 \begin{table}[htb!]
 \centering
