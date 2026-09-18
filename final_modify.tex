@@ -73,7 +73,7 @@ A gang-scheduled GPU job cannot start until all its GPUs are free at once. As jo
 \end{abstract}
 
 \begin{IEEEkeywords}
-Distributed systems, gang scheduling, GPU cluster scheduling, head-of-line blocking, load balancing and task assignment, order fairness, performance attributes, queue reordering, scheduling and task partitioning, Scheduling.
+Distributed systems, gang scheduling, GPU cluster scheduling, head-of-line blocking, load balancing and task assignment, order fairness, performance attributes, queue reordering, scheduling, scheduling and task partitioning.
 \end{IEEEkeywords}
 
 \maketitle
@@ -563,6 +563,9 @@ The coefficient $\alpha$ is the mechanism behind that balance. A fixed value mus
 Two directions follow. This work covers GPU gang traces only, so extending the evaluation to classical parallel-job traces in the Standard Workload Format would connect it to the HPC batch-scheduling literature. More pressing, the B200 validation ran on a single node, which cannot reproduce multinode fragmentation, so extending it to several nodes is the most important next step.
 
 \FloatBarrier
+\section*{CODE AND DATA AVAILABILITY}
+The simulator source, the workload traces, the parameter sweep configurations, and the analysis scripts that reproduce every table and figure in this paper are openly available at \url{https://github.com/mystous/safa-artifact}.
+
 \section*{ACKNOWLEDGMENT}
 The authors received no financial support from any institution for this study.
 
