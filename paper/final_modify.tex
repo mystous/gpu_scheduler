@@ -25,6 +25,7 @@
 \renewcommand{\algorithmiccomment}[1]{// #1}  % 교수 코멘트: {..} 대신 // 주석 표기
 \providecommand{\RETURN}{\State \Return}  % some TeXLive algcompatible lacks \RETURN -> supply (ignored if defined)
 \usepackage{cite}
+\usepackage{balance}   % last page: equalize the two columns
 \usepackage{placeins}         % \FloatBarrier — keep figures inside section/bibliography boundaries
 \usepackage{subcaption}       % 2x2 concept diagram (subfigures)
 \usepackage[hidelinks]{hyperref}
@@ -567,6 +568,7 @@ The authors received no financial support from any institution for this study.
 
 Disclosure of generative AI use. In accordance with IEEE recommendations, the authors disclose that generative AI tools were used only in an auxiliary role during preparation of this paper. Their use was limited to sentence polishing and language editing, figure generation, experiment-reproduction scripts, and assistance with organizing results. The conception of the research, the design of the algorithm, and the execution and interpretation of the experiments were carried out by the authors. The authors reviewed and revised all AI-assisted content and bear full responsibility for the content of the publication.
 
+\balance
 \bibliographystyle{IEEEtran}
 \bibliography{sn-bibliography}
 %% if required, the content of .bbl file can be included here once bbl is generated
