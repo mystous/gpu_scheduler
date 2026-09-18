@@ -68,7 +68,7 @@
 \authornote{K. Cho e-mail: mystous@korea.ac.kr. Y. Jin e-mail: yhjin@lguplus.co.kr.}
 
 \begin{abstract}
-Most training jobs in production GPU clusters now ask for several GPUs at once, and often for an entire node. A gang-scheduled job of this kind cannot start until every GPU it asked for is free at the same time. As jobs of different sizes come and go, the free GPUs scatter across nodes, and a cluster can hold plenty of idle capacity with no single node large enough for a big job. That job stalls at the head of the queue and every job behind it waits too, which is head-of-line (HOL) blocking. It leaves GPUs idle that the waiting jobs could have used, and a large job can be passed over indefinitely. Schedulers decide in two stages: Order (picking the next job) and Placement (picking where it runs). Only Order decides whether a blocked job holds up the rest; therefore, HOL blocking is an ordering problem. We present SAFA (starvation-aware fair aging), which changes only the Order stage. SAFA observes four numbers it can read directly at the scheduling instant: where a job sits in the queue, how many GPUs it wants, how long it has waited compared with its neighbors, and how many GPUs each server has free. It predicts nothing, profiles nothing, and solves nothing. A coefficient governs how far a waiting job may be promoted, and SAFA derives it from the queue's own statistics; thus, it needs no retuning when the workload changes. We replay the 111k-job Philly trace on clusters of 256 to 1024 GPUs. At 256 GPUs all six Order policies fall to an order-fairness score of 0 out of 100, four of them despite being given runtimes or profiles SAFA never receives. SAFA scores 92.7 to 93.5 at 256 and 512 GPUs. It also shortens the median queue wait by 7\%--13\% against FIFO and lifts average GPU utilization from 92\% to 95\% or 96\%, so the fairness comes at no cost in throughput. The same pattern holds on Helios and Alibaba, two traces from unrelated clusters. On a live NVIDIA B200$\times$8 Kubernetes cluster, SAFA runs on the real admission path with order fairness on par with blocking FIFO. SAFA never touches placement; hence, it can run ahead of any Placement policy. We used seven Placement policies, and under each one SAFA raised the allocation rate over FIFO by 3.7 to 5.8 percentage points. The gain was largest under KAI spread, the policy that scatters free GPUs most widely.
+A gang-scheduled GPU job cannot start until all its GPUs are free at once. As jobs come and go the free GPUs scatter, leaving ample idle capacity but no node large enough for a big job. That job stalls at the queue head and holds up everything behind it. This head-of-line (HOL) blocking wastes GPUs and can pass a large job over indefinitely. Of the two scheduling stages, Order and Placement, only Order decides whether a blocked job holds up the rest. We present SAFA (starvation-aware fair aging), which changes only Order. It reads four quantities available at the scheduling instant, namely queue position, GPU demand, relative age, and free slots per server, and predicts, profiles, and solves nothing. Its coefficient comes from queue statistics, so a workload change needs no retuning. On the 111k-job Philly trace at 256 to 1024 GPUs, all six Order baselines fall to an order-fairness score of 0 while SAFA holds 92.7 to 93.5, cutting the median wait by 7\%--13\% and lifting utilization from 92\% to 95\% or 96\%. Helios, Alibaba, and a live NVIDIA B200$\times$8 cluster show the same pattern, and SAFA raises allocation by 3.7 to 5.8 points under seven placements.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -572,23 +572,5 @@ Disclosure of generative AI use. In accordance with IEEE recommendations, the au
 %% if required, the content of .bbl file can be included here once bbl is generated
 %%\input sn-article.bbl
 
-% Author biographies --- to add a photo, replace IEEEbiographynophoto with
-% \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{photo}}]{Name}.
-% Fill in the XXXX/XX placeholders with actual degrees and years.
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{Pic/bio_kyunam_cho.jpg}}]{Kyunam Cho}~is a Research Fellow at LG Uplus in Seoul and a Ph.D. candidate in computer science at Korea University in Seoul, Korea. From 2000 to 2021, he worked as a software developer and software architect at Samsung Electronics. From 2021 to 2022, he worked as a software architect at Hyundai Card Company.
-
-His primary research areas are high-performance computing (HPC) and HPC-based software platforms. At Samsung Electronics, he built and operated thousands of GPGPU-based machine learning systems. His current interests include large language model operations, known as LLMOps, federated learning, and chaos engineering for public-cloud-based platforms. He is the author of a book on machine learning and has published papers in Computer Physics Communications.
-
-\end{IEEEbiography}
-
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{Pic/bio_younghwan_jin.jpg}}]{YoungHwan Jin}~received the B.S. and M.S. degrees in computer science from Yonsei University.
-His research interests include distributed systems and cloud-native architectures, with particular emphasis on resource allocation for distributed GPU inference and scalable machine learning operations in edge environments.
-
-\end{IEEEbiography}
-
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{Pic/bio_heonchang_yu.jpg}}]{Heonchang Yu}~is a Professor in the Department of Computer Science and Engineering at Korea University, Seoul, Korea. He received the M.S. and Ph.D. degrees in computer science from Korea University in 1991 and 1994, respectively. He has been a Professor at Korea University since 1998 and was a Visiting Professor in the Department of Electrical and Computer Engineering at the University of Texas at San Antonio, TX, USA, from 2019 to 2020. He leads the Distributed and Cloud Computing Laboratory at Korea University.
-
-His research interests include cloud computing, virtualization (including GPU virtualization), distributed systems, fault-tolerant systems, and edge-cloud technologies that support real-time processing. He has served as an editor of the Korean Institute of Information Scientists and Engineers since 2007.
-\end{IEEEbiography}
 
 \end{document}
